@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<materials>
+	<material name="/GlassDark">
+		<diffuse>
+			<color>0.0627451 0.054902 0.0431373</color>
+		</diffuse>
+		<opacity>0.15</opacity>
+		<ior>1.5</ior>
+		<reflection>
+			<color>1 1 1</color>
+			<level>0</level>
+			<glossiness>1</glossiness>
+			<fresnel>1</fresnel>
+		</reflection>
+		<refraction>
+			<color>1 1 1</color>
+			<glossiness>1</glossiness>
+		</refraction>
+	</material>
+</materials>

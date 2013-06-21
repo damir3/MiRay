@@ -1,0 +1,202 @@
+//
+//  Image.cpp
+//  MiRay/resources
+//
+//  Created by Damir Sagidullin on 08.04.13.
+//  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
+//
+
+#include "Image.h"
+#include "ImageManager.h"
+
+using namespace mr;
+
+// ------------------------------------------------------------------------ //
+
+Image::Image(ImageManager & owner, const char * strName)
+	: IResource(owner, strName)
+	, m_width(0)
+	, m_height(0)
+	, m_type(TYPE_NONE)
+	, m_pData(NULL)
+{
+}
+
+Image::~Image()
+{
+	Destroy();
+}
+
+// ------------------------------------------------------------------------ //
+
+bool Image::Create(int w, int h, eType type)
+{
+	Destroy();
+	if (type == TYPE_NONE)
+		return false;
+
+	m_pData = new byte[w * h * PixelSize(type)];
+	if (!m_pData)
+		return false;
+	
+	m_width = w;
+	m_height = h;
+	m_type = type;
+	return true;
+}
+
+void Image::Destroy()
+{
+	if (m_pData)
+	{
+		delete [] m_pData;
+		m_pData = NULL;
+	}
+
+	m_width = m_height = 0;
+	m_type = TYPE_NONE;
+}
+
+// ------------------------------------------------------------------------ //
+
+void Image::SetPixel(int x, int y, const ColorF & c)
+{
+	assert(x >= 0 && x < m_width);
+	assert(y >= 0 && y < m_height);
+	switch (m_type)
+	{
+		case TYPE_3B:
+		{
+			byte * pData = m_pData + (y * m_width + x) * 3;
+			pData[0] = F2B(clamp(c.r, 0.f, 1.f));
+			pData[1] = F2B(clamp(c.g, 0.f, 1.f));
+			pData[2] = F2B(clamp(c.b, 0.f, 1.f));
+			break;
+		}
+		case TYPE_4B:
+		{
+			byte * pData = m_pData + (y * m_width + x) * 4;
+			pData[0] = F2B(clamp(c.r, 0.f, 1.f));
+			pData[1] = F2B(clamp(c.g, 0.f, 1.f));
+			pData[2] = F2B(clamp(c.b, 0.f, 1.f));
+			pData[3] = F2B(clamp(c.a, 0.f, 1.f));
+			break;
+		}
+		case TYPE_3W:
+		{
+			uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
+			pData[0] = F2W(clamp(c.r, 0.f, 1.f));
+			pData[1] = F2W(clamp(c.g, 0.f, 1.f));
+			pData[2] = F2W(clamp(c.b, 0.f, 1.f));
+			break;
+		}
+		case TYPE_4W:
+		{
+			uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 4;
+			pData[0] = F2W(clamp(c.r, 0.f, 1.f));
+			pData[1] = F2W(clamp(c.g, 0.f, 1.f));
+			pData[2] = F2W(clamp(c.b, 0.f, 1.f));
+			pData[3] = F2W(clamp(c.a, 0.f, 1.f));
+			break;
+		}
+		case TYPE_3F:
+		{
+			float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 3;
+			pData[0] = c.r;
+			pData[1] = c.g;
+			pData[2] = c.b;
+			break;
+		}
+		case TYPE_4F:
+		{
+			float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 4;
+			pData[0] = c.r;
+			pData[1] = c.g;
+			pData[2] = c.b;
+			pData[3] = c.a;
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+// ------------------------------------------------------------------------ //
+
+ColorF Image::GetPixel(int x, int y) const
+{
+	assert(x >= 0 && x < m_width);
+	assert(y >= 0 && y < m_height);
+	switch (m_type)
+	{
+		case TYPE_3B:
+		{
+			const byte * pData = m_pData + (y * m_width + x) * 3;
+			return ColorF(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
+		}
+		case TYPE_4B:
+		{
+			const byte * pData = m_pData + (y * m_width + x) * 4;
+			return ColorF(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]), B2F(pData[3]));
+		}
+		case TYPE_3W:
+		{
+			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
+			return ColorF(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]));
+		}
+		case TYPE_4W:
+		{
+			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 4;
+			return ColorF(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]), W2F(pData[3]));
+		}
+		case TYPE_3F:
+		{
+			const float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 3;
+			return ColorF(pData[0], pData[1], pData[2]);
+		}
+		case TYPE_4F:
+		{
+			const float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 4;
+			return ColorF(pData[0], pData[1], pData[2], pData[3]);
+		}
+		default:
+			return ColorF::Null;
+	}
+}
+
+ColorF Image::GetPixel(float u, float v) const
+{
+	if (u > 1.f)
+		u = fmodf(u, 1.f);
+	else if (u < 0.f)
+		u = fmodf(u, 1.f) + 1.f;
+
+	if (v > 1.f)
+		v = fmodf(v, 1.f);
+	else if (v < 0.f)
+		v = fmodf(v, 1.f) + 1.f;
+
+	float fx = u * m_width - 0.5f;
+	float fy = v * m_height - 0.5f;
+
+	int ix = static_cast<int>(fx);
+	int iy = static_cast<int>(fy);
+	float dx = fx - ix;
+	float dy = fy - iy;
+	int ix2 = ix + 1;
+	int iy2 = iy + 1;
+
+	if (ix < 0)				ix += m_width;
+	if (ix2 >= m_width)		ix2 -= m_width;
+	if (iy < 0)				iy += m_height;
+	if (iy2 >= m_height)	iy2 -= m_height;
+
+	ColorF c11 = GetPixel(ix, iy);
+	ColorF c12 = GetPixel(ix2, iy);
+	ColorF c21 = GetPixel(ix, iy2);
+	ColorF c22 = GetPixel(ix2, iy2);
+	ColorF c1 = ColorF::Lerp(c11, c12, dx);
+	ColorF c2 = ColorF::Lerp(c21, c22, dx);
+
+	return ColorF::Lerp(c1, c2, dy);
+}

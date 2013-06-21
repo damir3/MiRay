@@ -1,0 +1,405 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2612780817702D0200AD2797 /* libfbxsdk.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2612780717702D0200AD2797 /* libfbxsdk.dylib */; };
+		2612780917702ECE00AD2797 /* libfbxsdk.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2612780717702D0200AD2797 /* libfbxsdk.dylib */; };
+		262585511771C090006FD438 /* libcommon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854D1771C090006FD438 /* libcommon.a */; };
+		262585521771C090006FD438 /* libresources.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854E1771C090006FD438 /* libresources.a */; };
+		262585531771C090006FD438 /* librt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854F1771C090006FD438 /* librt.a */; };
+		262585541771C090006FD438 /* libui.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262585501771C090006FD438 /* libui.a */; };
+		262BADAA1764875200D91D70 /* libfreeimage-3.15.4.dylib-x86_64 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */; };
+		264A4E21172D2E1100B85FA0 /* SceneView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 264A4E20172D2E1100B85FA0 /* SceneView.mm */; };
+		264A4F24172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 in Frameworks */ = {isa = PBXBuildFile; fileRef = 264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */; };
+		26870840172D2A3D00D46007 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2687083F172D2A3D00D46007 /* Cocoa.framework */; };
+		2687084A172D2A3D00D46007 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 26870848172D2A3D00D46007 /* InfoPlist.strings */; };
+		2687084C172D2A3D00D46007 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2687084B172D2A3D00D46007 /* main.mm */; };
+		26870850172D2A3D00D46007 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 2687084E172D2A3D00D46007 /* Credits.rtf */; };
+		26870853172D2A3D00D46007 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 26870852172D2A3D00D46007 /* AppDelegate.mm */; };
+		26870856172D2A3D00D46007 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26870854172D2A3D00D46007 /* MainMenu.xib */; };
+		26870867172D2AC100D46007 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26870866172D2AC100D46007 /* OpenGL.framework */; };
+		26ABD2DF17686079008FC669 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26ABD2DE17686079008FC669 /* OpenCL.framework */; };
+		26DE4AE41774210200B3F45F /* cup.fbx in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26DE4AE31774210200B3F45F /* cup.fbx */; };
+		26DE4AE6177425C700B3F45F /* cup.MiRay.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26DE4AE5177425C700B3F45F /* cup.MiRay.xml */; };
+		26EE58DF176AE6890071FFF7 /* kernel.cl in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26EE58DC176AE59C0071FFF7 /* kernel.cl */; };
+		26EE58E1176AEE890071FFF7 /* studio.hdr in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26EE58E0176AEE890071FFF7 /* studio.hdr */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		262BADA91764874500D91D70 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				2612780817702D0200AD2797 /* libfbxsdk.dylib in CopyFiles */,
+				262BADAA1764875200D91D70 /* libfreeimage-3.15.4.dylib-x86_64 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		26EE58DE176AE6810071FFF7 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				26DE4AE6177425C700B3F45F /* cup.MiRay.xml in CopyFiles */,
+				26DE4AE41774210200B3F45F /* cup.fbx in CopyFiles */,
+				26EE58E1176AEE890071FFF7 /* studio.hdr in CopyFiles */,
+				26EE58DF176AE6890071FFF7 /* kernel.cl in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2612780717702D0200AD2797 /* libfbxsdk.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfbxsdk.dylib; path = "../../ThirdParty/FBX SDK/lib/gcc4/ub/release/libfbxsdk.dylib"; sourceTree = "<group>"; };
+		2625854D1771C090006FD438 /* libcommon.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcommon.a; path = build/Release/libcommon.a; sourceTree = "<group>"; };
+		2625854E1771C090006FD438 /* libresources.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresources.a; path = build/Release/libresources.a; sourceTree = "<group>"; };
+		2625854F1771C090006FD438 /* librt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librt.a; path = build/Release/librt.a; sourceTree = "<group>"; };
+		262585501771C090006FD438 /* libui.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libui.a; path = build/Release/libui.a; sourceTree = "<group>"; };
+		264A4E1F172D2E1100B85FA0 /* SceneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneView.h; sourceTree = "<group>"; };
+		264A4E20172D2E1100B85FA0 /* SceneView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SceneView.mm; sourceTree = "<group>"; };
+		264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libfreeimage-3.15.4.dylib-x86_64"; path = "../../ThirdParty/FreeImage/libfreeimage-3.15.4.dylib-x86_64"; sourceTree = "<group>"; };
+		2687083C172D2A3D00D46007 /* MiRay Studio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MiRay Studio.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2687083F172D2A3D00D46007 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		26870842172D2A3D00D46007 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		26870843172D2A3D00D46007 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		26870844172D2A3D00D46007 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		26870847172D2A3D00D46007 /* MiRay Studio-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MiRay Studio-Info.plist"; sourceTree = "<group>"; };
+		26870849172D2A3D00D46007 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		2687084B172D2A3D00D46007 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		2687084D172D2A3D00D46007 /* MiRay Studio-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MiRay Studio-Prefix.pch"; sourceTree = "<group>"; };
+		2687084F172D2A3D00D46007 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		26870851172D2A3D00D46007 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		26870852172D2A3D00D46007 /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		26870855172D2A3D00D46007 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		26870866172D2AC100D46007 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		26ABD2DE17686079008FC669 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
+		26DE4AE31774210200B3F45F /* cup.fbx */ = {isa = PBXFileReference; lastKnownFileType = file; path = cup.fbx; sourceTree = "<group>"; };
+		26DE4AE5177425C700B3F45F /* cup.MiRay.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = cup.MiRay.xml; sourceTree = "<group>"; };
+		26EE58DC176AE59C0071FFF7 /* kernel.cl */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.opencl; name = kernel.cl; path = ../../rt/kernel.cl; sourceTree = "<group>"; };
+		26EE58E0176AEE890071FFF7 /* studio.hdr */ = {isa = PBXFileReference; lastKnownFileType = text; path = studio.hdr; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		26870839172D2A3D00D46007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				262585511771C090006FD438 /* libcommon.a in Frameworks */,
+				262585521771C090006FD438 /* libresources.a in Frameworks */,
+				262585531771C090006FD438 /* librt.a in Frameworks */,
+				262585541771C090006FD438 /* libui.a in Frameworks */,
+				2612780917702ECE00AD2797 /* libfbxsdk.dylib in Frameworks */,
+				26ABD2DF17686079008FC669 /* OpenCL.framework in Frameworks */,
+				264A4F24172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 in Frameworks */,
+				26870840172D2A3D00D46007 /* Cocoa.framework in Frameworks */,
+				26870867172D2AC100D46007 /* OpenGL.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		26870833172D2A3D00D46007 = {
+			isa = PBXGroup;
+			children = (
+				26870845172D2A3D00D46007 /* MiRay Studio */,
+				2687083E172D2A3D00D46007 /* Frameworks */,
+				2687083D172D2A3D00D46007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2687083D172D2A3D00D46007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2687083C172D2A3D00D46007 /* MiRay Studio.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2687083E172D2A3D00D46007 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2625854D1771C090006FD438 /* libcommon.a */,
+				2625854E1771C090006FD438 /* libresources.a */,
+				2625854F1771C090006FD438 /* librt.a */,
+				262585501771C090006FD438 /* libui.a */,
+				2612780717702D0200AD2797 /* libfbxsdk.dylib */,
+				264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */,
+				26ABD2DE17686079008FC669 /* OpenCL.framework */,
+				26870866172D2AC100D46007 /* OpenGL.framework */,
+				2687083F172D2A3D00D46007 /* Cocoa.framework */,
+				26870841172D2A3D00D46007 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		26870841172D2A3D00D46007 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				26870842172D2A3D00D46007 /* AppKit.framework */,
+				26870843172D2A3D00D46007 /* CoreData.framework */,
+				26870844172D2A3D00D46007 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		26870845172D2A3D00D46007 /* MiRay Studio */ = {
+			isa = PBXGroup;
+			children = (
+				264A4E1F172D2E1100B85FA0 /* SceneView.h */,
+				264A4E20172D2E1100B85FA0 /* SceneView.mm */,
+				26870851172D2A3D00D46007 /* AppDelegate.h */,
+				26870852172D2A3D00D46007 /* AppDelegate.mm */,
+				26870854172D2A3D00D46007 /* MainMenu.xib */,
+				26870846172D2A3D00D46007 /* Supporting Files */,
+			);
+			name = "MiRay Studio";
+			path = "../../MiRay Studio/mac";
+			sourceTree = "<group>";
+		};
+		26870846172D2A3D00D46007 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				26EE58DC176AE59C0071FFF7 /* kernel.cl */,
+				26EE58E0176AEE890071FFF7 /* studio.hdr */,
+				26DE4AE31774210200B3F45F /* cup.fbx */,
+				26DE4AE5177425C700B3F45F /* cup.MiRay.xml */,
+				26870847172D2A3D00D46007 /* MiRay Studio-Info.plist */,
+				26870848172D2A3D00D46007 /* InfoPlist.strings */,
+				2687084B172D2A3D00D46007 /* main.mm */,
+				2687084D172D2A3D00D46007 /* MiRay Studio-Prefix.pch */,
+				2687084E172D2A3D00D46007 /* Credits.rtf */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2687083B172D2A3D00D46007 /* MiRay Studio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26870859172D2A3D00D46007 /* Build configuration list for PBXNativeTarget "MiRay Studio" */;
+			buildPhases = (
+				26870838172D2A3D00D46007 /* Sources */,
+				26870839172D2A3D00D46007 /* Frameworks */,
+				2687083A172D2A3D00D46007 /* Resources */,
+				262BADA91764874500D91D70 /* CopyFiles */,
+				26EE58DE176AE6810071FFF7 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MiRay Studio";
+			productName = "MiRay Studio";
+			productReference = 2687083C172D2A3D00D46007 /* MiRay Studio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		26870834172D2A3D00D46007 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = "Damir Sagidullin";
+			};
+			buildConfigurationList = 26870837172D2A3D00D46007 /* Build configuration list for PBXProject "MiRay Studio" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 26870833172D2A3D00D46007;
+			productRefGroup = 2687083D172D2A3D00D46007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2687083B172D2A3D00D46007 /* MiRay Studio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2687083A172D2A3D00D46007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2687084A172D2A3D00D46007 /* InfoPlist.strings in Resources */,
+				26870850172D2A3D00D46007 /* Credits.rtf in Resources */,
+				26870856172D2A3D00D46007 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		26870838172D2A3D00D46007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2687084C172D2A3D00D46007 /* main.mm in Sources */,
+				26870853172D2A3D00D46007 /* AppDelegate.mm in Sources */,
+				264A4E21172D2E1100B85FA0 /* SceneView.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		26870848172D2A3D00D46007 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				26870849172D2A3D00D46007 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		2687084E172D2A3D00D46007 /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2687084F172D2A3D00D46007 /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+		26870854172D2A3D00D46007 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				26870855172D2A3D00D46007 /* en */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		26870857172D2A3D00D46007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				PRELINK_LIBS = "libfreeimage-3.15.4.dylib-x86_64";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		26870858172D2A3D00D46007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				PRELINK_LIBS = "libfreeimage-3.15.4.dylib-x86_64";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		2687085A172D2A3D00D46007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "../../MiRay Studio/mac/MiRay Studio-Prefix.pch";
+				INFOPLIST_FILE = "../../MiRay Studio/mac/MiRay Studio-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../ThirdParty/FreeImage\"",
+					"\"$(SRCROOT)/../../ThirdParty/FBX SDK/lib/gcc4/ub/release\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		2687085B172D2A3D00D46007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "../../MiRay Studio/mac/MiRay Studio-Prefix.pch";
+				INFOPLIST_FILE = "../../MiRay Studio/mac/MiRay Studio-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../ThirdParty/FreeImage\"",
+					"\"$(SRCROOT)/../../ThirdParty/FBX SDK/lib/gcc4/ub/release\"",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		26870837172D2A3D00D46007 /* Build configuration list for PBXProject "MiRay Studio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				26870857172D2A3D00D46007 /* Debug */,
+				26870858172D2A3D00D46007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		26870859172D2A3D00D46007 /* Build configuration list for PBXNativeTarget "MiRay Studio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2687085A172D2A3D00D46007 /* Debug */,
+				2687085B172D2A3D00D46007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 26870834172D2A3D00D46007 /* Project object */;
+}

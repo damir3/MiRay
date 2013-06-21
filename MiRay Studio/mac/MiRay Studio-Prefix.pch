@@ -1,0 +1,18 @@
+//
+// Prefix header for all source files of the 'MiRay Studio' target in the 'MiRay Studio' project
+//
+
+#ifdef __OBJC__
+	#import <Cocoa/Cocoa.h>
+#endif
+
+#include <Carbon/Carbon.h>
+
+#include <cstdlib>
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <set>
+
+#include "../../common/all.h"
+#include "../../ui/SceneView.h"

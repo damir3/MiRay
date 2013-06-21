@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:MiRay Studio.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:ui.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:rt.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:resources.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:common.xcodeproj">
+   </FileRef>
+</Workspace>

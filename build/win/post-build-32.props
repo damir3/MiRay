@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>copy $(TargetDir)"..\..\ThirdParty\FBX SDK\lib\vs2010\x86\release\*.dll" $(TargetDir)
+copy $(TargetDir)"..\..\ThirdParty\FreeImage\lib\vs2010\x86\*.dll" $(TargetDir)
+copy $(TargetDir)"..\..\rt\*.cl" $(TargetDir)
+copy $(TargetDir)"..\..\MiRay Studio\mac\*.hdr" $(TargetDir)
+copy $(TargetDir)"..\..\MiRay Studio\mac\*.fbx" $(TargetDir)
+copy $(TargetDir)"..\..\MiRay Studio\mac\*.MiRay.xml" $(TargetDir)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
