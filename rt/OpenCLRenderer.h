@@ -34,26 +34,16 @@ class OpenCLRenderer
 	cl_mem				m_nodes;
 	cl_mem				m_nodeTriangles;
 	cl_mem				m_result;
+	cl_float3			m_camPosition;
+	cl_float3			m_camDirectionX;
+	cl_float3			m_camDirectionY;
+	cl_float3			m_camDirectionZ;
+	cl_float2			m_dp;
+	cl_float				m_fFrameBlend;
 	size_t				m_localWorkSize[2];
+	cl_uint				m_size[4];
 	bool				m_bInitialized;
-
-	cl_uint	m_size[4];
-	Image *	m_pImage;
-	RectI	m_rcRenderArea;
-	Vec3	m_vEyePos;
-	ColorF	m_bgColor;
-	float	m_fFrameBlend;
-	Vec3	m_vCamDelta[3];
-	Vec2	m_dp;
-	const Image * m_pEnvironmentMap;
 	
-	typedef TVec2<int>	Vec2I;
-	Vec2I	m_pos;
-	Vec2I	m_delta;
-	
-	float	m_fDistEpsilon;
-	int		m_nMaxDepth;
-
 	bool SetupComputeDevices();
 	bool SetupComputeKernel(const char * pKernelFilename, const char * pKernelMethodName);
 	bool SetupSceneBuffers();

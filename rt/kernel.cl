@@ -74,7 +74,7 @@ inline bool TraceRay(float3 rayStart, float3 rayDirection, const __global float3
 			if (v >= 0.0f && u + v <= 1.0f)
 			{
 				float t = invDet * dot(edgeV, q); // ray intersection
-				if (res->z > t && t >= 0.0f)
+				if ((*res).z > t && t >= 0.0f)
 				{
 					*res = (float3)(u, v, t);
 					return true;
@@ -164,7 +164,7 @@ __kernel void MainKernel(__global float4 * result,
 			if (!TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, node->center, node->extents))
 				continue;
 
-//			color.rgb += 0.01f;
+//			color.xyz += 0.01f;
 
 			if (node->childs[0] != 0)
 			{
@@ -231,12 +231,12 @@ __kernel void MainKernel(__global float4 * result,
 		}
 //		const __global Node * node = nodes + nodes[0].childs[0];
 //		if (TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, node->center, node->extents))
-//			color.rgb += 0.2f;
+//			color.xyz += 0.2f;
 
 //		for (float r = 1.f; r <= 10.f; r += 0.01f)
 //		{
 //			if (!TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, (float3)(0.0f, 0.0f, 5.0f), (float3)(r, r, r)))
-//				color.rgb = r * 0.1f;
+//				color.xyz = r * 0.1f;
 //		}
 
 		if (cti != UINT_MAX)
@@ -246,10 +246,10 @@ __kernel void MainKernel(__global float4 * result,
 //			float3 lightDir = normalize((float3)(-1.0, -2.0, -3.0));
 //			float f = dot(normal, lightDir) * 0.5f + 0.5f;
 //			color = f;
-			color.rgb += normal.xyz * (float3)0.5f + (float3)0.5f;
-//			color.r = u;
-//			color.g = v;
-//			color.b = t;
+			color.xyz += normal.xyz * (float3)0.5f + (float3)0.5f;
+//			color.x = u;
+//			color.y = v;
+//			color.z = t;
 		}
 
 		result[index] = mix(result[index], color, fFrameBlend);

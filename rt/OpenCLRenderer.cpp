@@ -65,40 +65,77 @@ OpenCLRenderer::~OpenCLRenderer()
 	m_context = NULL;
 }
 
+#ifndef __APPLE__
+void clLogMessagesToStdout(const char * str, const void *, size_t, void *)
+{
+	printf(str);
+};
+#endif
+
 bool OpenCLRenderer::SetupComputeDevices()
 {
+	cl_uint num_platforms;
+	cl_int err = clGetPlatformIDs(0, NULL, &num_platforms); // get OpenCL platform count
+	if (err != CL_SUCCESS)
+	{
+		printf("Error %i in clGetPlatformIDs Call!!!\n\n", err);
+		return false;
+	}
+
+	if (!num_platforms)
+	{
+		printf("Error: No OpenCL platform found!\n\n");
+		return false;
+	}
+
+	cl_platform_id platform;
+	{
+		std::vector<cl_platform_id> clPlatformIDs(num_platforms);
+		err = clGetPlatformIDs(num_platforms, clPlatformIDs.data(), NULL);
+		printf("Available OpenCL platforms:\n");
+		for(cl_uint i = 0; i < num_platforms; ++i)
+		{
+			char chBuffer[1024];
+			err = clGetPlatformInfo(clPlatformIDs[i], CL_PLATFORM_NAME, 1024, &chBuffer, NULL);
+			if(err == CL_SUCCESS)
+				printf("%d: %s\n", i, chBuffer);
+		}
+
+		platform = clPlatformIDs[0];
+	}
+
 	// Locate a compute device
-	cl_int err = clGetDeviceIDs(NULL, CL_DEVICE_TYPE_DEFAULT, 1, &m_deviceId, NULL);
+	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &m_deviceId, NULL);
 	if (err != CL_SUCCESS)
 	{
 		printf("Error: Failed to locate compute device!\n");
 		return false;
 	}
-	
+
 	// Create a context containing the compute device(s)
 #ifdef __APPLE__
 	m_context = clCreateContext(0, 1, &m_deviceId, clLogMessagesToStdoutAPPLE, NULL, &err);
 #else
-	m_context = clCreateContext(0, 1, &m_deviceId, NULL, NULL, &err);
+	m_context = clCreateContext(0, 1, &m_deviceId, clLogMessagesToStdout, NULL, &err);
 #endif
 	if (!m_context)
 	{
 		printf("Error: Failed to create a compute context!\n");
 		return false;
 	}
-	
+
 	cl_device_id device_ids[16];
 	size_t returned_size;
-	
+
 	err = clGetContextInfo(m_context, CL_CONTEXT_DEVICES, sizeof(device_ids), device_ids, &returned_size);
 	if(err)
 	{
 		printf("Error: Failed to retrieve compute devices for context!\n");
 		return false;
 	}
-	
+
 	size_t device_count = returned_size / sizeof(cl_device_id);
-	
+
 	bool bDeviceFound = false;
 	for(size_t i = 0; i < device_count; i++)
 	{
@@ -108,12 +145,11 @@ bool OpenCLRenderer::SetupComputeDevices()
 		clGetDeviceInfo(device_ids[i], CL_DEVICE_TYPE, sizeof(cl_device_type), &device_type, NULL);
 		clGetDeviceInfo(device_ids[i], CL_DEVICE_VENDOR, sizeof(vendor_name), vendor_name, &returned_size);
 		clGetDeviceInfo(device_ids[i], CL_DEVICE_NAME, sizeof(device_name), device_name, &returned_size);
-		printf("%zd: [%lld] %s %s...\n", i, device_type, vendor_name, device_name);
+		printf("%d: [%d] %s %s...\n", (int)i, (int)device_type, vendor_name, device_name);
 //		if(device_type == m_deviceType)
 		{
 			m_deviceId = device_ids[i];
 			bDeviceFound = true;
-//			break;
 		}
 	}
 
@@ -134,7 +170,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 		printf("Error: Failed to create a command queue!\n");
 		return false;
 	}
-	
+
 	// Report the device vendor and device name
 	cl_char vendor_name[1024] = {0};
 	cl_char device_name[1024] = {0};
@@ -145,7 +181,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 		printf("Error: Failed to retrieve device info!\n");
 		return false;
 	}
-	
+
 	printf("--------------------------------\n");
 	printf("Connecting to %s %s...\n", vendor_name, device_name);
 	return true;
@@ -184,7 +220,7 @@ bool OpenCLRenderer::SetupComputeKernel(const char * pKernelFilename, const char
 		m_program = NULL;
 	}
 
-    printf("--------------------------------\n");
+	printf("--------------------------------\n");
 	printf("Loading kernel source from file '%s'...\n", pKernelFilename);
 	std::vector<char> source;
 	if (!ReadFile(source, pKernelFilename))
@@ -251,7 +287,7 @@ bool OpenCLRenderer::SetupComputeKernel(const char * pKernelFilename, const char
 	m_localWorkSize[0] = std::min<size_t>(m_localWorkSize[0], 16);
 	m_localWorkSize[1] = std::min<size_t>(m_localWorkSize[1], 16);
 
-    printf("--------------------------------\n");
+	printf("--------------------------------\n");
 
 	return true;
 }
@@ -305,7 +341,7 @@ bool OpenCLRenderer::SetupSceneBuffers()
 		enum { MAX_WRITE_TRIANGLES = 0x20000 }; // 16MB
 		const size_t sizeOfTriangle = sizeof(KernelTriangle);
 		const size_t numTriangles = m_scene.Triangles().size();
-		
+
 		printf("Creating OpenCL %d triangles...\n", (int)numTriangles);
 		m_triangles = clCreateBuffer(m_context, CL_MEM_READ_ONLY, numTriangles * sizeOfTriangle, NULL, NULL);
 		if (!m_triangles)
@@ -458,6 +494,11 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	m_size[2] = (cl_uint)m_scene.Triangles().size();
 	m_size[3] = 6; // trace depth
 	m_result = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4 * 4 * width * height, NULL, NULL);
+	std::vector<float> data(m_size[0] * m_size[1] * 4);
+	std::fill(data.begin(), data.end(), 0.f);
+	//cl_int err = clEnqueueWriteBuffer(m_commands, m_result, CL_TRUE, 0, m_size[0] * m_size[1] * 4 * 4, data.data(), 0, NULL, NULL);
+	//err = clEnqueueReadBuffer(m_commands, m_result, CL_TRUE, 0, m_size[0] * m_size[1] * 4 * 4, data.data(), 0, NULL, NULL);
+
 	if (!m_result)
 		printf("Failed to create OpenCL array!\n");
 }
@@ -475,32 +516,34 @@ void OpenCLRenderer::Render(Image & image, const RectI * pViewportRect,
 	if (!m_result)
 		return;
 
-	m_pImage = &image;
-	m_rcRenderArea = pViewportRect ? *pViewportRect : RectI(0, 0, image.Width(), image.Height());
-	m_vEyePos = matCamera.Pos();
-	m_bgColor = bgColor;
+	RectI rcRenderArea = pViewportRect ? *pViewportRect : RectI(0, 0, image.Width(), image.Height());
 	m_fFrameBlend = 1.f / (nFrameNumber + 1);
-	m_pEnvironmentMap = pEnvironmentMap;
 
-	m_fDistEpsilon = m_scene.Root()->BoundingBox().Size().Length() * 0.0001f;
-	m_dp = Vec2(2.f / m_rcRenderArea.Width(), 2.f / m_rcRenderArea.Height());
+	//float fDistEpsilon = m_scene.Root()->BoundingBox().Size().Length() * 0.0001f;
+	m_dp.s[0] = 2.f / rcRenderArea.Width();
+	m_dp.s[1] = 2.f / rcRenderArea.Height();
 
 	Matrix matViewProjInv;
 	matViewProjInv.Inverse(matViewProj);
 	Vec4 p = Vec4(0.f, 0.f, 1.f, 1.f);
 	p.Transform(matViewProjInv);
-	m_vCamDelta[2] = Vec3(p.x, p.y, p.z) / p.w;
+	Vec3 vCamDeltaZ = Vec3(p.x, p.y, p.z) / p.w;
 	p = Vec4(1.f, 0.f, 1.f, 1.f);
 	p.Transform(matViewProjInv);
-	m_vCamDelta[0] = Vec3(p.x, p.y, p.z) / p.w - m_vCamDelta[2];
+	Vec3 vCamDeltaX = Vec3(p.x, p.y, p.z) / p.w - vCamDeltaZ;
 	p = Vec4(0.f, 1.f, 1.f, 1.f);
 	p.Transform(matViewProjInv);
-	m_vCamDelta[1] = Vec3(p.x, p.y, p.z) / p.w - m_vCamDelta[2];
-	m_vCamDelta[2] -= m_vEyePos;
+	Vec3 vCamDeltaY = Vec3(p.x, p.y, p.z) / p.w - vCamDeltaZ;
+	vCamDeltaZ -= matCamera.Pos();
 
 	Vec2 vPixelOffset = nFrameNumber > 0 ? Vec2(frand(), frand()) : Vec2(0.5f, 0.5f);
-	m_vCamDelta[2] += m_vCamDelta[0] * (vPixelOffset.y * m_dp.x);
-	m_vCamDelta[2] += m_vCamDelta[1] * -(vPixelOffset.y * m_dp.y);
+	vCamDeltaZ += vCamDeltaX * (vPixelOffset.y * m_dp.s[0]);
+	vCamDeltaZ += vCamDeltaY * -(vPixelOffset.y * m_dp.s[1]);
+
+	copy_float3(m_camPosition, matCamera.Pos());
+	copy_float3(m_camDirectionX, vCamDeltaX);
+	copy_float3(m_camDirectionY, vCamDeltaY);
+	copy_float3(m_camDirectionZ, vCamDeltaZ);
 
 	cl_int err = 0;
 	cl_uint numArgs = 0;
@@ -509,30 +552,30 @@ void OpenCLRenderer::Render(Image & image, const RectI * pViewportRect,
 	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_mem), &m_nodes);
 	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_mem), &m_nodeTriangles);
 	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(m_size), &m_size);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(Vec3), &m_vEyePos);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(Vec3), &m_vCamDelta[0]);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(Vec3), &m_vCamDelta[1]);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(Vec3), &m_vCamDelta[2]);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(Vec2), &m_dp);
-	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(float), &m_fFrameBlend);
-	if (err)
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float3), &m_camPosition);
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float3), &m_camDirectionX);
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float3), &m_camDirectionY);
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float3), &m_camDirectionZ);
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float2), &m_dp);
+	err |= clSetKernelArg(m_kernel, numArgs++, sizeof(cl_float), &m_fFrameBlend);
+	if (err != CL_SUCCESS)
 		return;
 
 	size_t globalWorkSize[2];
-    globalWorkSize[0] = ((m_size[0] + m_localWorkSize[0] - 1) / m_localWorkSize[0]) * m_localWorkSize[0];
-    globalWorkSize[1] = ((m_size[1] + m_localWorkSize[1] - 1) / m_localWorkSize[1]) * m_localWorkSize[1];
+	globalWorkSize[0] = ((m_size[0] + m_localWorkSize[0] - 1) / m_localWorkSize[0]) * m_localWorkSize[0];
+	globalWorkSize[1] = ((m_size[1] + m_localWorkSize[1] - 1) / m_localWorkSize[1]) * m_localWorkSize[1];
 
 	err = clEnqueueNDRangeKernel(m_commands, m_kernel, 2, NULL, globalWorkSize, m_localWorkSize, 0, NULL, NULL);
-    if (err)
-    {
-        printf("Failed to enqueue kernel! %d\n", err);
-        return;
-    }
+	if (err)
+	{
+		printf("Failed to enqueue kernel! %d\n", err);
+		return;
+	}
 
 	err = clEnqueueReadBuffer(m_commands, m_result, CL_TRUE, 0, m_size[0] * m_size[1] * 4 * 4, image.Data(), 0, NULL, NULL);
-    if (err != CL_SUCCESS)
-    {
-        printf("Failed to read buffer! %d\n", err);
-        return;
-    }
+	if (err != CL_SUCCESS)
+	{
+		printf("Failed to read buffer! %d\n", err);
+		return;
+	}
 }
