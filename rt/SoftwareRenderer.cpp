@@ -59,7 +59,7 @@ void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 	for (size_t i = numThreads; i < m_renderThreads.size(); i++)
 		delete m_renderThreads[i];
 
-	while (m_renderThreads.size() < numThreads)
+	while (m_renderThreads.size() < (size_t)numThreads)
 		m_renderThreads.push_back(new RenderThread(*this));
 
 	for (size_t i = 0; i < m_renderThreads.size(); i++)

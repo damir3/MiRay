@@ -52,18 +52,22 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="common.props" />
+    <Import Project="post-build-32.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="common.props" />
+    <Import Project="post-build-64.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="common.props" />
+    <Import Project="post-build-32.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="common.props" />
+    <Import Project="post-build-64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -89,7 +93,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86;../../ThirdParty/FBX SDK/lib/vs2010/x86/release;../../ThirdParty/FreeImage/lib/vs2010/x86</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -103,7 +107,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage/lib/vs2010/x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,7 +125,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86;../../ThirdParty/FBX SDK/lib/vs2010/x86/release;../../ThirdParty/FreeImage/lib/vs2010/x86</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,7 +143,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../ThirdParty/AMD APP/lib/x86_64;../../ThirdParty/FBX SDK/lib/vs2010/x64/release;../../ThirdParty/FreeImage/lib/vs2010/x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
