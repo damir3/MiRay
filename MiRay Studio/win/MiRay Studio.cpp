@@ -5,7 +5,6 @@
 //  Created by Damir Sagidullin on 17.06.13.
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
-
 #include "MiRay Studio.h"
 #include "../../ui/SceneView.h"
 #include <direct.h>
@@ -96,12 +95,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.cbClsExtra		= 0;
 	wcex.cbWndExtra		= 0;
 	wcex.hInstance		= hInstance;
-	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MIRAYSTUDIO));
+	wcex.hIcon			= NULL;//LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MIRAYSTUDIO));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
 	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_MIRAYSTUDIO);
 	wcex.lpszClassName	= g_szWindowClass;
-	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.hIconSm		= NULL;//LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
 	return RegisterClassEx(&wcex);
 }
