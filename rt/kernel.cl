@@ -28,29 +28,9 @@ typedef struct
 
 inline bool TestRayBoxIntersection(float3 rayCenter, float3 rayExtents, float3 rayHalfDir, float3 boxCenter, float3 boxExtents)
 {
-	float3 delta = rayCenter - boxCenter;
-	float3 absDelta = fabs(delta);
-	float3 extents = boxExtents + rayExtents;
-
-	if (any(isgreater(absDelta, extents)))
-		return false;
-
-	// faster on GPU
-	float3 v1 = fabs(cross(rayHalfDir, delta));
+	float3 v1 = fabs(cross(rayHalfDir, rayCenter - boxCenter));
 	float3 v2 = boxExtents.yzx * rayExtents.zxy + boxExtents.zxy * rayExtents.yzx;
 	return all(isless(v1, v2));
-
-//	// faster on CPU
-//	if (fabs((rayHalfDir.y * delta.z) - (rayHalfDir.z * delta.y)) > (boxExtents.y * rayExtents.z + boxExtents.z * rayExtents.y))
-//		return false;
-//	
-//	if (fabs((rayHalfDir.z * delta.x) - (rayHalfDir.x * delta.z)) > (boxExtents.z * rayExtents.x + boxExtents.x * rayExtents.z))
-//		return false;
-//	
-//	if (fabs((rayHalfDir.x * delta.y) - (rayHalfDir.y * delta.x)) > (boxExtents.x * rayExtents.y + boxExtents.y * rayExtents.x))
-//		return false;
-//
-//	return true;
 }
 
 // ------------------------------------------------------------------------ //
@@ -225,19 +205,13 @@ __kernel void MainKernel(__global float4 * result,
 					if (mins.x <= rayEnd.x && maxs.x >= rayEnd.x &&
 						mins.y <= rayEnd.y && maxs.y >= rayEnd.y &&
 						mins.z <= rayEnd.z && maxs.z >= rayEnd.z)
-						stackPos = 0;
+						stackPos = 0; // break;
 				}
 			}
 		}
 //		const __global Node * node = nodes + nodes[0].childs[0];
 //		if (TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, node->center, node->extents))
 //			color.xyz += 0.2f;
-
-//		for (float r = 1.f; r <= 10.f; r += 0.01f)
-//		{
-//			if (!TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, (float3)(0.0f, 0.0f, 5.0f), (float3)(r, r, r)))
-//				color.xyz = r * 0.1f;
-//		}
 
 		if (cti != UINT_MAX)
 		{
@@ -251,6 +225,13 @@ __kernel void MainKernel(__global float4 * result,
 //			color.y = v;
 //			color.z = t;
 		}
+
+//		// ray box intersection test
+//		for (float r = 1.f; r <= 10.f; r += 0.01f)
+//		{
+//			if (!TestRayBoxIntersection(rayCenter, rayExtents, rayHalfDir, (float3)(0.0f, 0.0f, 5.0f), (float3)(r, r, r)))
+//				color.xyz = r * 0.1f;
+//		}
 
 		result[index] = mix(result[index], color, fFrameBlend);
 	}

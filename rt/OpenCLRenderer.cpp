@@ -88,6 +88,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 		return false;
 	}
 
+	bool bDeviceFound = false;
 	cl_platform_id platform;
 	{
 		std::vector<cl_platform_id> platforms(num_platforms);
@@ -121,19 +122,24 @@ bool OpenCLRenderer::SetupComputeDevices()
 				err |= clGetDeviceInfo(devices[di], CL_DEVICE_NAME, sizeof(device_name), device_name, &returned_size);
 				if (err != CL_SUCCESS) continue;
 				printf("%d: [%d] '%s' '%s'...\n", di, (int)device_type, vendor_name, device_name);
+				if (!bDeviceFound && (device_type & m_deviceType) != 0)
+				{
+					bDeviceFound = true;
+					m_deviceId = devices[di];
+				}
 			}
 		}
 
 		platform = platforms[0];
 	}
 
-	// Locate a compute device
-	err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_DEFAULT, 1, &m_deviceId, NULL);
-	if (err != CL_SUCCESS)
+	if (!bDeviceFound)
 	{
-		printf("Error: Failed to locate compute device!\n");
+		printf("Error: Failed to locate compute device of type %d!\n", (int)m_deviceType);
 		return false;
 	}
+
+	printf("--------------------------------\n");
 
 	// Create a context containing the compute device(s)
 #ifdef __APPLE__
@@ -146,42 +152,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 		printf("Error: Failed to create a compute context!\n");
 		return false;
 	}
-
-	cl_device_id device_ids[16];
-	size_t returned_size;
-
-	err = clGetContextInfo(m_context, CL_CONTEXT_DEVICES, sizeof(device_ids), device_ids, &returned_size);
-	if (err)
-	{
-		printf("Error: Failed to retrieve compute devices for context!\n");
-		return false;
-	}
-
-	size_t device_count = returned_size / sizeof(cl_device_id);
-
-	bool bDeviceFound = false;
-	for (size_t i = 0; i < device_count; i++)
-	{
-		cl_device_type device_type;
-		cl_char vendor_name[1024] = {0};
-		cl_char device_name[1024] = {0};
-		clGetDeviceInfo(device_ids[i], CL_DEVICE_TYPE, sizeof(cl_device_type), &device_type, NULL);
-		clGetDeviceInfo(device_ids[i], CL_DEVICE_VENDOR, sizeof(vendor_name), vendor_name, &returned_size);
-		clGetDeviceInfo(device_ids[i], CL_DEVICE_NAME, sizeof(device_name), device_name, &returned_size);
-		printf("%d: [%d] '%s' '%s'...\n", (int)i, (int)device_type, vendor_name, device_name);
-//		if (device_type == m_deviceType)
-		{
-			m_deviceId = device_ids[i];
-			bDeviceFound = true;
-		}
-	}
-
-	if (!bDeviceFound)
-	{
-		printf("Error: Failed to locate compute device!\n");
-		return false;
-	}
-
+	
 	cl_ulong memSize = 0;
 	clGetDeviceInfo(m_deviceId, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &memSize, NULL);
 	printf("OpenCL global memory size: %lld\n", memSize);
@@ -195,6 +166,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 	}
 
 	// Report the device vendor and device name
+	size_t returned_size;
 	cl_char vendor_name[1024] = {0};
 	cl_char device_name[1024] = {0};
 	err = clGetDeviceInfo(m_deviceId, CL_DEVICE_VENDOR, sizeof(vendor_name), vendor_name, &returned_size);
@@ -206,7 +178,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 	}
 
 	printf("--------------------------------\n");
-	printf("Connecting to %s %s...\n", vendor_name, device_name);
+	printf("Connecting to '%s' '%s'...\n", vendor_name, device_name);
 	return true;
 }
 
@@ -518,11 +490,6 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	m_size[2] = (cl_uint)m_scene.Triangles().size();
 	m_size[3] = 6; // trace depth
 	m_result = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4 * 4 * width * height, NULL, NULL);
-	std::vector<float> data(m_size[0] * m_size[1] * 4);
-	std::fill(data.begin(), data.end(), 0.f);
-	//cl_int err = clEnqueueWriteBuffer(m_commands, m_result, CL_TRUE, 0, m_size[0] * m_size[1] * 4 * 4, data.data(), 0, NULL, NULL);
-	//err = clEnqueueReadBuffer(m_commands, m_result, CL_TRUE, 0, m_size[0] * m_size[1] * 4 * 4, data.data(), 0, NULL, NULL);
-
 	if (!m_result)
 		printf("Failed to create OpenCL array!\n");
 }

@@ -53,8 +53,6 @@ SceneView::SceneView(const char * pResourcesPath)
 	m_vCollisionTriangle[0] = m_vCollisionTriangle[1] = m_vCollisionTriangle[2] = Vec3::Null;
 	m_pImageManager = new ImageManager();
 	m_pModelManager = new ModelManager(m_pImageManager);
-//	m_pEnvironmentMap = m_pImageManager->Load("/Users/damir/Models/HDR/uffizi_probe.hdr");
-	m_pEnvironmentMap = m_pImageManager->Load((m_resourcesPath + "/studio.hdr").c_str());
 	ResetCamera();
 }
 

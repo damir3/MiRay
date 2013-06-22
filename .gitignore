@@ -1,0 +1,12 @@
+*.suo
+*.swp
+tmp
+bin
+out
+*.user
+.DS_Store
+xcuserdata/
+*.sdf
+*.opensdf
+*.aps
+ipch

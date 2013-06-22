@@ -134,7 +134,7 @@ bool InitOpenGL(HWND hWnd)
 	}
 
 	char path[FILENAME_MAX];
-	GetModuleFileNameA(g_hInst, path, sizeof(path));
+	GetModuleFileNameA(g_hInst, path, _countof(path));
 	path[sizeof(path) - 1] = '\0';
 	char drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
 	_splitpath_s(path, drive, _countof(drive), dir, _countof(dir), fname, _countof(fname), ext, _countof(ext));
@@ -148,8 +148,8 @@ bool InitOpenGL(HWND hWnd)
 	if (!g_pSceneView->Init())
 		return false;
 
-	strcat_s(path, _countof(path), "cup.fbx");
-	g_pSceneView->LoadScene(path);
+	g_pSceneView->SetEnvironmentImage((path + std::string("studio.hdr").c_str());
+	g_pSceneView->LoadScene((path + std::string("cup.fbx").c_str());
 
 	return true;
 }

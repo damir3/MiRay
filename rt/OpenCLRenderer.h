@@ -39,7 +39,7 @@ class OpenCLRenderer
 	cl_float3			m_camDirectionY;
 	cl_float3			m_camDirectionZ;
 	cl_float2			m_dp;
-	cl_float				m_fFrameBlend;
+	cl_float			m_fFrameBlend;
 	size_t				m_localWorkSize[2];
 	cl_uint				m_size[4];
 	bool				m_bInitialized;

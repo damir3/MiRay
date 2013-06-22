@@ -49,9 +49,11 @@ private:
 
 	BVHNode * const m_pParent;
 
-	BBox			m_bbox;
-	byte			m_axis;
-	float			m_dist;
+	BBox		m_bbox;
+	Vec3		m_center;
+	Vec3		m_extents;
+	byte		m_axis;
+	float		m_dist;
 
 	BVHNode *	m_pChilds[2];
 	std::vector<CollisionTriangle *>	m_triangles;
@@ -66,6 +68,8 @@ public:
 	~BVHNode();
 
 	const BBox & BoundingBox() const { return m_bbox; }
+	const Vec3 & Center() const { return m_center; }
+	const Vec3 & Extents() const { return m_extents; }
 	byte Axis() const { return m_axis; }
 	float Dist() const { return m_dist; }
 	BVHNode * Child(int i) const { return m_pChilds[i]; }

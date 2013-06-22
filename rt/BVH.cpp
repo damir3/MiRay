@@ -53,7 +53,7 @@ bool BVH::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr)
 	while (ppTopNode > pStackNodes)
 	{
 		const BVHNode * pNode = *(--ppTopNode);
-		if (!ray.TestIntersection(pNode->BoundingBox()))
+		if (!ray.TestIntersection(pNode->Center(), pNode->Extents()))
 			continue;
 
 		if (pNode->Triangles().empty())
