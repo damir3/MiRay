@@ -14,7 +14,7 @@ using namespace mr;
 
 OpenCLRenderer::OpenCLRenderer(BVH & scene, const char * pKernelFilename, const char * pKernelMethodName)
 	: m_scene(scene)
-	, m_deviceType(CL_DEVICE_TYPE_GPU)
+	, m_deviceType(CL_DEVICE_TYPE_GPU | CL_DEVICE_TYPE_CPU)
 	, m_deviceId(NULL)
 	, m_context(NULL)
 	, m_commands(NULL)
@@ -122,7 +122,7 @@ bool OpenCLRenderer::SetupComputeDevices()
 				err |= clGetDeviceInfo(devices[di], CL_DEVICE_NAME, sizeof(device_name), device_name, &returned_size);
 				if (err != CL_SUCCESS) continue;
 				printf("%d: [%d] '%s' '%s'...\n", di, (int)device_type, vendor_name, device_name);
-				if (!bDeviceFound && (device_type & m_deviceType) != 0)
+				if (device_type & m_deviceType)
 				{
 					bDeviceFound = true;
 					m_deviceId = devices[di];

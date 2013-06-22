@@ -10,6 +10,8 @@
 #include <direct.h>
 #include <commdlg.h>
 #include <shellapi.h>
+#include <io.h>
+#include <fcntl.h>
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "OpenCL.lib")
@@ -43,11 +45,37 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+void SetStdOutToNewConsole()
+{
+	// allocate a console for this app
+	AllocConsole();
+
+	// redirect unbuffered STDOUT to the console
+	long lStdHandle = (long)GetStdHandle(STD_OUTPUT_HANDLE);
+	int hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
+	FILE * fp = _fdopen( hConHandle, "w" );
+	*stdout = *fp;
+
+	setvbuf( stdout, NULL, _IONBF, 0 );
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPTSTR    lpCmdLine,
 	int       nCmdShow)
 {
+	bool bConsole = false;
+	int numArgs;
+	LPWSTR * ppArgs = CommandLineToArgvW(lpCmdLine, &numArgs);
+	for (int i = 0; i < numArgs; i++)
+	{
+		if (!wcscmp(ppArgs[i], L"-c"))
+			bConsole = true;
+	}
+
+	if (bConsole)
+		SetStdOutToNewConsole();
+
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -148,8 +176,8 @@ bool InitOpenGL(HWND hWnd)
 	if (!g_pSceneView->Init())
 		return false;
 
-	g_pSceneView->SetEnvironmentImage((path + std::string("studio.hdr").c_str());
-	g_pSceneView->LoadScene((path + std::string("cup.fbx").c_str());
+	g_pSceneView->SetEnvironmentImage((path + std::string("studio.hdr")).c_str());
+	g_pSceneView->LoadScene((path + std::string("cup.fbx")).c_str());
 
 	return true;
 }
