@@ -315,13 +315,14 @@ bool OpenCLRenderer::SetupComputeKernel(const char * pKernelFilename, const char
 	return true;
 }
 
-#pragma pack (push, 16)
+#pragma pack(push, 16)
 struct KernelTriangle
 {
 	cl_float3	pos[3];
 	cl_float3	normal[3];
 	cl_float2	tc[3];
 	cl_uint		material;
+	cl_uint		tmp; // #pragma pack(push, 16) doesn't work in Visual Studio
 };
 
 struct KernelNode
