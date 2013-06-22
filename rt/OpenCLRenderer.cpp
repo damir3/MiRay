@@ -492,6 +492,8 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	m_result = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4 * 4 * width * height, NULL, NULL);
 	if (!m_result)
 		printf("Failed to create OpenCL array!\n");
+
+	clEnqueueFillBuffer(m_commands, m_result, &Vec4::Null, sizeof(Vec4), 0, 4 * 4 * width * height, 0, NULL, NULL);
 }
 
 void OpenCLRenderer::Render(Image & image, const RectI * pViewportRect,
