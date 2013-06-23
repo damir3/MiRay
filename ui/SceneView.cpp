@@ -24,6 +24,8 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_fRWidth(0.f)
 	, m_fRHeight(0.f)
 	, m_fFOV(60.f)
+	, m_fNearZ(0.1f)
+	, m_fFarZ(1000.f)
 	, m_bGesture(false)
 	, m_vGestureTarget(Vec3::Null)
 	, m_vGestureTargetNormal(Vec3::Null)
@@ -114,6 +116,9 @@ bool SceneView::LoadScene(const char * pFilename)
 	printf("Scene loading time: %f ms\n", (tm2 - tm1) * 1000.0);
 	Vec3 vCenter = m_pModel->BoundingBox().Center();
 	Vec3 vSize = m_pModel->BoundingBox().Size();
+	float l = vSize.Length();
+	m_fNearZ = l * 0.001f;
+	m_fFarZ = l * 10.f;
 	printf("center(%g %g %g) size(%g %g %g)\n", vCenter.x, vCenter.y, vCenter.z, vSize.x, vSize.y, vSize.z);
 
 	SAFE_DELETE(m_pRenderModel);
@@ -253,8 +258,8 @@ void SceneView::Zoom(float x, float y, float d)
 
 	Vec3 vTarget = GetTarget(x, y);
 	Vec3 vDir = m_matCamera.Pos() - vTarget;
-	float fDist = vDir.Normalize();
-	fDist = clamp(fDist * fMul, 0.3f, 900.f);
+	float fDist = vDir.Normalize() * fMul;
+	fDist = clamp(fDist, m_fNearZ, m_fFarZ * 0.9f);
 	m_matCamera.Pos() = vTarget + vDir * fDist;
 
 	UpdateMatrices();
@@ -536,7 +541,7 @@ void SceneView::DrawBVHNode(const BVHNode * pCN, byte level) const
 
 void SceneView::UpdateMatrices()
 {
-	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight);
+	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
 	m_matView.Inverse(m_matCamera);
 	m_matViewProj = m_matView * m_matProj;
 

@@ -39,7 +39,7 @@ private:
 	const std::string	m_resourcesPath;
 	float	m_fWidth, m_fHeight;
 	float	m_fRWidth, m_fRHeight;
-	float	m_fFOV;
+	float	m_fFOV, m_fNearZ, m_fFarZ;
 	bool	m_bGesture;
 	Vec3	m_vGestureTarget;
 	Vec3	m_vGestureTargetNormal;

@@ -7,10 +7,7 @@
 //
 #pragma once
 
-#ifndef _WIN32
-#include <pthread.h>
-//#include <unistd.h>
-#endif
+#include "mutex.h"
 
 namespace mr
 {
@@ -26,6 +23,7 @@ class Thread
 
 	pthread_t m_thread;
 #endif
+	Mutex	m_mutexStartJoin;
 	
 protected:
 	Thread();

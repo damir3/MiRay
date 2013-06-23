@@ -70,6 +70,7 @@ void *Thread::StaticThreadProc(void *pData)
 
 bool Thread::Start()
 {
+	Mutex::Locker locker(m_mutexStartJoin);
 	if (m_thread != NULL)
 		return false;
 
@@ -78,6 +79,7 @@ bool Thread::Start()
 
 void Thread::Join()
 {
+	Mutex::Locker locker(m_mutexStartJoin);
 	if (m_thread != NULL)
 	{
 		::pthread_join(m_thread, NULL);
