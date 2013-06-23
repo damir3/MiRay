@@ -148,6 +148,16 @@ struct ColorF
 		return ColorF(r, g, b, a);
 	}
 
+	static ColorF LerpRGB(const ColorF &from, const ColorF &to, float f, float a)
+	{
+		if (from == to) return ColorF(from.r, from.g, from.b, a);
+
+		float r = from.r + (to.r - from.r) * f;
+		float g = from.g + (to.g - from.g) * f;
+		float b = from.b + (to.b - from.b) * f;
+		return ColorF(r, g, b, a);
+	}
+
 	static const ColorF Null;
 	static const ColorF White;
 };

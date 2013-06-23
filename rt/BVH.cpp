@@ -59,7 +59,7 @@ bool BVH::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr)
 		if (pNode->Triangles().empty())
 		{
 			assert(pNode->Child(0) && pNode->Child(1));
-			if (ray.Start()[pNode->Axis()] > pNode->Dist())
+			if (ray.Origin()[pNode->Axis()] > pNode->Dist())
 			{
 				*ppTopNode++ = pNode->Child(0);
 				*ppTopNode++ = pNode->Child(1);

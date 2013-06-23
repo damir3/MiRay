@@ -36,6 +36,11 @@ class CollisionTriangle
 //	float		m_vv;
 //	uint32		m_nLastTraceCount;
 
+	Vec3		m_n;
+	int			m_axis_u, m_axis_v;
+	float		m_e1u, m_e1v;
+	float		m_e2u, m_e2v;
+
 public:
 	CollisionTriangle(const Vertex & v0, const Vertex & v1, const Vertex & v2, const void * pUserData)
 //		: m_nLastTraceCount(0)
@@ -51,6 +56,36 @@ public:
 
 		m_edgeU = v1.pos - v0.pos;
 		m_edgeV = v2.pos - v0.pos;
+
+		//////////////////////////////////////////////////////////////////////////
+
+		m_n = Vec3::Cross(m_edgeV, m_edgeU);
+//		m_n.Normalize();
+
+		int normAxis;
+		if (fabs(m_n.x) > fabs(m_n.y))
+			normAxis = fabs(m_n.x) > fabs(m_n.z) ? 0 : 2;
+		else
+			normAxis = fabs(m_n.y) > fabs(m_n.z) ? 1 : 2;
+		m_axis_u = (normAxis + 1) % 3;
+		m_axis_v = (normAxis + 2) % 3;
+
+		m_e1u = m_edgeU[m_axis_u];
+		m_e1v = m_edgeU[m_axis_v];
+		m_e2u = m_edgeV[m_axis_u];
+		m_e2v = m_edgeV[m_axis_v];
+
+		float f = (m_e2u * m_e1v - m_e2v * m_e1u);
+		if (f != 0.f)
+		{
+			f = 1.f / f;
+			m_e1u *= f;
+			m_e1v *= f;
+			m_e2u *= f;
+			m_e2v *= f;
+		}
+
+		//////////////////////////////////////////////////////////////////////////
 
 //		m_normal = Vec3::Cross(m_edgeU, m_edgeV);
 //		m_normal.Normalize();
@@ -150,10 +185,11 @@ public:
 
 	bool TraceRay(CollisionRay & ray, TraceResult & tr) const
 	{
+
 //		if (!ray.IsIntersect(m_bbox))
 //			return false;
-
-//		float d1 = Vec3::Dot(ray.Start(), m_normal) - m_dist;
+//
+//		float d1 = Vec3::Dot(ray.Origin(), m_normal) - m_dist;
 //		float d2 = Vec3::Dot(ray.End(), m_normal) - m_dist;
 //		if (d1 < 0.f)
 //		{
@@ -167,7 +203,7 @@ public:
 //		assert(dd > 0.f);
 //		float f = d1 / dd;
 //		assert(f >= 0.f && f <= 1.f);
-//		Vec3 pos = Vec3::Lerp(ray.Start(), ray.End(), f);
+//		Vec3 pos = Vec3::Lerp(ray.Origin(), ray.End(), f);
 //
 //		Vec2 pc;
 //		if (!GetParametricCoords(pc, pos))
@@ -178,63 +214,67 @@ public:
 //		tr.fraction *= f;
 //		tr.pTriangle = this;
 //		tr.pc = pc;
-
-//		if (!((Vec3::Dot(ray.Start(), m_normal) > m_dist) ^ (Vec3::Dot(ray.End(), m_normal) > m_dist)))
+//
+//		if (!((Vec3::Dot(ray.Origin(), m_normal) > m_dist) ^ (Vec3::Dot(ray.End(), m_normal) > m_dist)))
 //			return false;
 
-		Vec3 h = Vec3::Cross(ray.Direction(), m_edgeV);
-		float det = Vec3::Dot(m_edgeU, h);
-		float u, v, t, dt;
+		//////////////////////////////////////////////////////////////////////////
 
-		if (det > 0.f)
-		{// back facing triangle
-			Vec3 s = ray.Start() - m_vertices[0].pos;
-			u = Vec3::Dot(s, h);
-			if (u < 0.f || u > det)
-				return false;
+//		Vec3 h = Vec3::Cross(ray.Direction(), m_edgeV);
+//		float det = Vec3::Dot(m_edgeU, h);
+//		float u, v, t, dt;
+//
+//		if (det > 0.f)
+//		{// back facing triangle
+//			Vec3 s = ray.Origin() - m_vertices[0].pos;
+//			u = Vec3::Dot(s, h);
+//			if (u < 0.f || u > det)
+//				return false;
+//
+//			Vec3 q = Vec3::Cross(s, m_edgeU);
+//			v = Vec3::Dot(ray.Direction(), q);
+//			if (v < 0.f || u + v > det)
+//				return false;
+//
+//			t = Vec3::Dot(m_edgeV, q); // ray intersection
+//			if (t < 0.f || t >= det)
+//				return false;
+//
+//			dt = 1e-6f;
+//		}
+//		else if (det < 0.f)
+//		{// front facing triangle
+//			Vec3 s = ray.Origin() - m_vertices[0].pos;
+//			u = Vec3::Dot(s, h);
+//			if (u > 0.f || u < det)
+//				return false;
+//
+//			Vec3 q = Vec3::Cross(s, m_edgeU);
+//			v = Vec3::Dot(ray.Direction(), q);
+//			if (v > 0.f || u + v < det)
+//				return false;
+//
+//			t = Vec3::Dot(m_edgeV, q); // ray intersection
+//			if (t > 0.f || t <= det)
+//				return false;
+//
+//			dt = -1e-6f;
+//		}
+//		else
+//			return false;
+//
+//		float invDet = 1.f / det;
+//		t = t * invDet + dt;
+//		u *= invDet;
+//		v *= invDet;
 
-			Vec3 q = Vec3::Cross(s, m_edgeU);
-			v = Vec3::Dot(ray.Direction(), q);
-			if (v < 0.f || u + v > det)
-				return false;
-
-			t = Vec3::Dot(m_edgeV, q); // ray intersection
-			if (t < 0.f || t >= det)
-				return false;
-
-			dt = 1e-6f;
-		}
-		else if (det < 0.f)
-		{// front facing triangle
-			Vec3 s = ray.Start() - m_vertices[0].pos;
-			u = Vec3::Dot(s, h);
-			if (u > 0.f || u < det)
-				return false;
-
-			Vec3 q = Vec3::Cross(s, m_edgeU);
-			v = Vec3::Dot(ray.Direction(), q);
-			if (v > 0.f || u + v < det)
-				return false;
-
-			t = Vec3::Dot(m_edgeV, q); // ray intersection
-			if (t > 0.f || t <= det)
-				return false;
-
-			dt = -1e-6f;
-		}
-		else
-			return false;
-
-		float invDet = 1.f / det;
-		t = t * invDet + dt;
-		u *= invDet;
-		v *= invDet;
+		//////////////////////////////////////////////////////////////////////////
 
 //		if (det == 0.f)
 //			return false;
 //
 //		float invDet = 1.f / det;
-//		Vec3 s = ray.Start() - m_vertices[0].pos;
+//		Vec3 s = ray.Origin() - m_vertices[0].pos;
 //		float u = invDet * Vec3::Dot(s, h);
 //		if (u < -0.0001f || u > 1.0001f)
 //			return(false);
@@ -248,6 +288,48 @@ public:
 //		float t = invDet * Vec3::Dot(m_edgeV, q); // ray intersection
 //		if (t < 0.f || t >= 1.f)
 //			return false;
+
+		//////////////////////////////////////////////////////////////////////////
+
+		float u, v, t;
+		float det = Vec3::Dot(m_n, ray.Direction());
+		if (det < 0.f)
+		{// front face
+			Vec3 delta = m_vertices[0].pos - ray.Origin();
+			t = Vec3::Dot(m_n, delta);
+			if (t > 0.f || t <= det) return false;
+
+			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
+			float dv = ray.Direction()[m_axis_v] * t - delta[m_axis_v] * det;
+
+			u = m_e2u * dv - m_e2v * du;
+			if (u > 0.f || u < det) return false;
+			v = m_e1v * du - m_e1u * dv;
+			if (v > 0.f || u + v < det) return false;
+		}
+		else if (det > 0.f)
+		{// back face
+			Vec3 delta = m_vertices[0].pos - ray.Origin();
+			t = Vec3::Dot(m_n, delta);
+			if (t < 0.f || t >= det) return false;
+
+			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
+			float dv = ray.Direction()[m_axis_v] * t - delta[m_axis_v] * det;
+
+			u = m_e2u * dv - m_e2v * du;
+			if (u < 0.f || u > det) return false;
+			v = m_e1v * du - m_e1u * dv;
+			if (v < 0.f || u + v > det) return false;
+		}
+		else
+			return false;
+
+		float invDet = 1.f / det;
+		t *= invDet;
+		u *= invDet;
+		v *= invDet;
+
+		//////////////////////////////////////////////////////////////////////////
 
 		ray.Clip(t);
 

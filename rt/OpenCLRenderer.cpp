@@ -355,14 +355,14 @@ bool OpenCLRenderer::SetupSceneBuffers()
 			const CollisionTriangle & tri = m_scene.Triangles()[i];
 			KernelTriangle & kernelTri = triangles[count++];
 			copy_float3(kernelTri.pos[0], tri.Vertex(0).pos);
-			copy_float3(kernelTri.pos[1], tri.Vertex(1).pos);
-			copy_float3(kernelTri.pos[2], tri.Vertex(2).pos);
+			copy_float3(kernelTri.pos[1], tri.Vertex(1).pos - tri.Vertex(0).pos);
+			copy_float3(kernelTri.pos[2], tri.Vertex(2).pos - tri.Vertex(0).pos);
 			copy_float3(kernelTri.normal[0], tri.Vertex(0).normal);
-			copy_float3(kernelTri.normal[1], tri.Vertex(1).normal);
-			copy_float3(kernelTri.normal[2], tri.Vertex(2).normal);
+			copy_float3(kernelTri.normal[1], tri.Vertex(1).normal - tri.Vertex(0).normal);
+			copy_float3(kernelTri.normal[2], tri.Vertex(2).normal - tri.Vertex(0).normal);
 			copy_float2(kernelTri.tc[0], tri.Vertex(0).tc);
-			copy_float2(kernelTri.tc[1], tri.Vertex(1).tc);
-			copy_float2(kernelTri.tc[2], tri.Vertex(2).tc);
+			copy_float2(kernelTri.tc[1], tri.Vertex(1).tc - tri.Vertex(0).tc);
+			copy_float2(kernelTri.tc[2], tri.Vertex(2).tc - tri.Vertex(0).tc);
 
 			std::map<const void *, uint32>::const_iterator itMaterial = mapMaterials.find(tri.UserData());
 			if (itMaterial == mapMaterials.end())

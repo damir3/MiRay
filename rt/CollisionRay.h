@@ -12,44 +12,45 @@ namespace mr
 
 class CollisionRay
 {
-	Vec3 m_vStart;
+	Vec3 m_vOrigin;
 	Vec3 m_vEnd;
+
+	Vec3 m_vDir;
 	Vec3 m_vCenter;
 	Vec3 m_vHalfDir;
 	Vec3 m_vHalfSize;
-	Vec3 m_vDir;
 	
 public:
 	
-	CollisionRay(const Vec3 & start, const Vec3 & end)
-		: m_vStart(start)
+	CollisionRay(const Vec3 & origin, const Vec3 & end)
+		: m_vOrigin(origin)
 		, m_vEnd(end)
-		, m_vDir(end - start)
+		, m_vDir(end - origin)
 	{
 		m_vHalfDir = m_vDir * 0.5f;
-		m_vCenter = m_vStart + m_vHalfDir;
+		m_vCenter = m_vOrigin + m_vHalfDir;
 		m_vHalfSize = Vec3(fabs(m_vHalfDir.x), fabs(m_vHalfDir.y), fabs(m_vHalfDir.z));
 	}
 
-	const Vec3 & Start() const { return m_vStart; }
+	const Vec3 & Origin() const { return m_vOrigin; }
 	const Vec3 & End() const { return m_vEnd; }
 	const Vec3 & Direction() const { return m_vDir; }
 
 	void Clip(float f)
 	{
 		m_vDir *= f;
-		m_vEnd = m_vStart + m_vDir;
+		m_vEnd = m_vOrigin + m_vDir;
 		m_vHalfDir *= f;
-		m_vCenter = m_vStart + m_vHalfDir;
+		m_vCenter = m_vOrigin + m_vHalfDir;
 		m_vHalfSize *= f;
 	}
 
 //	void SetEnd(const Vec3 & vEnd)
 //	{
 //		m_vEnd = vEnd;
-//		m_vDir = m_vEnd - m_vStart;
+//		m_vDir = m_vEnd - m_vOrigin;
 //		m_vHalfDir = m_vDir * 0.5f;
-//		m_vCenter = m_vStart + m_vHalfDir;
+//		m_vCenter = m_vOrigin + m_vHalfDir;
 //		m_vHalfSize = Vec3(fabs(m_vHalfDir.x), fabs(m_vHalfDir.y), fabs(m_vHalfDir.z));
 //	}
 

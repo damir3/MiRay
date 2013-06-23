@@ -64,11 +64,12 @@
 }
 
 - (void)prepareOpenGL
+
 {
 	self.pSceneView->Init();
 //	glEnable(GL_MULTISAMPLE);
 
-//	self.pSceneView->SetEnvironmentImage([[[NSBundle mainBundle] pathForResource:@"studio" ofType:@"hdr"] UTF8String]);
+	self.pSceneView->SetEnvironmentImage([[[NSBundle mainBundle] pathForResource:@"studio" ofType:@"hdr"] UTF8String]);
 	self.pSceneView->LoadScene([[[NSBundle mainBundle] pathForResource:@"cup" ofType:@"fbx"] UTF8String]);
 
 	NSTimer *timer = [NSTimer timerWithTimeInterval:1.0/10.0 target:self selector:@selector(idle:) userInfo:nil repeats:YES];
