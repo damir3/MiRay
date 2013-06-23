@@ -493,7 +493,10 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	if (!m_result)
 		printf("Failed to create OpenCL array!\n");
 
-	clEnqueueFillBuffer(m_commands, m_result, &Vec4::Null, sizeof(Vec4), 0, 4 * 4 * width * height, 0, NULL, NULL);
+//	clEnqueueFillBuffer(m_commands, m_result, &Vec4::Null, sizeof(Vec4), 0, 4 * 4 * width * height, 0, NULL, NULL);
+	std::vector<ColorF> data(width * height);
+	std::fill(data.begin(), data.end(), ColorF::Null);
+	clEnqueueWriteBuffer(m_commands, m_result, CL_TRUE, 0, 4 * 4 * width * height, data.data(), 0, NULL, NULL);
 }
 
 void OpenCLRenderer::Render(Image & image, const RectI * pViewportRect,
