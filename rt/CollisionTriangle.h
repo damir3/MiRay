@@ -22,10 +22,12 @@ struct TraceResult
 	TraceResult() : pTriangle(NULL), fraction(1.f) {}
 };
 
+class IMaterial;
+
 class CollisionTriangle
 {
 	Vertex		m_vertices[3];
-	const void	*m_pUserData;
+	const IMaterial * m_pMaterial;
 	BBox		m_bbox;
 	Vec3		m_edgeU;
 	Vec3		m_edgeV;
@@ -42,13 +44,13 @@ class CollisionTriangle
 	float		m_e2u, m_e2v;
 
 public:
-	CollisionTriangle(const Vertex & v0, const Vertex & v1, const Vertex & v2, const void * pUserData)
+	CollisionTriangle(const Vertex & v0, const Vertex & v1, const Vertex & v2, const IMaterial * pMaterial)
 //		: m_nLastTraceCount(0)
 	{
 		m_vertices[0] = v0;
 		m_vertices[1] = v1;
 		m_vertices[2] = v2;
-		m_pUserData = pUserData;
+		m_pMaterial = pMaterial;
 
 		m_bbox.vMins = m_bbox.vMaxs = v0.pos;
 		m_bbox.AddToBounds(v1.pos);
@@ -107,7 +109,7 @@ public:
 	}
 
 	const Vertex & Vertex(int i) const { return m_vertices[i]; }
-	const void * UserData() const { return m_pUserData; }
+	const IMaterial * Material() const { return m_pMaterial; }
 	const BBox & BoundingBox() const { return m_bbox; }
 	const Vec3 & Edge1() const { return m_edgeU; }
 	const Vec3 & Edge2() const { return m_edgeV; }

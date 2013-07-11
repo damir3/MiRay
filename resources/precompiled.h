@@ -25,6 +25,8 @@
 #define FBXSDK_SHARED
 #include <fbxsdk.h>
 
+#include "../ThirdParty/pugixml/pugixml.hpp"
+
 #include "../common/all.h"
 #include "ImageManager.h"
 #include "MaterialManager.h"

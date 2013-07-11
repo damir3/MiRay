@@ -66,7 +66,7 @@ OpenCLRenderer::~OpenCLRenderer()
 }
 
 #ifndef __APPLE__
-void clLogMessagesToStdout(const char * str, const void *, size_t, void *)
+void CL_API_CALL clLogMessagesToStdout(const char * str, const void *, size_t, void *)
 {
 	printf(str);
 };
@@ -347,7 +347,7 @@ bool OpenCLRenderer::SetupSceneBuffers()
 		}
 
 		std::vector<KernelTriangle>		triangles(std::min<size_t>(numTriangles, MAX_WRITE_TRIANGLES));
-		std::map<const void *, uint32>	mapMaterials;
+		std::map<const IMaterial *, uint32>	mapMaterials;
 		size_t offset = 0, count = 0;
 
 		for (size_t i = 0; i < numTriangles; i++)
@@ -364,12 +364,12 @@ bool OpenCLRenderer::SetupSceneBuffers()
 			copy_float2(kernelTri.tc[1], tri.Vertex(1).tc - tri.Vertex(0).tc);
 			copy_float2(kernelTri.tc[2], tri.Vertex(2).tc - tri.Vertex(0).tc);
 
-			std::map<const void *, uint32>::const_iterator itMaterial = mapMaterials.find(tri.UserData());
+			std::map<const IMaterial *, uint32>::const_iterator itMaterial = mapMaterials.find(tri.Material());
 			if (itMaterial == mapMaterials.end())
 			{
 				kernelTri.material = static_cast<cl_uint>(materials.size());
-				mapMaterials[tri.UserData()] = kernelTri.material;
-				materials.push_back(tri.UserData());
+				mapMaterials[tri.Material()] = kernelTri.material;
+				materials.push_back(tri.Material());
 			}
 			else
 				kernelTri.material = itMaterial->second;

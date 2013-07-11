@@ -25,7 +25,6 @@
 
 #include "../common/all.h"
 #include "../resources/Image.h"
-#include "../resources/Material.h"
 
 #include "BVH.h"
 

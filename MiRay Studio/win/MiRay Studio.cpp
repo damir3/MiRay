@@ -222,7 +222,11 @@ void OnFileOpen(HWND hWnd)
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrDefExt = "";
 	if (GetOpenFileNameA(&ofn))
+	{
+		wglMakeCurrent(g_hDC, g_hRC);
 		g_pSceneView->LoadScene(fileName);
+		wglMakeCurrent(NULL, NULL);
+	}
 }
 
 static const char * strImageFilter = "Image Files\0*.jpg;*.;*.jpeg;*.png;*.tga;*.hdr;*.exr;*.tif;*.tiff;*.psd;*.dds;"\
@@ -302,7 +306,9 @@ void OnDropFiles(HWND hWnd, HDROP hDrop)
 			const char * extension = p ? ++p : lpszFile;
 			if (CheckModelExtension(extension))
 			{
+				wglMakeCurrent(g_hDC, g_hRC);
 				g_pSceneView->LoadScene(lpszFile);
+				wglMakeCurrent(NULL, NULL);
 				break;
 			}
 			if (CheckImageExtension(extension))

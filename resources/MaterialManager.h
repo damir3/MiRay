@@ -7,27 +7,24 @@
 //
 #pragma once
 
-#include "Material.h"
+#include "MaterialResource.h"
 
 namespace mr
 {
-	
+
 class MaterialManager : public IResourceManager
 {
-//	bool LoadMaterial(Material * pMaterial);
-//	void SaveMaterial(const Material * pMaterial);
-
 public:
 	MaterialManager();
 	~MaterialManager();
 
-	Material * Get(const char * strName);
-	Material * Create(const char * strName);
+	MaterialResource * Get(const char * strName);
+	MaterialResource * Create(const char * strName);
 	void CleanupMaterials();
 	void LoadTextures(ImageManager * pImageManager, const char * strLocalPath);
 
 	bool LoadMaterials(const char * strFilename);
 	bool SaveMaterials(const char * strFilename);
 };
-	
+
 }

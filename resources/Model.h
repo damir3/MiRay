@@ -16,7 +16,7 @@ typedef std::vector<Vertex>		VertexArray;
 typedef std::vector<uint32>		IndexArray;
 
 class Image;
-class Material;
+class MaterialResource;
 class ModelManager;
 
 class Model : public IResource
@@ -24,7 +24,7 @@ class Model : public IResource
 public:
 	struct Geometry
 	{
-		Material*		m_pMaterial;
+		MaterialResource * m_pMaterial;
 		VertexArray		m_vertices;
 		IndexArray		m_indices;
 		BBox			m_bbox;

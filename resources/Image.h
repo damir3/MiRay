@@ -20,10 +20,12 @@ public:
 	enum eType
 	{
 		TYPE_NONE,
+		TYPE_1B,
 		TYPE_3B,
 		TYPE_4B,
 		TYPE_3W,
 		TYPE_4W,
+		TYPE_1F,
 		TYPE_3F,
 		TYPE_4F,
 	};
@@ -32,13 +34,15 @@ public:
 	{
 		switch (type)
 		{
-		case TYPE_3B: return 3;
-		case TYPE_4B: return 4;
-		case TYPE_3W: return 6;
-		case TYPE_4W: return 8;
-		case TYPE_3F: return 12;
-		case TYPE_4F: return 16;
-		default: return 0;
+			case TYPE_1B: return 1;
+			case TYPE_3B: return 3;
+			case TYPE_4B: return 4;
+			case TYPE_3W: return 6;
+			case TYPE_4W: return 8;
+			case TYPE_1F: return 4;
+			case TYPE_3F: return 12;
+			case TYPE_4F: return 16;
+			default: return 0;
 		}
 	}
 

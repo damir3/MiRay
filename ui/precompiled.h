@@ -19,6 +19,8 @@
 #define FBXSDK_SHARED
 #include <fbxsdk.h>
 
+#include "../ThirdParty/pugixml/pugixml.hpp"
+
 #include "../common/all.h"
 #include "../common/timer.h"
 #include "../rt/BVH.h"

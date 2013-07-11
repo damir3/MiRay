@@ -12,7 +12,8 @@ using namespace mr;
 
 void BVH::AddTriangle(const CollisionTriangle & t)
 {
-	m_triangles.push_back(t);
+	if (!t.IsDegenerate())
+		m_triangles.push_back(t);
 }
 
 void BVH::Build(byte nMaxNodesLevel)

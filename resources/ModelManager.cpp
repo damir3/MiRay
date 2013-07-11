@@ -361,27 +361,27 @@ void ModelManager::AddMesh(Model & scene, FbxNode * pFbxNode, FbxAMatrix & pGlob
 				if (!geom.m_pMaterial)
 				{
 					geom.m_pMaterial = m_pMaterialManager->Create(strMaterial.c_str());
+					geom.m_pMaterial->Create();
 
-					ReadMaterialTextureName(geom.m_pMaterial->m_diffuseTexName, pFbxMaterial, FbxSurfaceMaterial::sDiffuse);
+//					ReadMaterialTextureName(geom.m_pMaterial->m_diffuseTexName, pFbxMaterial, FbxSurfaceMaterial::sDiffuse);
 //					ReadMaterialTextureName(geom.m_pMaterial->m_specularTexName, pFbxMaterial, FbxSurfaceMaterial::sSpecular);
 //					ReadMaterialTextureName(geom.m_pMaterial->m_opacityTexName, pFbxMaterial, FbxSurfaceMaterial::sTransparentColor);
-					ReadMaterialTextureName(geom.m_pMaterial->m_bumpMapName, pFbxMaterial, FbxSurfaceMaterial::sBump);
+//					ReadMaterialTextureName(geom.m_pMaterial->m_bumpMapName, pFbxMaterial, FbxSurfaceMaterial::sBump);
 //					ReadMaterialTextureName(geom.m_pMaterial->m_normalMapName, pFbxMaterial, FbxSurfaceMaterial::sNormalMap);
 
 					FbxClassId classId = pFbxMaterial->GetClassId();
 					if (classId.Is(FbxSurfaceLambert::ClassId) || classId.Is(FbxSurfacePhong::ClassId))
 					{
-						const FbxSurfaceLambert * pLambert = (FbxSurfaceLambert *)pFbxMaterial;
-						FbxDouble3 cDiffuse = pLambert->Diffuse;
-						FbxDouble fDiffuse = pLambert->DiffuseFactor;
-						geom.m_pMaterial->m_diffuseColor.r = (float)(cDiffuse[0] * fDiffuse);
-						geom.m_pMaterial->m_diffuseColor.g = (float)(cDiffuse[1] * fDiffuse);
-						geom.m_pMaterial->m_diffuseColor.b = (float)(cDiffuse[2] * fDiffuse);
-						geom.m_pMaterial->m_diffuseColor.a = 1.f;
+//						const FbxSurfaceLambert * pLambert = (FbxSurfaceLambert *)pFbxMaterial;
+//						FbxDouble3 cDiffuse = pLambert->Diffuse;
+//						FbxDouble fDiffuse = pLambert->DiffuseFactor;
+//						geom.m_pMaterial->m_diffuse.SetColor((float)(cDiffuse[0] * fDiffuse),
+//															 (float)(cDiffuse[1] * fDiffuse),
+//															 (float)(cDiffuse[2] * fDiffuse), 1.f);
 //						FbxDouble3 cTransparent = pLambert->TransparentColor;
 //						geom.m_pMaterial->m_refractionColor = ColorF(cTransparent[0], cTransparent[1], cTransparent[2]);
-						geom.m_pMaterial->m_opacity = 1.f - static_cast<float>(pLambert->TransparencyFactor);
-						geom.m_pMaterial->m_bumpLevel = static_cast<float>(pLambert->BumpFactor);
+//						geom.m_pMaterial->m_opacity.SetColor(ColorF(1.f - static_cast<float>(pLambert->TransparencyFactor)));
+//						geom.m_pMaterial->m_bumpLevel = static_cast<float>(pLambert->BumpFactor);
 
 //						if (classId.Is(FbxSurfacePhong::ClassId))
 //						{

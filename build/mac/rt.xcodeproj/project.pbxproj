@@ -18,6 +18,8 @@
 		2687332D176F0EA0004B4144 /* precompiled.h in Headers */ = {isa = PBXBuildFile; fileRef = 26873321176F0EA0004B4144 /* precompiled.h */; };
 		2687332E176F0EA0004B4144 /* SoftwareRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26873322176F0EA0004B4144 /* SoftwareRenderer.cpp */; };
 		2687332F176F0EA0004B4144 /* SoftwareRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = 26873323176F0EA0004B4144 /* SoftwareRenderer.h */; };
+		26CDA25B177AC7AC00291530 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26CDA259177AC7AC00291530 /* Material.cpp */; };
+		26CDA25E177AD76800291530 /* Material.h in Headers */ = {isa = PBXBuildFile; fileRef = 26CDA25D177AD76800291530 /* Material.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +35,8 @@
 		26873321176F0EA0004B4144 /* precompiled.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = precompiled.h; path = ../../rt/precompiled.h; sourceTree = "<group>"; };
 		26873322176F0EA0004B4144 /* SoftwareRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SoftwareRenderer.cpp; path = ../../rt/SoftwareRenderer.cpp; sourceTree = "<group>"; };
 		26873323176F0EA0004B4144 /* SoftwareRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SoftwareRenderer.h; path = ../../rt/SoftwareRenderer.h; sourceTree = "<group>"; };
+		26CDA259177AC7AC00291530 /* Material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Material.cpp; path = ../../rt/Material.cpp; sourceTree = "<group>"; };
+		26CDA25D177AD76800291530 /* Material.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Material.h; path = ../../rt/Material.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +53,8 @@
 		267566A21709252D00130D1B = {
 			isa = PBXGroup;
 			children = (
+				26CDA259177AC7AC00291530 /* Material.cpp */,
+				26CDA25D177AD76800291530 /* Material.h */,
 				26873319176F0EA0004B4144 /* BVH.cpp */,
 				2687331A176F0EA0004B4144 /* BVH.h */,
 				2687331B176F0EA0004B4144 /* BVHNode.cpp */,
@@ -86,6 +92,7 @@
 				2687332C176F0EA0004B4144 /* OpenCLRenderer.h in Headers */,
 				2687332D176F0EA0004B4144 /* precompiled.h in Headers */,
 				2687332F176F0EA0004B4144 /* SoftwareRenderer.h in Headers */,
+				26CDA25E177AD76800291530 /* Material.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,6 +151,7 @@
 				26873327176F0EA0004B4144 /* BVHNode.cpp in Sources */,
 				2687332B176F0EA0004B4144 /* OpenCLRenderer.cpp in Sources */,
 				2687332E176F0EA0004B4144 /* SoftwareRenderer.cpp in Sources */,
+				26CDA25B177AC7AC00291530 /* Material.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
