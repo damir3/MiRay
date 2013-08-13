@@ -331,12 +331,16 @@ bool OpenCLRenderer::SetupSceneBuffers()
 	SAFE_RELEASE_MEM_OBJECT(m_materials);
 	SAFE_RELEASE_MEM_OBJECT(m_triangles);
 
+	if (!m_scene.NumVolumes())
+		return false;
+
+	CollisionVolume * pVolume = m_scene.Volume(0);
 	std::vector<const void *>	materials;
 
 	{// fill triangles buffer
 		enum { MAX_WRITE_TRIANGLES = 0x20000 }; // 16MB
 		const size_t sizeOfTriangle = sizeof(KernelTriangle);
-		const size_t numTriangles = m_scene.Triangles().size();
+		const size_t numTriangles = pVolume->Triangles().size();
 
 		printf("Creating OpenCL %d triangles...\n", (int)numTriangles);
 		m_triangles = clCreateBuffer(m_context, CL_MEM_READ_ONLY, numTriangles * sizeOfTriangle, NULL, NULL);
@@ -352,7 +356,7 @@ bool OpenCLRenderer::SetupSceneBuffers()
 
 		for (size_t i = 0; i < numTriangles; i++)
 		{
-			const CollisionTriangle & tri = m_scene.Triangles()[i];
+			const CollisionTriangle & tri = pVolume->Triangles()[i];
 			KernelTriangle & kernelTri = triangles[count++];
 			copy_float3(kernelTri.pos[0], tri.Vertex(0).pos);
 			copy_float3(kernelTri.pos[1], tri.Vertex(1).pos - tri.Vertex(0).pos);
@@ -392,7 +396,7 @@ bool OpenCLRenderer::SetupSceneBuffers()
 	{// fill nodes buffer
 		enum { MAX_WRITE_NODES = 0x20000 };
 		const size_t sizeOfNode = sizeof(KernelNode);
-		const size_t numNodes = m_scene.Root()->GetNodeCount();
+		const size_t numNodes = pVolume->Root()->GetNodeCount();
 
 		printf("Creating OpenCL %d nodes...\n", (int)numNodes);
 		m_nodes = clCreateBuffer(m_context, CL_MEM_READ_ONLY, numNodes * sizeOfNode, NULL, NULL);
@@ -406,13 +410,13 @@ bool OpenCLRenderer::SetupSceneBuffers()
 		std::vector<KernelNode>		nodes(std::min<size_t>(numNodes, MAX_WRITE_NODES));
 		size_t offset = 0, count = 0;
 
-		const BVHNode * pStackNodes[64]; // BVH tree depth must be less than 64
-		const BVHNode ** ppTopNode = pStackNodes;
-		*ppTopNode++ = m_scene.Root();
+		const CollisionNode * pStackNodes[64]; // BVH tree depth must be less than 64
+		const CollisionNode ** ppTopNode = pStackNodes;
+		*ppTopNode++ = pVolume->Root();
 
 		while (ppTopNode > pStackNodes)
 		{
-			const BVHNode * pNode = *(--ppTopNode);
+			const CollisionNode * pNode = *(--ppTopNode);
 			KernelNode & kernelNode = nodes[count++];
 			kernelNode.plane.s[0] = pNode->Axis() == 0 ? 1.f : 0.f;
 			kernelNode.plane.s[1] = pNode->Axis() == 1 ? 1.f : 0.f;
@@ -437,7 +441,7 @@ bool OpenCLRenderer::SetupSceneBuffers()
 
 				kernelNode.beginTriangle = (cl_uint)nodeTriangles.size();
 				for (std::vector<CollisionTriangle *>::const_iterator it = pNode->Triangles().begin(), itEnd = pNode->Triangles().end(); it != itEnd; ++it)
-					nodeTriangles.push_back(static_cast<cl_uint>((*it) - m_scene.Triangles().data()));
+					nodeTriangles.push_back(static_cast<cl_uint>((*it) - pVolume->Triangles().data()));
 
 				kernelNode.endTriangle = (cl_uint)nodeTriangles.size();
 			}
@@ -487,7 +491,7 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	// create result buffer
 	m_size[0] = width;
 	m_size[1] = height;
-	m_size[2] = (cl_uint)m_scene.Triangles().size();
+	m_size[2] = (cl_uint)m_scene.Volume(0)->Triangles().size();
 	m_size[3] = 6; // trace depth
 	m_result = clCreateBuffer(m_context, CL_MEM_READ_WRITE, 4 * 4 * width * height, NULL, NULL);
 	if (!m_result)

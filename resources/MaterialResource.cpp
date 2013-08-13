@@ -49,11 +49,11 @@ public:
 	
 	MaterialTexture	m_reflectionTexture;
 	MaterialTexture	m_reflectionTintTexture;
-	MaterialTexture	m_reflectionGlossinessTexture;
+	MaterialTexture	m_reflectionRoughnessTexture;
 	MaterialTexture	m_reflectionExitColorTexture;
 
 	MaterialTexture	m_refractionTintTexture;
-	MaterialTexture	m_refractionGlossinessTexture;
+	MaterialTexture	m_refractionRoughnessTexture;
 	MaterialTexture	m_refractionExitColorTexture;
 	
 	std::string		m_bumpMapName;
@@ -79,10 +79,10 @@ MaterialLayerImpl::MaterialLayerImpl()
 	, m_iorTexture(m_indexOfRefraction)
 	, m_reflectionTexture(m_reflection)
 	, m_reflectionTintTexture(m_reflectionTint)
-	, m_reflectionGlossinessTexture(m_reflectionGlossiness)
+	, m_reflectionRoughnessTexture(m_reflectionRoughness)
 	, m_reflectionExitColorTexture(m_reflectionExitColor)
 	, m_refractionTintTexture(m_refractionTint)
-	, m_refractionGlossinessTexture(m_refractionGlossiness)
+	, m_refractionRoughnessTexture(m_refractionRoughness)
 	, m_refractionExitColorTexture(m_refractionExitColor)
 	, m_pNormalmap(nullptr)
 	, m_bumpLevelTexture(m_bumpLevel)
@@ -96,15 +96,15 @@ MaterialLayerImpl::~MaterialLayerImpl()
 
 // ------------------------------------------------------------------------ //
 
-static ColorF ColorFromString(const char * str, const ColorF & def = ColorF::Null)
+static Vec3 ColorFromString(const char * str, const Vec3 & def = Vec3::Null)
 {
 	if (!str || !*str)
 		return def;
 	
-	ColorF out;
-	int n = sscanf(str, "%f %f %f", &out.r, &out.g, &out.b);
+	Vec3 out;
+	int n = sscanf(str, "%f %f %f", &out.x, &out.y, &out.z);
 	if (n == 1)
-		out.g = out.b = out.r;
+		out.y = out.z = out.x;
 	else if (n != 3)
 		return def;
 	return out;
@@ -145,12 +145,12 @@ bool ReadMaterialParam(MaterialParameter & param, std::string & strTextureName, 
 
 // ------------------------------------------------------------------------ //
 
-static const char * ColorToString(const ColorF & c, char * buf, size_t sz)
+static const char * ColorToString(const Vec3 & c, char * buf, size_t sz)
 {
-	if (c.r == c.g && c.r == c.b)
-		snprintf(buf, sz, "%g", c.r);
+	if (c.x == c.y && c.x == c.z)
+		snprintf(buf, sz, "%g", c.x);
 	else
-		snprintf(buf, sz, "%g %g %g", c.r, c.g, c.b);
+		snprintf(buf, sz, "%g %g %g", c.x, c.y, c.z);
 	return buf;
 }
 
@@ -191,10 +191,10 @@ void MaterialLayerImpl::Load(pugi::xml_node node)
 	
 	ReadMaterialParam(m_reflection, m_reflectionTexture.Filename(), node, "reflection");
 	ReadMaterialParam(m_reflectionTint, m_reflectionTintTexture.Filename(), node, "reflection-tint");
-	ReadMaterialParam(m_reflectionGlossiness, m_reflectionGlossinessTexture.Filename(), node, "reflection-glossiness");
+	ReadMaterialParam(m_reflectionRoughness, m_reflectionRoughnessTexture.Filename(), node, "reflection-roughness");
 	
 	ReadMaterialParam(m_refractionTint, m_refractionTintTexture.Filename(), node, "refraction-tint");
-	ReadMaterialParam(m_refractionGlossiness, m_refractionGlossinessTexture.Filename(), node, "refraction-glossiness");
+	ReadMaterialParam(m_refractionRoughness, m_refractionRoughnessTexture.Filename(), node, "refraction-roughness");
 	
 	BoolFromString(m_fresnelReflection, node.child("fresnel-reflection").text().get(), m_fresnelReflection);
 
@@ -207,10 +207,10 @@ void MaterialLayerImpl::Load(pugi::xml_node node)
 
 void MaterialLayerImpl::Save(pugi::xml_node node)
 {
-	if (!m_ambientTexture.Filename().empty() || (m_ambient.GetColor() != ColorF::Null))
+	if (!m_ambientTexture.Filename().empty() || (m_ambient.GetColor() != Vec3::Null))
 		SaveMaterialParam(node, "ambient", m_ambient, m_ambientTexture.Filename());
 
-	if (!m_emissiveTexture.Filename().empty() || (m_emissive.GetColor() != ColorF::Null))
+	if (!m_emissiveTexture.Filename().empty() || (m_emissive.GetColor() != Vec3::Null))
 		SaveMaterialParam(node, "emissive", m_emissive, m_emissiveTexture.Filename());
 
 	SaveMaterialParam(node, "diffuse", m_diffuse, m_diffuseTexture.Filename());
@@ -222,32 +222,32 @@ void MaterialLayerImpl::Save(pugi::xml_node node)
 	char buf[256];
 	node.append_child("fresnel-reflection").text().set(BoolToString(FresnelReflection(), buf, sizeof(buf)));
 
-	if (!m_reflectionTexture.Filename().empty() || (m_reflection.GetColor() != ColorF::Null))
+	if (!m_reflectionTexture.Filename().empty() || (m_reflection.GetColor() != Vec3::Null))
 		SaveMaterialParam(node, "reflection", m_reflection, m_reflectionTexture.Filename());
 
-	if (!m_reflectionTintTexture.Filename().empty() || (m_reflectionTint.GetColor() != ColorF::White))
+	if (!m_reflectionTintTexture.Filename().empty() || (m_reflectionTint.GetColor() != Vec3(1.f)))
 		SaveMaterialParam(node, "reflection-tint", m_reflectionTint, m_reflectionTintTexture.Filename());
 
-	if (!m_reflectionGlossinessTexture.Filename().empty() || (m_reflectionGlossiness.GetColor() != ColorF::White))
-		SaveMaterialParam(node, "reflection-glossiness", m_reflectionGlossiness, m_reflectionGlossinessTexture.Filename());
+	if (!m_reflectionRoughnessTexture.Filename().empty() || (m_reflectionRoughness.GetColor() != Vec3::Null))
+		SaveMaterialParam(node, "reflection-roughness", m_reflectionRoughness, m_reflectionRoughnessTexture.Filename());
 
-	if (!m_reflectionExitColorTexture.Filename().empty() || (m_reflectionExitColor.GetColor() != ColorF::Null))
+	if (!m_reflectionExitColorTexture.Filename().empty() || (m_reflectionExitColor.GetColor() != Vec3::Null))
 		SaveMaterialParam(node, "reflection-exit-color", m_reflectionExitColor, m_reflectionExitColorTexture.Filename());
 
-	if (!m_refractionTintTexture.Filename().empty() || (m_refractionTint.GetColor() != ColorF::White))
+	if (!m_refractionTintTexture.Filename().empty() || (m_refractionTint.GetColor() != Vec3(1.f)))
 		SaveMaterialParam(node, "refraction-tint", m_refractionTint, m_refractionTintTexture.Filename());
 
-	if (!m_refractionGlossinessTexture.Filename().empty() || (m_refractionGlossiness.GetColor() != ColorF::White))
-		SaveMaterialParam(node, "refraction-glossiness", m_refractionGlossiness, m_refractionGlossinessTexture.Filename());
+	if (!m_refractionRoughnessTexture.Filename().empty() || (m_refractionRoughness.GetColor() != Vec3::Null))
+		SaveMaterialParam(node, "refraction-roughness", m_refractionRoughness, m_refractionRoughnessTexture.Filename());
 
-	if (!m_refractionExitColorTexture.Filename().empty() || (m_refractionExitColor.GetColor() != ColorF::Null))
+	if (!m_refractionExitColorTexture.Filename().empty() || (m_refractionExitColor.GetColor() != Vec3::Null))
 		SaveMaterialParam(node, "refraction-exit-color", m_refractionExitColor, m_refractionExitColorTexture.Filename());
 
 	if (!m_bumpMapName.empty())
 	{
 		node.append_child("bump-map").text().set(m_bumpMapName.c_str());
 
-		if (!m_bumpLevelTexture.Filename().empty() || (m_bumpLevel.GetColor() != ColorF::Null))
+		if (!m_bumpLevelTexture.Filename().empty() || (m_bumpLevel.GetColor() != Vec3::Null))
 			SaveMaterialParam(node, "bump-level", m_bumpLevel, m_bumpLevelTexture.Filename());
 	}
 }
@@ -291,10 +291,10 @@ void MaterialLayerImpl::LoadTextures(ImageManager * pImageManager, const char * 
 	LoadTexture(m_iorTexture, pImageManager, strLocalPath);
 	LoadTexture(m_reflectionTexture, pImageManager, strLocalPath);
 	LoadTexture(m_reflectionTintTexture, pImageManager, strLocalPath);
-	LoadTexture(m_reflectionGlossinessTexture, pImageManager, strLocalPath);
+	LoadTexture(m_reflectionRoughnessTexture, pImageManager, strLocalPath);
 	LoadTexture(m_reflectionExitColorTexture, pImageManager, strLocalPath);
 	LoadTexture(m_refractionTintTexture, pImageManager, strLocalPath);
-	LoadTexture(m_refractionGlossinessTexture, pImageManager, strLocalPath);
+	LoadTexture(m_refractionRoughnessTexture, pImageManager, strLocalPath);
 	LoadTexture(m_refractionExitColorTexture, pImageManager, strLocalPath);
 	LoadTexture(m_bumpLevelTexture, pImageManager, strLocalPath);
 

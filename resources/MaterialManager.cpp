@@ -45,7 +45,12 @@ MaterialResource * MaterialManager::Create(const char * strName)
 
 void MaterialManager::CleanupMaterials()
 {
-	for (Resources::const_iterator it = m_resources.begin(); it != m_resources.end(); ++it)
+	// make temporary resources list
+	std::vector<IResource *> resources(m_resources.size());
+	std::copy(m_resources.begin(), m_resources.end(), resources.begin());
+
+	// cleanup resources
+	for (auto it = resources.begin(); it != resources.end(); ++it)
 		(*it)->Release();
 }
 
@@ -74,7 +79,7 @@ bool MaterialManager::SaveMaterials(const char * strFilename)
 	pugi::xml_document doc;
 
 	pugi::xml_node materials = doc.append_child("materials");
-	for (Resources::const_iterator it = m_resources.begin(); it != m_resources.end(); ++it)
+	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
 	{
 		MaterialResource * pMaterial = static_cast<MaterialResource *>(*it);
 		pugi::xml_node material = materials.append_child("material");
@@ -88,6 +93,6 @@ bool MaterialManager::SaveMaterials(const char * strFilename)
 
 void MaterialManager::LoadTextures(ImageManager * pImageManager, const char * strLocalPath)
 {
-	for (Resources::const_iterator it = m_resources.begin(); it != m_resources.end(); ++it)
+	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
 		static_cast<MaterialResource *>(*it)->LoadTextures(pImageManager, strLocalPath);
 }

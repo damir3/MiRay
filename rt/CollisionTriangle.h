@@ -15,11 +15,13 @@ namespace mr
 struct TraceResult
 {
 	const class CollisionTriangle * pTriangle;
+	const class CollisionVolume * pVolume;
 	float	fraction;
+	bool	backface;
 	Vec3	pos;
 	Vec2	pc;
 
-	TraceResult() : pTriangle(NULL), fraction(1.f) {}
+	TraceResult() : pTriangle(NULL), pVolume(NULL), fraction(1.f) {}
 };
 
 class IMaterial;
@@ -117,7 +119,7 @@ public:
 //	float Dist() const { return m_dist; }
 
 //	bool IsDegenerate() const { return (m_normal.Length2() == 0.f) || ((m_uv * m_uv - m_uu * m_vv) == 0.f); }
-	bool IsDegenerate() const { return Vec3::Cross(m_edgeU, m_edgeV).Length2() == 0.f; }
+	bool IsDegenerate() const { return Vec3::Cross(m_edgeU, m_edgeV).LengthSquared() == 0.f; }
 
 //	bool GetParametricCoords(Vec2 & pc, const Vec3 & p) const
 //	{
@@ -308,6 +310,8 @@ public:
 			if (u > 0.f || u < det) return false;
 			v = m_e1v * du - m_e1u * dv;
 			if (v > 0.f || u + v < det) return false;
+
+			tr.backface = false;
 		}
 		else if (det > 0.f)
 		{// back face
@@ -322,6 +326,8 @@ public:
 			if (u < 0.f || u > det) return false;
 			v = m_e1v * du - m_e1u * dv;
 			if (v < 0.f || u + v > det) return false;
+
+			tr.backface = true;
 		}
 		else
 			return false;

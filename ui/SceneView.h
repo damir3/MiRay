@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../resources/Model.h"
+#include "../rt/Light.h"
 
 namespace mr
 {
@@ -16,7 +17,7 @@ namespace mr
 	class RenderModel;
 
 	class BVH;
-	class BVHNode;
+	class CollisionNode;
 	class CollisionTriangle;
 }
 
@@ -68,11 +69,33 @@ private:
 	RenderThread	*m_pRenderThread;
 	Vec3	m_vCollisionTriangle[3];
 
+	class OmniLight : public ILight
+	{
+		Vec3	m_origin;
+		float	m_radius;
+		Vec3	m_intensity;
+		
+	public:
+		void SetOrigin(const Vec3 & o) { m_origin = o; }
+		void SetRadius(float r) { m_radius = r; }
+		void SetIntensity(const Vec3 & i) { m_intensity = i; }
+
+		const Vec3 & Origin() const { return m_origin; }
+		float Radius() const { return m_radius; }
+		const Vec3 & Intensity() const { return m_intensity; }
+
+		Vec3 Position(const Vec3 & p) const;
+		Vec3 Intensity(float squared_distance) const; // diffuse
+		Vec3 Intensity(const Vec3 & rayPos, const Vec3 & rayDir) const; // specular
+	};
+
+	OmniLight		m_light;
+
 	void CreateBVH();
 
 	Vec3 GetTarget(float x, float y) const;
 	void DrawGrid();
-	void DrawBVHNode(const BVHNode * pCN, byte level) const;
+	void DrawCollisionNode(const CollisionNode * pCN, byte level) const;
 	void DrawWireframeBox(const BBox & box, const Color & c) const;
 	void DrawBox(const BBox & box, const Color & c) const;
 

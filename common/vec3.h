@@ -167,7 +167,7 @@ struct TVec3
 	{
 		return sqrt(x * x + y * y + z * z);
 	}
-	T Length2() const
+	T LengthSquared() const
 	{
 		return (x * x + y * y + z * z);
 	}
@@ -188,14 +188,23 @@ struct TVec3
 	T Pitch() const; // in radians
 
 	// -------------------------------------------------------------------- //
-
+	
+	TVec3 TransformedCoord(const Matrix &mat) const;
+	TVec3 TransformedNormal(const Matrix &mat) const;
 	void Rotate(const TVec3 &axis, float sin_a, float cos_a);
 	void Rotate(const TVec3 &axis, float angle);
-	void TransformNormal(const Matrix &mat);
-	void TransformCoord(const Matrix &mat);
-	void TTransformNormal(const Matrix &mat);
+	void TransformCoord(const Matrix &mat) { *this = TransformedCoord(mat); }
+	void TransformNormal(const Matrix &mat) { *this = TransformedNormal(mat); }
 	void TTransformCoord(const Matrix &mat);
-	void Perpendicular();
+	void TTransformNormal(const Matrix &mat);
+	TVec3 Perpendicular() const;
+
+	void Scale(const TVec3 &scale)
+	{
+		x *= scale.x;
+		y *= scale.y;
+		z *= scale.z;
+	}
 
 	// -------------------------------------------------------------------- //
 
@@ -220,11 +229,17 @@ struct TVec3
 			a.y + (b.y - a.y) * f,
 			a.z + (b.z - a.z) * f);
 	}
+	static TVec3 Lerp3(const TVec3 & a, const TVec3 & b, const TVec3 & f)
+	{
+		return TVec3(a.x + (b.x - a.x) * f.x,
+					 a.y + (b.y - a.y) * f.y,
+					 a.z + (b.z - a.z) * f.z);
+	}
 	static TVec3 Normalize(const TVec3 & v)
 	{
-		T length2 = v.x * v.x + v.y * v.y + v.z * v.z;
-		if (length2 != (T)0.0) {
-			T f = (T)1.0 / (T)sqrt(length2);
+		T lengthSquared = v.x * v.x + v.y * v.y + v.z * v.z;
+		if (lengthSquared != (T)0.0) {
+			T f = (T)1.0 / (T)sqrt(lengthSquared);
 			return TVec3(v.x * f, v.y * f, v.z * f);
 		}
 		return TVec3::Null;

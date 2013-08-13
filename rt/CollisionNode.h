@@ -1,5 +1,5 @@
 //
-//  BVHNode.h
+//  CollisionNode.h
 //  MiRay/rt
 //
 //  Created by Damir Sagidullin on 01.04.13.
@@ -12,7 +12,7 @@
 namespace mr
 {
 
-class BVHNode
+class CollisionNode
 {
 public:
 	struct sPolygon
@@ -47,7 +47,7 @@ public:
 private:
 	enum { MAX_NODE_TRIANGLES = 8 };
 
-	BVHNode * const m_pParent;
+	CollisionNode * const m_pParent;
 
 	BBox		m_bbox;
 	Vec3		m_center;
@@ -55,7 +55,7 @@ private:
 	byte		m_axis;
 	float		m_dist;
 
-	BVHNode *	m_pChilds[2];
+	CollisionNode *	m_pChilds[2];
 	std::vector<CollisionTriangle *>	m_triangles;
 
 	bool FindSplitPlane(const sPolygonArray & polygons);
@@ -64,15 +64,15 @@ private:
 	static float CalculateSAH(const sPolygonArray & polygons);
 
 public:
-	BVHNode(BVHNode * pParent);
-	~BVHNode();
+	CollisionNode(CollisionNode * pParent);
+	~CollisionNode();
 
 	const BBox & BoundingBox() const { return m_bbox; }
 	const Vec3 & Center() const { return m_center; }
 	const Vec3 & Extents() const { return m_extents; }
 	byte Axis() const { return m_axis; }
 	float Dist() const { return m_dist; }
-	BVHNode * Child(int i) const { return m_pChilds[i]; }
+	CollisionNode * Child(int i) const { return m_pChilds[i]; }
 	const std::vector<CollisionTriangle *> & Triangles() const { return m_triangles; }
 
 	size_t GetNodeCount() const;

@@ -1,16 +1,18 @@
 //
-//  BVHNode.cpp
+//  CollisionNode.cpp
 //  MiRay/rt
 //
 //  Created by Damir Sagidullin on 01.04.13.
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
-#include "BVHNode.h"
+#include "CollisionNode.h"
 
 using namespace mr;
 
-BVHNode::BVHNode(BVHNode * pParent)
+// ------------------------------------------------------------------------ //
+
+CollisionNode::CollisionNode(CollisionNode * pParent)
 	: m_pParent(pParent)
 	, m_axis(0)
 	, m_dist(FLT_MAX)
@@ -19,13 +21,15 @@ BVHNode::BVHNode(BVHNode * pParent)
 	m_bbox.ClearBounds();
 }
 
-BVHNode::~BVHNode()
+CollisionNode::~CollisionNode()
 {
 	delete m_pChilds[0];
 	delete m_pChilds[1];
 }
 
-size_t BVHNode::GetNodeCount() const
+// ------------------------------------------------------------------------ //
+
+size_t CollisionNode::GetNodeCount() const
 {
 	size_t c = 1;
 
@@ -38,7 +42,7 @@ size_t BVHNode::GetNodeCount() const
 	return c;
 }
 
-size_t BVHNode::GetTriangleCount() const
+size_t CollisionNode::GetTriangleCount() const
 {
 	size_t c = m_triangles.size();
 	
@@ -51,11 +55,12 @@ size_t BVHNode::GetTriangleCount() const
 	return c;
 }
 
-size_t BVHNode::GetChildrenDepth() const
+size_t CollisionNode::GetChildrenDepth() const
 {
 	return m_triangles.empty() ? 1 + std::max<size_t>(m_pChilds[0]->GetChildrenDepth(), m_pChilds[1]->GetChildrenDepth()) : 0;
 }
 
+// ------------------------------------------------------------------------ //
 
 //struct SplitVolume
 //{
@@ -93,7 +98,7 @@ size_t BVHNode::GetChildrenDepth() const
 //	}
 //};
 
-bool BVHNode::FindSplitPlane(const sPolygonArray & polygons)
+bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 {
 	const Vec3 vBoxSize = m_bbox.Size();
 	m_axis = vBoxSize.x >= vBoxSize.y ? (vBoxSize.x >= vBoxSize.z ? 0 : 2) : (vBoxSize.y >= vBoxSize.z ? 1 : 2);
@@ -205,7 +210,7 @@ bool BVHNode::FindSplitPlane(const sPolygonArray & polygons)
 //	SplitVolume volume[2];
 //};
 
-//bool BVHNode::FindSplitPlane(const sPolygonArray & polygons)
+//bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 //{
 //	const Vec3 vBoxSize = m_bbox.Size();
 //	m_axis = vBoxSize.x >= vBoxSize.y ? (vBoxSize.x >= vBoxSize.z ? 0 : 2) : (vBoxSize.y >= vBoxSize.z ? 1 : 2);
@@ -294,13 +299,13 @@ bool BVHNode::FindSplitPlane(const sPolygonArray & polygons)
 //	return m_axis >= 0;
 //}
 
-void BVHNode::FillTriangles(const sPolygonArray & polygons)
+void CollisionNode::FillTriangles(const sPolygonArray & polygons)
 {
 	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 		m_triangles.push_back(it->pTriangle);
 }
 
-BBox BVHNode::CalculateBBox(const sPolygonArray & polygons)
+BBox CollisionNode::CalculateBBox(const sPolygonArray & polygons)
 {
 	BBox bbox;
 	bbox.ClearBounds();
@@ -309,7 +314,7 @@ BBox BVHNode::CalculateBBox(const sPolygonArray & polygons)
 	return bbox;
 }
 
-void BVHNode::Create(byte level, const sPolygonArray & polygons)
+void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 {
 	m_bbox = CalculateBBox(polygons);
 	m_center = m_bbox.Center();
@@ -400,10 +405,10 @@ void BVHNode::Create(byte level, const sPolygonArray & polygons)
 
 	level--;
 
-	m_pChilds[0] = new BVHNode(this);
+	m_pChilds[0] = new CollisionNode(this);
 	m_pChilds[0]->Create(level, childPolygons[0]);
 
-	m_pChilds[1] = new BVHNode(this);
+	m_pChilds[1] = new CollisionNode(this);
 	m_pChilds[1]->Create(level, childPolygons[1]);
 
 	if (polygons.size() <= GetChildrenDepth() * 2)

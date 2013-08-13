@@ -150,7 +150,7 @@ struct TVec2
 	{
 		return (T)sqrt(x * x + y * y);
 	}
-	T Length2() const
+	T LengthSquared() const
 	{
 		return (x * x + y * y);
 	}
@@ -184,9 +184,9 @@ struct TVec2
 	}
 	static TVec2 Normalize(const TVec2 &v)
 	{
-		T length2 = v.x * v.x + v.y * v.y;
-		if (length2 != (T)0.0) {
-				T f = (T)1.0 / (T)sqrt(length2);
+		T lengthSquared = v.x * v.x + v.y * v.y;
+		if (lengthSquared != (T)0.0) {
+				T f = (T)1.0 / (T)sqrt(lengthSquared);
 			return TVec2(v.x * f, v.y * f);
 		}
 		return TVec2::Null;

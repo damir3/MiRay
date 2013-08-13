@@ -13,27 +13,27 @@ using namespace mr;
 // ------------------------------------------------------------------------ //
 
 MaterialLayer::MaterialLayer()
-	: m_ambient(ColorF::Null)
-	, m_emissive(ColorF::Null)
-	, m_diffuse(ColorF::White)
-	, m_opacity(ColorF::White)
-	, m_indexOfRefraction(ColorF(1.5f))
+	: m_ambient(0.f)
+	, m_emissive(0.f)
+	, m_diffuse(1.f)
+	, m_opacity(1.f)
+	, m_indexOfRefraction(1.5f)
 	, m_fresnelReflection(false)
-	, m_reflection(ColorF::Null)
-	, m_reflectionTint(ColorF::White)
-	, m_reflectionGlossiness(ColorF::White)
-	, m_reflectionExitColor(ColorF::Null)
-	, m_refractionTint(ColorF::White)
-	, m_refractionGlossiness(ColorF::White)
-	, m_refractionExitColor(ColorF::Null)
-	, m_bumpLevel(ColorF::White)
-	, m_normalmap(ColorF::White)
+	, m_reflection(0.f)
+	, m_reflectionTint(1.f)
+	, m_reflectionRoughness(0.f)
+	, m_reflectionExitColor(0.f)
+	, m_refractionTint(1.f)
+	, m_refractionRoughness(0.f)
+	, m_refractionExitColor(0.f)
+	, m_bumpLevel(1.f)
+	, m_normalmap(1.f)
 {
 }
 
 // ------------------------------------------------------------------------ //
 
-MaterialParameter::MaterialParameter(const ColorF & c)
+MaterialParameter::MaterialParameter(const Vec3 & c)
 	: m_color(c)
 	, m_width(0)
 	, m_height(0)
@@ -76,7 +76,7 @@ float MaterialParameter::GetTextureValue(int x, int y) const
 	}
 }
 
-ColorF MaterialParameter::GetTextureColor(int x, int y) const
+Vec3 MaterialParameter::GetTextureColor(int x, int y) const
 {
 	assert(m_pData);
 	assert(x >= 0 && x < m_width);
@@ -86,42 +86,42 @@ ColorF MaterialParameter::GetTextureColor(int x, int y) const
 		case PIXEL_FORMAT_1B:
 		{
 			float f = B2F(reinterpret_cast<const byte *>(m_pData)[y * m_pitch + x]);
-			return ColorF(f, f, f, f);
+			return Vec3(f);
 		}
 		case PIXEL_FORMAT_3B:
 		{
 			const byte * pData = reinterpret_cast<const byte *>(m_pData) + y * m_pitch + x * 3;
-			return ColorF(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
+			return Vec3(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
 		}
 		case PIXEL_FORMAT_4B:
 		{
 			const byte * pData = reinterpret_cast<const byte *>(m_pData) + y * m_pitch + x * 4;
-			return ColorF(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]), B2F(pData[3]));
+			return Vec3(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
 		}
 		case PIXEL_FORMAT_1F:
 		{
 			float f = reinterpret_cast<const float *>(m_pData)[y * m_pitch + x];
-			return ColorF(f, f, f, f);
+			return Vec3(f);
 		}
 		case PIXEL_FORMAT_3F:
 		{
 			const float * pData = reinterpret_cast<const float *>(m_pData) + y * m_pitch + x * 3;
-			return ColorF(pData[0], pData[1], pData[2]);
+			return Vec3(pData[0], pData[1], pData[2]);
 		}
 		case PIXEL_FORMAT_4F:
 		{
 			const float * pData = reinterpret_cast<const float *>(m_pData) + y * m_pitch + x * 4;
-			return ColorF(pData[0], pData[1], pData[2], pData[3]);
+			return Vec3(pData[0], pData[1], pData[2]);
 		}
 		default:
-			return ColorF::Null;
+			return Vec3::Null;
 	}
 }
 
 float MaterialParameter::Value(const Vec2 & tc) const
 {
 	if (!m_pData)
-		return m_color.r;
+		return m_color.x;
 
 	float u, v;
 	if (tc.x > 1.f)
@@ -161,10 +161,10 @@ float MaterialParameter::Value(const Vec2 & tc) const
 	float c1 = lerp<float>(c11, c12, dx);
 	float c2 = lerp<float>(c21, c22, dx);
 
-	return lerp<float>(c1, c2, dy) * m_color.r;
+	return lerp<float>(c1, c2, dy) * m_color.x;
 }
 
-ColorF MaterialParameter::Color(const Vec2 & tc) const
+Vec3 MaterialParameter::Color(const Vec2 & tc) const
 {
 	if (!m_pData)
 		return m_color;
@@ -199,13 +199,13 @@ ColorF MaterialParameter::Color(const Vec2 & tc) const
 	if (iy < 0)				iy += m_height;
 	if (iy2 >= m_height)	iy2 -= m_height;
 
-	ColorF c11 = GetTextureColor(ix, iy);
-	ColorF c12 = GetTextureColor(ix2, iy);
-	ColorF c21 = GetTextureColor(ix, iy2);
-	ColorF c22 = GetTextureColor(ix2, iy2);
-	ColorF c1 = ColorF::Lerp(c11, c12, dx);
-	ColorF c2 = ColorF::Lerp(c21, c22, dx);
+	Vec3 c11 = GetTextureColor(ix, iy);
+	Vec3 c12 = GetTextureColor(ix2, iy);
+	Vec3 c21 = GetTextureColor(ix, iy2);
+	Vec3 c22 = GetTextureColor(ix2, iy2);
+	Vec3 c1 = Vec3::Lerp(c11, c12, dx);
+	Vec3 c2 = Vec3::Lerp(c21, c22, dx);
 
-	return ColorF::Lerp(c1, c2, dy) * m_color;
+	return Vec3::Lerp(c1, c2, dy) * m_color;
 }
 

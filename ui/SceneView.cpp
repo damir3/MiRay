@@ -98,6 +98,33 @@ void SceneView::SetRenderMode(eRenderMode rm)
 	ResumeRenderThread();
 }
 
+Vec3 SceneView::OmniLight::Intensity(float squared_distance) const
+{
+	return m_intensity / squared_distance;
+}
+
+Vec3 SceneView::OmniLight::Position(const Vec3 & p) const
+{
+	Vec3 delta = Vec3::Normalize(Vec3Rand()) * m_radius;
+	return Vec3::Dot(delta, p - m_origin) > 0.f ? m_origin + delta : m_origin - delta;
+}
+
+Vec3 SceneView::OmniLight::Intensity(const Vec3 & rayPos, const Vec3 & rayDir) const
+{
+	Vec3 delta = m_origin - rayPos;
+	float C = delta.LengthSquared() - (m_radius * m_radius);
+	if (C <= 0.f)
+		return Vec3::Null;
+
+	float A = rayDir.LengthSquared();
+	if (A == 0.f) return Vec3::Null; // degenerate ray
+	float B = -2.f * Vec3::Dot(rayDir, delta);
+	float D = B * B - 4.f * A * C;
+	if (D < 0.f) return Vec3::Null; // not intersect
+	float f = (-B - sqrtf(D)) * 0.5f / A;
+	return f >= 0.f && f <= 1.f ? m_intensity : Vec3::Null;
+}
+
 bool SceneView::LoadScene(const char * pFilename)
 {
 	StopRenderThread();
@@ -162,7 +189,8 @@ void SceneView::CreateBVH()
 			numTriangles += (*itGeom)->m_indices.size() / 3;
 	}
 
-	m_pCS = new BVH(numTriangles);
+	m_pCS = new BVH();
+	CollisionVolume * pVolume = m_pCS->CreateVolume(numTriangles);
 
 	for (Model::MeshArray::const_iterator itMesh = m_pModel->Meshes().begin(), itMeshEnd = m_pModel->Meshes().end(); itMesh != itMeshEnd; ++itMesh)
 	{
@@ -173,20 +201,27 @@ void SceneView::CreateBVH()
 			{
 				CollisionTriangle t(geom.m_vertices[pInd[0]], geom.m_vertices[pInd[1]], geom.m_vertices[pInd[2]],
 									geom.m_pMaterial);
-				m_pCS->AddTriangle(t);
+				pVolume->AddTriangle(t);
 			}
 		}
 	}
 
-	m_pCS->Build(30);
+	pVolume->Build(30);
 	double tm2 = Timer::GetSeconds();
 
 	m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pCS, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
-	m_pRenderThread->SetRenderer(new SoftwareRenderer(*m_pCS));
+	SoftwareRenderer * pSoftwareRenderer = new SoftwareRenderer(*m_pCS);
+	const BBox & bbox = m_pCS->BoundingBox();
+	m_light.SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
+	m_light.SetRadius(m_pCS->BoundingBox().Size().Length() * 0.04f);
+	m_light.SetIntensity(Vec3(0.3f) * m_pCS->BoundingBox().Size().LengthSquared());
+	ILight * pLights[] = {&m_light};
+//	pSoftwareRenderer->SetLights(1, pLights);
+	m_pRenderThread->SetRenderer(pSoftwareRenderer);
 
-	printf("Collision scene creating time: %ld triangles, %d nodes, %d, %f ms\n", m_pCS->Triangles().size(),
-		   static_cast<int>(m_pCS->Root()->GetNodeCount()),
-		   static_cast<int>(m_pCS->Root()->GetChildrenDepth()),
+	printf("Collision scene creating time: %ld triangles, %d nodes, %d, %f ms\n", pVolume->Triangles().size(),
+		   static_cast<int>(pVolume->Root()->GetNodeCount()),
+		   static_cast<int>(pVolume->Root()->GetChildrenDepth()),
 		   (tm2 - tm1) * 1000.0);
 }
 
@@ -453,37 +488,37 @@ void SceneView::DrawWireframeBox(const BBox & box, const Color & c) const
 void SceneView::DrawBox(const BBox & bbox, const Color & c) const
 {
 	glBegin(GL_QUADS);
-	glColor4ubv(VertexColor(c, Vec3::X));
+	glColor4ubv(VertexColor(c, -Vec3::X));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
 	
-	glColor4ubv(VertexColor(c, -Vec3::X));
+	glColor4ubv(VertexColor(c, Vec3::X));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, Vec3::Y));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
 	
 	glColor4ubv(VertexColor(c, -Vec3::Y));
+	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
+	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
+	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
+	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
+	
+	glColor4ubv(VertexColor(c, Vec3::Y));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
 	
-	glColor4ubv(VertexColor(c, Vec3::Z));
+	glColor4ubv(VertexColor(c, -Vec3::Z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
 	
-	glColor4ubv(VertexColor(c, -Vec3::Z));
+	glColor4ubv(VertexColor(c, Vec3::Z));
 	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
 	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
@@ -491,7 +526,7 @@ void SceneView::DrawBox(const BBox & bbox, const Color & c) const
 	glEnd();
 }
 
-void SceneView::DrawBVHNode(const BVHNode * pCN, byte level) const
+void SceneView::DrawCollisionNode(const CollisionNode * pCN, byte level) const
 {
 	if (!pCN)
 		return;
@@ -535,8 +570,8 @@ void SceneView::DrawBVHNode(const BVHNode * pCN, byte level) const
 //		glPolygonMode(GL_FRONT, GL_FILL);
 //	}
 
-	DrawBVHNode(pCN->Child(0), level + 1);
-	DrawBVHNode(pCN->Child(1), level + 1);
+	DrawCollisionNode(pCN->Child(0), level + 1);
+	DrawCollisionNode(pCN->Child(1), level + 1);
 }
 
 void SceneView::UpdateMatrices()
@@ -614,7 +649,10 @@ void SceneView::Draw()
 	//		DrawMesh(*(*itMesh));
 
 		if (m_bShowBVH)
-			DrawBVHNode(m_pCS->Root(), 0);
+		{
+			for (size_t i = 0; i < m_pCS->NumVolumes(); i++)
+				DrawCollisionNode(m_pCS->Volume(i)->Root(), 0);
+		}
 	}
 
 	DrawRenderMap();
@@ -628,8 +666,14 @@ void SceneView::Draw()
 
 		if (m_bGesture)
 		{
-			Vec3 vBoxExt = Vec3( Vec3::Dot(m_vGestureTarget - m_matCamera.Pos(), m_matCamera.AxisZ()) * 0.005f );
+			Vec3 vBoxExt = Vec3( fabsf(Vec3::Dot(m_vGestureTarget - m_matCamera.Pos(), m_matCamera.AxisZ())) * 0.005f );
 			DrawBox(BBox(m_vGestureTarget - vBoxExt, m_vGestureTarget + vBoxExt), Color(0, 128, 255));
+		}
+	
+		{
+			Vec3 vBoxExt = Vec3(m_light.Radius());
+			ColorF c = Vec3::Normalize(m_light.Intensity());
+			DrawBox(BBox(m_light.Origin() - vBoxExt, m_light.Origin() + vBoxExt), c);
 		}
 
 		glLineWidth(1.f);
@@ -647,7 +691,7 @@ void SceneView::Draw()
 		glColor3ub(0, 255, 0);
 		glVertex3fv(m_vGestureTarget);
 		glVertex3fv(m_vGestureTarget + m_vGestureTargetNormal * (m_pModel->BoundingBox().Size().Length() * 0.01f));
-		
+
 		glEnd();
 		glDepthMask(GL_TRUE);
 //		glLineWidth(1.f);

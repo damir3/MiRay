@@ -8,8 +8,19 @@
 
 #include "SoftwareRenderer.h"
 #include "Material.h"
+#include "Light.h"
 
 using namespace mr;
+
+// ------------------------------------------------------------------------ //
+
+SoftwareRenderer::SoftwareRenderer(BVH & scene)
+	: m_scene(scene)
+	, m_pImage(NULL)
+	, m_pEnvironmentMap(NULL)
+	, m_nRayCounter(0)
+{
+}
 
 SoftwareRenderer::~SoftwareRenderer()
 {
@@ -21,6 +32,17 @@ SoftwareRenderer::~SoftwareRenderer()
 		m_renderThreads.pop_back();
 	}
 }
+
+// ------------------------------------------------------------------------ //
+
+void SoftwareRenderer::SetLights(size_t num, ILight ** ppLights)
+{
+	m_lights.resize(num);
+	for (size_t i = 0; i < num; i++)
+		m_lights[i] = ppLights[i];
+}
+
+// ------------------------------------------------------------------------ //
 
 void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 							  const Matrix & matCamera, const Matrix & matViewProj,
@@ -34,7 +56,8 @@ void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 	m_fFrameBlend = 1.f / (nFrameNumber + 1);
 	m_pEnvironmentMap = pEnvironmentMap;
 
-	m_fDistEpsilon = m_scene.Root()->BoundingBox().Size().Length() * 0.0001f;
+	m_fRayLength = m_scene.BoundingBox().Size().Length();
+	m_fDistEpsilon = m_fRayLength * 0.0001f;
 	m_nMaxDepth = 6;
 	m_dp = Vec2(2.f / m_rcRenderArea.Width(), 2.f / m_rcRenderArea.Height());
 
@@ -101,6 +124,8 @@ void SoftwareRenderer::Interrupt()
 	Join();
 }
 
+// ------------------------------------------------------------------------ //
+
 bool SoftwareRenderer::GetNextArea(RectI & rc)
 {
 	Mutex::Locker locker(m_mutex);
@@ -120,6 +145,12 @@ bool SoftwareRenderer::GetNextArea(RectI & rc)
 		m_pos.x = rc.right;
 
 	return true;
+}
+
+ColorF SoftwareRenderer::RenderPixel(const Vec2 &p) const
+{
+	sResult res = TraceRay(m_vEyePos, m_vCamDelta[2] + m_vCamDelta[0] * p.x - m_vCamDelta[1] * p.y, 0, NULL);
+	return ColorF(res.color.x, res.color.y, res.color.z, res.opacity.x);
 }
 
 void SoftwareRenderer::RenderArea(const RectI & rc) const
@@ -159,6 +190,8 @@ void SoftwareRenderer::RenderThread::ThreadProc()
 //	printf("end %p\n", this);
 }
 
+// ------------------------------------------------------------------------ //
+
 ColorF SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 {
 	if (!m_pEnvironmentMap)
@@ -174,21 +207,21 @@ ColorF SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 //	return m_pEnvironmentMap->GetPixel(vDir.x * d + 0.5f, vDir.z * -d + 0.5f);
 }
 
-float FresnelReflection(const Vec3 & I,const Vec3 & N, float eta)
-{
-	const float	e = 1.f / eta;
-	const float	c = -Vec3::Dot(I, N);
-	const float	t = e * e + c * c - 1.f;
-	const float	g = sqrtf(std::max<float>(t, 0.f));
-	const float	a = (g - c) / (g + c);
-	const float	b = (c * (g + c) - 1.f) / (c * (g - c) + 1.f);
-
-	return clamp(0.5f * a * a * (1.f + b * b), 0.f, 1.f);
-
-//	float R0 = powf((eta - 1.f) / (eta + 1.f), 2.f);
-//	float ca = Vec3::Dot(I, N);
-//	return lerp(powf(1.f + ca, 5.f), 1.f, R0);
-}
+//float FresnelReflection(const Vec3 & I,const Vec3 & N, float eta)
+//{
+//	const float	e = 1.f / eta;
+//	const float	c = -Vec3::Dot(I, N);
+//	const float	t = e * e + c * c - 1.f;
+//	const float	g = sqrtf(std::max<float>(t, 0.f));
+//	const float	a = (g - c) / (g + c);
+//	const float	b = (c * (g + c) - 1.f) / (c * (g - c) + 1.f);
+//
+//	return clamp(0.5f * a * a * (1.f + b * b), 0.f, 1.f);
+//
+////	float R0 = powf((eta - 1.f) / (eta + 1.f), 2.f);
+////	float ca = Vec3::Dot(I, N);
+////	return lerp(powf(1.f + ca, 5.f), 1.f, R0);
+//}
 
 float FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2)
 {
@@ -202,15 +235,16 @@ float FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2)
 	return (rO * rO + rP * rP) * 0.5f;
 }
 
-Vec3 FaceForward(const Vec3 & v, const Vec3 & normal)
-{
-	return Vec3::Dot(v, normal) < 0.f ? -v : v;
-}
+//Vec3 FaceForward(const Vec3 & v, const Vec3 & normal)
+//{
+//	return Vec3::Dot(v, normal) < 0.f ? -v : v;
+//}
 
-ColorF SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const
+SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const
 {
 	TraceResult tr;
 	tr.pTriangle = pPrevTriangle;
+	++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
 	if (!m_scene.TraceRay(v1, v2, tr))
 		return EnvironmentColor(v2 - v1);
 
@@ -219,174 +253,208 @@ ColorF SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDe
 	Vec3 normal = tr.pTriangle->GetNormal(tr.pc);
 
 	if (pMaterial->Normalmap().HasTexture())
-	{
+	{// bump mapping
 		float bumpLevel = pMaterial->BumpLevel().Value(tc);
 		if (bumpLevel > 0.f)
 		{
-			ColorF cn = pMaterial->Normalmap().Color(tc);
 			Vec3 tangent, binormal;
 			tr.pTriangle->GetTangents(tangent, binormal, normal);
-			Vec3 n(cn.r * 2.f - 1.f, cn.g * 2.f - 1.f, cn.b * 2.f - 1.f);
+			Vec3 n = pMaterial->Normalmap().Color(tc) * 2.f - Vec3(1.f);
 			n = Vec3::Lerp(Vec3::Z, n, bumpLevel);
 			normal = tangent * n.x + binormal * n.y + normal * n.z;
-			normal.Normalize();
 		}
 	}
 
-	bool bInverseNormal = Vec3::Dot(tr.pTriangle->Edge1(), Vec3::Cross(v2 - v1, tr.pTriangle->Edge2())) > 0.f;
-//	bool bInverseNormal = Vec3::Dot(normal, v1 - v2) < 0.f;
-	Vec3 N = bInverseNormal ? -normal : normal;
+	if (tr.pVolume)
+		normal = normal.TransformedNormal(tr.pVolume->Transformation());
+
+	normal.Normalize();
+	Vec3 N = tr.backface ? -normal : normal;
+
 //	printf("%d: (%g %g %g) -> (%g %g %g) %p (%g %g %g)\n", nTraceDepth, v1.x, v1.y, v1.z, tr.pos.x, tr.pos.y, tr.pos.z, tr.pTriangle, normal.x, normal.y, normal.z);
 
-//	ColorF c = LookUpTexture(p, dp, tr.pTriangle);
+	Vec3 kR = pMaterial->Reflection().Color(tc);
+	Vec3 I = Vec3::Normalize(v2 - v1);
 	
-	ColorF c = pMaterial->Diffuse().Color(tc);
-	c.a = pMaterial->Opacity().Value(tc);
-
-	if (c.a > 0.f)
+	Vec3 ior = pMaterial->IndexOfRefraction().Color(tc);
+	float eta = tr.backface ? ior.x : 1.f / ior.x;
+	if (pMaterial->FresnelReflection() && !tr.backface)
 	{
-//		ColorF cEnv = ColorF::Null;
-//		Vec3 P = tr.pos + N * m_fDistEpsilon;
-//		float l = 0.f;
-//
-//		for (int i = 0; i < 1; i++)
-//		{
-//			Vec3 vRandDir;
-//			float dl;
-//			do {
-//				vRandDir = Vec3::Normalize(Vec3Rand());
-//				dl = Vec3::Dot(vRandDir, N);
-//			} while (dl > -0.05f && dl < 0.05f);
-//
-//			if (dl < 0.f)
-//			{
-//				dl = -dl;
-//				vRandDir = -vRandDir;
-//			}
-//
-//			TraceResult tr2;
-//			if (!m_scene.TraceRay(P, P + vRandDir * 200.f, tr2))
-//			{
-//				cEnv += EnvironmentColor(vRandDir) * dl;
-//	//			cEnv += ColorF::White * dl;
-//			}
-//
-//			l += dl;
-//		}
-//
-//		cEnv *= (1.f / l);
-//		c.r *= cEnv.r;
-//		c.g *= cEnv.g;
-//		c.b *= cEnv.b;
-
-		float l = VertexLight(N);
-		c.r *= l;
-		c.g *= l;
-		c.b *= l;
+		float fresnel = tr.backface ? FresnelReflection(I, N, ior.x, 1.f) : FresnelReflection(I, N, 1.f, ior.x);
+		kR.x = std::min<float>(kR.x + fresnel, 1.f);
+		kR.y = std::min<float>(kR.y + fresnel, 1.f);
+		kR.z = std::min<float>(kR.z + fresnel, 1.f);
 	}
 
-	ColorF reflectionColor = pMaterial->Reflection().Color(tc);
-	if (c.a >= 1.f && reflectionColor.r <= 0.f && !pMaterial->FresnelReflection())
-		return c; // no reflection, no refraction
+	bool bReflection = (kR.x > 0.f || kR.y > 0.f || kR.z > 0.f);
+	Vec3 R; // reflection direction
+	sResult cR(Vec3::Null, Vec3::Null);
 
 	nTraceDepth++;
+//	if (frand() < kR.x)
+	if (bReflection)
+	{// reflection
+		if (nTraceDepth >= m_nMaxDepth)
+			return sResult(pMaterial->RefractionExitColor().Color(tc), Vec3(0.f));
+		
+		float reflectionRoughness = pMaterial->ReflectionRoughness().Value(tc);
+		Vec3 RN = reflectionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (reflectionRoughness * 0.25f)) : N;
+		R = Vec3::Reflect(I, RN);
+		Vec3 v1R = tr.pos + N * m_fDistEpsilon;
+		cR = TraceRay(v1R, v1R + R * m_fRayLength, nTraceDepth, tr.pTriangle);
+		cR.color.Scale(pMaterial->ReflectionTint().Color(tc));
 
-	Vec3 I = v2 - v1;
-	float dist = I.Normalize();
-
-	float ior = pMaterial->IndexOfRefraction().Value(tc);
-	float eta = bInverseNormal ? ior : 1.f / ior;
-	float kR = reflectionColor.r;
-	if (pMaterial->FresnelReflection() && !bInverseNormal)
-	{
-		float fresnel = bInverseNormal ? FresnelReflection(I, N, ior, 1.f) : FresnelReflection(I, N, 1.f, ior);
-		kR = std::min<float>(kR + fresnel, 1.f);
-	}
-//		kR = std::min<float>(kR + FresnelReflection(I, N, eta), 1.f);
-
-//	bool bReflect = (rand() & 0xFF) * (kR + (1.f - kR) * c.a) <= kR * 0xFF;
-
-	if (c.a < 1.f && kR < 1.f)// && !bReflect)
-	{// refraction
-		if (nTraceDepth < m_nMaxDepth)
+		if ((kR.x >= 1.f && kR.y >= 1.f && kR.z >= 1.f))
 		{
-			float refractionGlossiness = pMaterial->RefractionGlossiness().Value(tc);
-			Vec3 RN = refractionGlossiness < 1.f ? Vec3::Normalize(N + Vec3Rand() * ((1.f - refractionGlossiness) * 0.25f)) : N;
-			Vec3 T = Vec3::Refract(I, RN, eta);
-			if (T.Length2() > 0.f)
-			{
-				Vec3 v1T = tr.pos - N * m_fDistEpsilon;
-				ColorF cT = TraceRay(v1T, v1T + T * dist, nTraceDepth, tr.pTriangle);
-				cT *= pMaterial->ReflectionTint().Color(tc);
+			cR.color += pMaterial->Emissive().Color(tc);
+			return cR;
+		}
+	}
 
-				c = ColorF::LerpRGB(cT, c, c.a, c.a);
+	Vec3 opacity = pMaterial->Opacity().Color(tc);
+	bool bTransmission = (opacity.x < 1.f || opacity.y < 1.f || opacity.z < 1.f);
+	sResult cT(Vec3::Null, Vec3::Null);
+
+//	if (frand() > opacity.x)
+	if (bTransmission)
+	{// transmission
+		if (nTraceDepth >= m_nMaxDepth)
+			return sResult(pMaterial->RefractionExitColor().Color(tc), Vec3(0.f));
+
+		float refractionRoughness = pMaterial->RefractionRoughness().Value(tc);
+		Vec3 RN = refractionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (refractionRoughness * 0.25f)) : N;
+		Vec3 T = Vec3::Refract(I, RN, eta);
+		if (T.LengthSquared() == 0.f)
+			return sResult(pMaterial->RefractionExitColor().Color(tc), Vec3(0.f));
+
+		Vec3 v1T = tr.pos - N * m_fDistEpsilon;
+		cT = TraceRay(v1T, v1T + T * m_fRayLength, nTraceDepth, tr.pTriangle);
+		if (!tr.backface)
+			cT.color.Scale(pMaterial->RefractionTint().Color(tc));
+
+//		return cT;
+	}
+
+	Vec3 P = tr.pos + normal * m_fDistEpsilon;
+	sResult res(Vec3::Null, opacity);
+
+	if (opacity.x > 0.f || opacity.y > 0.f || opacity.z > 0.f)
+	{
+		Vec3 diffuse = pMaterial->Diffuse().Color(tc);
+		res.color += pMaterial->Ambient().Color(tc);
+
+		{// ambient occlusion
+			Vec3 vRandDir = RandomDirection(normal);
+			TraceResult otl;
+			++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
+			if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
+			{
+				ColorF envColor = EnvironmentColor(vRandDir);
+				res.color += Vec3(envColor.r, envColor.g, envColor.b);
 			}
 		}
-		else
-			c = ColorF::LerpRGB(pMaterial->RefractionExitColor().Color(tc), c, c.a, c.a);
-	}
 
-	if (kR > 0.f)// && bReflect)
-	{// reflection
-		c.a = std::min<float>(c.a + kR, 1.f); // opacity
-		if (nTraceDepth < m_nMaxDepth)
-		{
-			float reflectionGlossiness = pMaterial->ReflectionGlossiness().Value(tc);
-			Vec3 RN = reflectionGlossiness < 1.f ? Vec3::Normalize(N + Vec3Rand() * ((1.f - reflectionGlossiness) * 0.25f)) : N;
-			Vec3 R = Vec3::Reflect(I, RN);
-			Vec3 v1R = tr.pos + N * m_fDistEpsilon;
-			ColorF cR = TraceRay(v1R, v1R + R * dist, nTraceDepth, tr.pTriangle);
-			cR *= pMaterial->ReflectionTint().Color(tc);
-			c = ColorF::LerpRGB(c, cR, kR, c.a);
+		if (!m_lights.empty())
+		{// lighting
+			ILight * pLight = m_lights[rand() % m_lights.size()];
+			Vec3 vLightPos = pLight->Position(P);
+			Vec3 vLightDir = vLightPos - P;
+			float l2 = vLightDir.LengthSquared();
+			if (l2 > 0.f)
+			{
+				float dp = Vec3::Dot(normal, vLightDir);
+				if (dp > 0.f)
+				{
+					TraceResult ltr;
+					++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
+					if (!m_scene.TraceRay(P, vLightPos, ltr))
+					{
+						// diffuse
+						Vec3 vLightIntensity = pLight->Intensity(l2);
+						if (vLightIntensity != Vec3::Null)
+							res.color += vLightIntensity * dp / sqrtf(l2);
+						
+//						// specular
+//						if (bReflection)
+//							cReflection += pLight->Intensity(P, P + R * dist);
+					}
+				}
+			}
 		}
-		else
-			c = ColorF::LerpRGB(c, pMaterial->RefractionExitColor().Color(tc), kR, c.a);
+
+		res.color.Scale(diffuse);
 	}
 
-	return c;
+	if (bTransmission)
+	{
+		res.color = Vec3::Lerp3(cT.color, res.color, opacity);
+		cT.opacity.Scale(Vec3(1.f) - res.opacity);
+		res.opacity += cT.opacity;
+	}
+
+	if (bReflection)
+	{
+		res.color = Vec3::Lerp3(res.color, cR.color, kR);
+		res.opacity = Vec3::Lerp3(res.opacity, cR.opacity, kR);
+	}
+
+	res.color += pMaterial->Emissive().Color(tc);
+
+	return res;
 }
 
-ColorF SoftwareRenderer::RenderPixel(const Vec2 &p) const
+// ------------------------------------------------------------------------ //
+
+Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal)
 {
-	return TraceRay(m_vEyePos, m_vCamDelta[2] + m_vCamDelta[0] * p.x - m_vCamDelta[1] * p.y, 0, NULL);
+	Vec3 axis1 = normal.Perpendicular();
+	Vec3 axis2 = Vec3::Cross(normal, axis1);
+	float cosA = frand();
+	float sinA = sqrtf(1.f - cosA * cosA);
+	float B = rand() * (M_2PIf / RAND_MAX);
+	return axis1 * (sinA * cosf(B)) + axis2 * (sinA * sinf(B)) + normal * cosA;
 }
 
-//ColorF SoftwareRenderer::LookUpTexture(const Vec2 & p, const Vec2 & dp, const CollisionTriangle * pTriangle) const
-//{
-//	const Material * pMaterial = static_cast<const Material *>(pTriangle->UserData());
-//	const int nsx = 4;
-//	const int nsy = 4;
-//	const Vec2 ds(dp.x / nsx, dp.y / nsy);
-//	const Vec2 sp(p.x - (nsx - 1) * 0.5f * ds.x, p.y - (nsy - 1) * 0.5f * ds.y);
-//	const float d1 = Vec3::Dot(m_vEyePos, pTriangle->Normal()) - pTriangle->Dist();
-//	
-//	ColorF res = ColorF::Null;
-//	for (int sy = 0; sy < nsy; sy++)
-//	{
-//		for (int sx = 0; sx < nsx; sx++)
-//		{
-//			Vec4 v(sp.x + sx * ds.x, -(sp.y + sy * ds.y), 1.f, 1.f);
-//			v.Transform(matViewProjInv);
-//			Vec3 v2 = Vec3(v.x, v.y, v.z) / v.w;
-//			
-//			float d2 = Vec3::Dot(v2, pTriangle->Normal()) - pTriangle->Dist();
-//			if (!((d1 >= 0.f) ^ (d2 >= 0.f)))
-//				continue;
-//			
-//			float dd = d1 - d2;
-//			assert(dd != 0.f);
-//			float f = d1 / dd;
-//			assert(f >= 0.f && f <= 1.f);
-//			Vec3 pos = Vec3::Lerp(m_vEyePos, v2, f);
-//			
-//			Vec2 pc;
-//			pTriangle->GetParametricCoordsNoCheck(pc, pos);
-//			
-//			Vec2 tc = pTriangle->GetTexCoord(pc);
-//			res += pMaterial->m_pDiffuseTexture ? pMaterial->m_pDiffuseTexture->GetPixel(tc.x, tc.y) : ColorF::White;
-////			res += m_pTexture ? m_pTexture->GetPixel(tc.x, tc.y) : ColorF::White;
-//		}
-//	}
-//	
-//	return res * (1.f / (nsx * nsy));
-//}
+// ------------------------------------------------------------------------ //
+
+/*
+ColorF SoftwareRenderer::LookUpTexture(const Vec2 & p, const Vec2 & dp, const CollisionTriangle * pTriangle) const
+{
+	const Material * pMaterial = static_cast<const Material *>(pTriangle->UserData());
+	const int nsx = 4;
+	const int nsy = 4;
+	const Vec2 ds(dp.x / nsx, dp.y / nsy);
+	const Vec2 sp(p.x - (nsx - 1) * 0.5f * ds.x, p.y - (nsy - 1) * 0.5f * ds.y);
+	const float d1 = Vec3::Dot(m_vEyePos, pTriangle->Normal()) - pTriangle->Dist();
+	
+	ColorF res = ColorF::Null;
+	for (int sy = 0; sy < nsy; sy++)
+	{
+		for (int sx = 0; sx < nsx; sx++)
+		{
+			Vec4 v(sp.x + sx * ds.x, -(sp.y + sy * ds.y), 1.f, 1.f);
+			v.Transform(matViewProjInv);
+			Vec3 v2 = Vec3(v.x, v.y, v.z) / v.w;
+			
+			float d2 = Vec3::Dot(v2, pTriangle->Normal()) - pTriangle->Dist();
+			if (!((d1 >= 0.f) ^ (d2 >= 0.f)))
+				continue;
+			
+			float dd = d1 - d2;
+			assert(dd != 0.f);
+			float f = d1 / dd;
+			assert(f >= 0.f && f <= 1.f);
+			Vec3 pos = Vec3::Lerp(m_vEyePos, v2, f);
+			
+			Vec2 pc;
+			pTriangle->GetParametricCoordsNoCheck(pc, pos);
+			
+			Vec2 tc = pTriangle->GetTexCoord(pc);
+			res += pMaterial->m_pDiffuseTexture ? pMaterial->m_pDiffuseTexture->GetPixel(tc.x, tc.y) : ColorF::White;
+//			res += m_pTexture ? m_pTexture->GetPixel(tc.x, tc.y) : ColorF::White;
+		}
+	}
+	
+	return res * (1.f / (nsx * nsy));
+}
+*/

@@ -289,25 +289,27 @@ void Vec3::Rotate(const Vec3 &axis, float rad)
 		src_z*((one_c * zz) + cos_a);
 }
 
-template<> 
-void Vec3::TransformNormal(const Matrix &mat)
+template<>
+Vec3 Vec3::TransformedCoord(const Matrix &mat) const
 {
-	Vec3 tmp = *(this);
-	x = tmp.x*mat.m11 + tmp.y*mat.m21 + tmp.z*mat.m31;
-	y = tmp.x*mat.m12 + tmp.y*mat.m22 + tmp.z*mat.m32;
-	z = tmp.x*mat.m13 + tmp.y*mat.m23 + tmp.z*mat.m33;
+	Vec3 tmp;
+	tmp.x = x * mat.m11 + y * mat.m21 + z * mat.m31 + mat.m41;
+	tmp.y = x * mat.m12 + y * mat.m22 + z * mat.m32 + mat.m42;
+	tmp.z = x * mat.m13 + y * mat.m23 + z * mat.m33 + mat.m43;
+	return tmp;
 }
 
-template<> 
-void Vec3::TransformCoord(const Matrix &mat)
+template<>
+Vec3 Vec3::TransformedNormal(const Matrix &mat) const
 {
-	Vec3 tmp = *(this);
-	x = tmp.x*mat.m11 + tmp.y*mat.m21 + tmp.z*mat.m31 + mat.m41;
-	y = tmp.x*mat.m12 + tmp.y*mat.m22 + tmp.z*mat.m32 + mat.m42;
-	z = tmp.x*mat.m13 + tmp.y*mat.m23 + tmp.z*mat.m33 + mat.m43;
+	Vec3 tmp;
+	tmp.x = x * mat.m11 + y * mat.m21 + z * mat.m31;
+	tmp.y = x * mat.m12 + y * mat.m22 + z * mat.m32;
+	tmp.z = x * mat.m13 + y * mat.m23 + z * mat.m33;
+	return tmp;
 }
 
-template<> 
+template<>
 void Vec3::TTransformNormal(const Matrix &mat)
 {
 	Vec3 tmp = *(this);
@@ -326,17 +328,17 @@ void Vec3::TTransformCoord(const Matrix &mat)
 }
 
 template<> 
-void Vec3::Perpendicular()
+Vec3 Vec3::Perpendicular() const
 {
-	//if (x == 0 && y == 0 && z == 0) return;
-
+	Vec3 v;
 	if (fabsf(x) <= fabsf(y) && fabsf(x) <= fabsf(z))
-		*this = Vec3(y*y+z*z, -x*y, -x*z);
+		v = Vec3(y*y+z*z, -x*y, -x*z);
 	else if (fabsf(y) <= fabsf(z))
-		*this = Vec3(-y*x, x*x+z*z, -y*z);
+		v = Vec3(-y*x, x*x+z*z, -y*z);
 	else 
-		*this = Vec3(-z*x, -z*y, x*x+y*y);
+		v = Vec3(-z*x, -z*y, x*x+y*y);
 
-	Normalize();
+	v.Normalize();
+	return v;
 }
 

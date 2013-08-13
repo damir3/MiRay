@@ -7,10 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2657B06B17B37BCA00324810 /* CollisionVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2657B06917B37BCA00324810 /* CollisionVolume.cpp */; };
+		2657B06C17B37BCA00324810 /* CollisionVolume.h in Headers */ = {isa = PBXBuildFile; fileRef = 2657B06A17B37BCA00324810 /* CollisionVolume.h */; };
+		267A9E6417B73CB200771E1C /* Light.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 267A9E6217B73CB200771E1C /* Light.cpp */; };
+		267A9E6517B73CB200771E1C /* Light.h in Headers */ = {isa = PBXBuildFile; fileRef = 267A9E6317B73CB200771E1C /* Light.h */; };
 		26873325176F0EA0004B4144 /* BVH.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26873319176F0EA0004B4144 /* BVH.cpp */; };
 		26873326176F0EA0004B4144 /* BVH.h in Headers */ = {isa = PBXBuildFile; fileRef = 2687331A176F0EA0004B4144 /* BVH.h */; };
-		26873327176F0EA0004B4144 /* BVHNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2687331B176F0EA0004B4144 /* BVHNode.cpp */; };
-		26873328176F0EA0004B4144 /* BVHNode.h in Headers */ = {isa = PBXBuildFile; fileRef = 2687331C176F0EA0004B4144 /* BVHNode.h */; };
+		26873327176F0EA0004B4144 /* CollisionNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2687331B176F0EA0004B4144 /* CollisionNode.cpp */; };
+		26873328176F0EA0004B4144 /* CollisionNode.h in Headers */ = {isa = PBXBuildFile; fileRef = 2687331C176F0EA0004B4144 /* CollisionNode.h */; };
 		26873329176F0EA0004B4144 /* CollisionRay.h in Headers */ = {isa = PBXBuildFile; fileRef = 2687331D176F0EA0004B4144 /* CollisionRay.h */; };
 		2687332A176F0EA0004B4144 /* CollisionTriangle.h in Headers */ = {isa = PBXBuildFile; fileRef = 2687331E176F0EA0004B4144 /* CollisionTriangle.h */; };
 		2687332B176F0EA0004B4144 /* OpenCLRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2687331F176F0EA0004B4144 /* OpenCLRenderer.cpp */; };
@@ -23,11 +27,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2657B06917B37BCA00324810 /* CollisionVolume.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CollisionVolume.cpp; path = ../../rt/CollisionVolume.cpp; sourceTree = "<group>"; };
+		2657B06A17B37BCA00324810 /* CollisionVolume.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CollisionVolume.h; path = ../../rt/CollisionVolume.h; sourceTree = "<group>"; };
 		267566AB1709252D00130D1B /* librt.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librt.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		267A9E6217B73CB200771E1C /* Light.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Light.cpp; path = ../../rt/Light.cpp; sourceTree = "<group>"; };
+		267A9E6317B73CB200771E1C /* Light.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Light.h; path = ../../rt/Light.h; sourceTree = "<group>"; };
 		26873319176F0EA0004B4144 /* BVH.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BVH.cpp; path = ../../rt/BVH.cpp; sourceTree = "<group>"; };
 		2687331A176F0EA0004B4144 /* BVH.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BVH.h; path = ../../rt/BVH.h; sourceTree = "<group>"; };
-		2687331B176F0EA0004B4144 /* BVHNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BVHNode.cpp; path = ../../rt/BVHNode.cpp; sourceTree = "<group>"; };
-		2687331C176F0EA0004B4144 /* BVHNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BVHNode.h; path = ../../rt/BVHNode.h; sourceTree = "<group>"; };
+		2687331B176F0EA0004B4144 /* CollisionNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CollisionNode.cpp; path = ../../rt/CollisionNode.cpp; sourceTree = "<group>"; };
+		2687331C176F0EA0004B4144 /* CollisionNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CollisionNode.h; path = ../../rt/CollisionNode.h; sourceTree = "<group>"; };
 		2687331D176F0EA0004B4144 /* CollisionRay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CollisionRay.h; path = ../../rt/CollisionRay.h; sourceTree = "<group>"; };
 		2687331E176F0EA0004B4144 /* CollisionTriangle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CollisionTriangle.h; path = ../../rt/CollisionTriangle.h; sourceTree = "<group>"; };
 		2687331F176F0EA0004B4144 /* OpenCLRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenCLRenderer.cpp; path = ../../rt/OpenCLRenderer.cpp; sourceTree = "<group>"; };
@@ -53,12 +61,16 @@
 		267566A21709252D00130D1B = {
 			isa = PBXGroup;
 			children = (
+				267A9E6217B73CB200771E1C /* Light.cpp */,
+				267A9E6317B73CB200771E1C /* Light.h */,
 				26CDA259177AC7AC00291530 /* Material.cpp */,
 				26CDA25D177AD76800291530 /* Material.h */,
 				26873319176F0EA0004B4144 /* BVH.cpp */,
 				2687331A176F0EA0004B4144 /* BVH.h */,
-				2687331B176F0EA0004B4144 /* BVHNode.cpp */,
-				2687331C176F0EA0004B4144 /* BVHNode.h */,
+				2657B06917B37BCA00324810 /* CollisionVolume.cpp */,
+				2657B06A17B37BCA00324810 /* CollisionVolume.h */,
+				2687331B176F0EA0004B4144 /* CollisionNode.cpp */,
+				2687331C176F0EA0004B4144 /* CollisionNode.h */,
 				2687331D176F0EA0004B4144 /* CollisionRay.h */,
 				2687331E176F0EA0004B4144 /* CollisionTriangle.h */,
 				2687331F176F0EA0004B4144 /* OpenCLRenderer.cpp */,
@@ -86,13 +98,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				26873326176F0EA0004B4144 /* BVH.h in Headers */,
-				26873328176F0EA0004B4144 /* BVHNode.h in Headers */,
+				26873328176F0EA0004B4144 /* CollisionNode.h in Headers */,
 				26873329176F0EA0004B4144 /* CollisionRay.h in Headers */,
 				2687332A176F0EA0004B4144 /* CollisionTriangle.h in Headers */,
 				2687332C176F0EA0004B4144 /* OpenCLRenderer.h in Headers */,
 				2687332D176F0EA0004B4144 /* precompiled.h in Headers */,
 				2687332F176F0EA0004B4144 /* SoftwareRenderer.h in Headers */,
 				26CDA25E177AD76800291530 /* Material.h in Headers */,
+				2657B06C17B37BCA00324810 /* CollisionVolume.h in Headers */,
+				267A9E6517B73CB200771E1C /* Light.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -148,10 +162,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				26873325176F0EA0004B4144 /* BVH.cpp in Sources */,
-				26873327176F0EA0004B4144 /* BVHNode.cpp in Sources */,
+				26873327176F0EA0004B4144 /* CollisionNode.cpp in Sources */,
 				2687332B176F0EA0004B4144 /* OpenCLRenderer.cpp in Sources */,
 				2687332E176F0EA0004B4144 /* SoftwareRenderer.cpp in Sources */,
 				26CDA25B177AC7AC00291530 /* Material.cpp in Sources */,
+				2657B06B17B37BCA00324810 /* CollisionVolume.cpp in Sources */,
+				267A9E6417B73CB200771E1C /* Light.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

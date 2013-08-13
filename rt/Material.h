@@ -23,7 +23,7 @@ enum ePixelFormat
 
 class MaterialParameter
 {
-	ColorF			m_color;
+	Vec3			m_color;
 
 	int				m_width;
 	int				m_height;
@@ -32,16 +32,16 @@ class MaterialParameter
 	const void *	m_pData;
 
 	float GetTextureValue(int x, int y) const;
-	ColorF GetTextureColor(int x, int y) const;
+	Vec3 GetTextureColor(int x, int y) const;
 
 public:
-	MaterialParameter(const ColorF & c);
+	MaterialParameter(const Vec3 & c);
 
 	float Value(const Vec2 & tc) const;
-	ColorF Color(const Vec2 & tc) const;
+	Vec3 Color(const Vec2 & tc) const;
 
-	void SetColor(const ColorF & c) { m_color = c; }
-	const ColorF & GetColor() const { return m_color; }
+	void SetColor(const Vec3 & c) { m_color = c; }
+	const Vec3 & GetColor() const { return m_color; }
 
 	void SetTexture(int width, int height, ePixelFormat pf, int pitch, const void * pData);
 	bool HasTexture() const { return NULL != m_pData; }
@@ -64,11 +64,11 @@ protected:
 	bool m_fresnelReflection;
 	MaterialParameter	m_reflection;
 	MaterialParameter	m_reflectionTint;
-	MaterialParameter	m_reflectionGlossiness;
+	MaterialParameter	m_reflectionRoughness;
 	MaterialParameter	m_reflectionExitColor;
 
 	MaterialParameter	m_refractionTint;
-	MaterialParameter	m_refractionGlossiness;
+	MaterialParameter	m_refractionRoughness;
 	MaterialParameter	m_refractionExitColor;
 
 	MaterialParameter	m_bumpLevel;
@@ -91,11 +91,11 @@ public:
 	bool FresnelReflection() const { return m_fresnelReflection; }
 	const MaterialParameter & Reflection() const { return m_reflection; }
 	const MaterialParameter & ReflectionTint() const { return m_reflectionTint; }
-	const MaterialParameter & ReflectionGlossiness() const { return m_reflectionGlossiness; }
+	const MaterialParameter & ReflectionRoughness() const { return m_reflectionRoughness; }
 	const MaterialParameter & ReflectionExitColor() const { return m_reflectionExitColor; }
 
 	const MaterialParameter & RefractionTint() const { return m_refractionTint; }
-	const MaterialParameter & RefractionGlossiness() const { return m_refractionGlossiness; }
+	const MaterialParameter & RefractionRoughness() const { return m_refractionRoughness; }
 	const MaterialParameter & RefractionExitColor() const { return m_refractionExitColor; }
 	
 	const MaterialParameter & BumpLevel() const { return m_bumpLevel; }

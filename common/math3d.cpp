@@ -69,7 +69,7 @@ Vec2 mr::Vec2Rand()
 	{
 		out.x = rand() * (2.f / RAND_MAX) - 1.f;
 		out.y = rand() * (2.f / RAND_MAX) - 1.f;
-	} while (out.Length2() > 1.f);
+	} while (out.LengthSquared() > 1.f);
 	return out;
 }
 
@@ -81,7 +81,7 @@ Vec3 mr::Vec3Rand()
 		out.x = rand() * (2.f / RAND_MAX) - 1.f;
 		out.y = rand() * (2.f / RAND_MAX) - 1.f;
 		out.z = rand() * (2.f / RAND_MAX) - 1.f;
-	} while (out.Length2() > 1.f);
+	} while (out.LengthSquared() > 1.f);
 	return out;
 }
 

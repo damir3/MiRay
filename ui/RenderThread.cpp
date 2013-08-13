@@ -53,8 +53,8 @@ void RenderThread::SetOpenCLRenderer(OpenCLRenderer * pRenderer)
 }
 
 void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
-						 const mr::ColorF &bgColor, const mr::Image *pEnvironmentMap,
-						 const mr::Matrix &matCamera, const mr::Matrix &matViewProj)
+						 const ColorF &bgColor, const Image *pEnvironmentMap,
+						 const Matrix &matCamera, const Matrix &matViewProj)
 {
 	if (!m_pRenderer)
 		return;
@@ -104,6 +104,7 @@ void RenderThread::ThreadProc()
 		double tm1 = Timer::GetSeconds();
 		if (m_mode == 0)
 		{
+			m_pRenderer->ResetRayCounter();
 			m_pRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj,
 								m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
 			m_pRenderer->Join();
@@ -117,7 +118,8 @@ void RenderThread::ThreadProc()
 		double tm2 = Timer::GetSeconds();
 
 		if (m_mode == 0)
-			printf("%d: %dx%d (%d threads) %f ms\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), m_numCPU, (tm2 - tm1) * 1000.0);
+			printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), m_numCPU, (tm2 - tm1) * 1000.0,
+				   m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
 		else
 			printf("%d: %dx%d %f ms\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
 
