@@ -22,8 +22,8 @@
     <ClCompile Include="..\..\resources\Image.cpp" />
     <ClCompile Include="..\..\resources\ImageManager.cpp" />
     <ClCompile Include="..\..\resources\IResource.cpp" />
-    <ClCompile Include="..\..\resources\Material.cpp" />
     <ClCompile Include="..\..\resources\MaterialManager.cpp" />
+    <ClCompile Include="..\..\resources\MaterialResource.cpp" />
     <ClCompile Include="..\..\resources\Model.cpp" />
     <ClCompile Include="..\..\resources\ModelManager.cpp" />
     <ClCompile Include="..\..\ThirdParty\pugixml\pugixml.cpp" />
@@ -32,8 +32,8 @@
     <ClInclude Include="..\..\resources\Image.h" />
     <ClInclude Include="..\..\resources\ImageManager.h" />
     <ClInclude Include="..\..\resources\IResource.h" />
-    <ClInclude Include="..\..\resources\Material.h" />
     <ClInclude Include="..\..\resources\MaterialManager.h" />
+    <ClInclude Include="..\..\resources\MaterialResource.h" />
     <ClInclude Include="..\..\resources\Model.h" />
     <ClInclude Include="..\..\resources\ModelManager.h" />
     <ClCompile Include="..\..\resources\precompiled.h">

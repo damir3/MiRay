@@ -20,13 +20,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\rt\BVH.cpp" />
-    <ClCompile Include="..\..\rt\BVHNode.cpp" />
+    <ClCompile Include="..\..\rt\CollisionNode.cpp" />
+    <ClCompile Include="..\..\rt\CollisionVolume.cpp" />
+    <ClCompile Include="..\..\rt\Light.cpp" />
+    <ClCompile Include="..\..\rt\Material.cpp" />
     <ClCompile Include="..\..\rt\OpenCLRenderer.cpp" />
     <ClCompile Include="..\..\rt\SoftwareRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\rt\BVH.h" />
-    <ClInclude Include="..\..\rt\BVHNode.h" />
+    <ClInclude Include="..\..\rt\CollisionNode.h" />
     <ClInclude Include="..\..\rt\CollisionRay.h" />
     <ClInclude Include="..\..\rt\CollisionTriangle.h" />
     <ClCompile Include="..\..\rt\precompiled.h">
@@ -40,6 +43,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClInclude Include="..\..\rt\CollisionVolume.h" />
+    <ClInclude Include="..\..\rt\Light.h" />
+    <ClInclude Include="..\..\rt\Material.h" />
     <ClInclude Include="..\..\rt\OpenCLRenderer.h" />
     <ClInclude Include="..\..\rt\SoftwareRenderer.h" />
   </ItemGroup>

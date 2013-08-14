@@ -27,9 +27,6 @@
     <ClCompile Include="..\..\resources\IResource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\resources\Material.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\resources\MaterialManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,6 +42,9 @@
     <ClCompile Include="..\..\ThirdParty\pugixml\pugixml.cpp">
       <Filter>pugixml</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\resources\MaterialResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resources\Image.h">
@@ -54,9 +54,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resources\IResource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\resources\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resources\MaterialManager.h">
@@ -73,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="..\..\ThirdParty\pugixml\pugixml.hpp">
       <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\resources\MaterialResource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
