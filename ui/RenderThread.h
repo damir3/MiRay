@@ -39,6 +39,7 @@ public:
 	RenderThread();
 	~RenderThread();
 
+	SoftwareRenderer * Renderer() { return m_pRenderer; }
 	void SetRenderer(SoftwareRenderer * pRenderer);
 	void SetOpenCLRenderer(OpenCLRenderer * pRenderer);
 

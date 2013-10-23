@@ -16,10 +16,9 @@ class ImageManager;
 
 class ModelManager : public IResourceManager
 {
-	ImageManager	*	m_pImageManager;
-	MaterialManager *	m_pMaterialManager;
-	FbxManager *		m_pSdkManager;
-	FbxImporter *		m_pImporter;
+	ImageManager	*m_pImageManager;
+	FbxManager		*m_pSdkManager;
+	FbxImporter		*m_pImporter;
 
 	void CollectMeshes(Model & model, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & time);
 	void AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlobalPosition,
@@ -40,7 +39,7 @@ public:
 	ModelManager(ImageManager * pImageManager);
 	~ModelManager();
 
-	Model * LoadModel(const char * strFilename);
+	Model * LoadModel(const char * strFilename, pugi::xml_node node);
 };
 
 }

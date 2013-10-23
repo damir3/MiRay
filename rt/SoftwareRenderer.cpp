@@ -79,6 +79,8 @@ void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 
 	m_pos = Vec2I(0, 0);
 	m_delta = Vec2I(16, 16);
+	m_random = Vec2(frand(), frand());
+	m_matRandom.RotationAxis(Vec3::Normalize(Vec3Rand()), acosf(frand()));
 
 	for (size_t i = numThreads; i < m_renderThreads.size(); i++)
 		delete m_renderThreads[i];
@@ -197,7 +199,7 @@ ColorF SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 	if (!m_pEnvironmentMap)
 		return m_bgColor;
 
-	return m_pEnvironmentMap->GetPixel(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f);
+	return m_pEnvironmentMap->GetPixel(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f) * m_bgColor;
 
 //	float l = Vec2(vDir.x, vDir.z).Length();
 //	float d = (atan2f(vDir.y, l) * (0.5f / M_PIf) + 0.25f);
@@ -405,14 +407,17 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 // ------------------------------------------------------------------------ //
 
-Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal)
+Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal) const
 {
 	Vec3 axis1 = normal.Perpendicular();
 	Vec3 axis2 = Vec3::Cross(normal, axis1);
+//	float cosA = m_random.x;
 	float cosA = frand();
 	float sinA = sqrtf(1.f - cosA * cosA);
+//	float B = m_random.y * M_2PIf;
 	float B = rand() * (M_2PIf / RAND_MAX);
 	return axis1 * (sinA * cosf(B)) + axis2 * (sinA * sinf(B)) + normal * cosA;
+//	return normal.TransformedNormal(m_matRandom);
 }
 
 // ------------------------------------------------------------------------ //

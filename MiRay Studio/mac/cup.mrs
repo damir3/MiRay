@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<scene>
+	<environment>
+		<map>studio.hdr</map>
+		<color>1 1 1</color>
+	</environment>
+	<camera>
+		<position>1.12941e-07 -19.2337 6.14566</position>
+		<yaw>-90</yaw>
+		<pitch>10</pitch>
+		<fov>60</fov>
+	</camera>
+	<omni-light>
+		<position>-6.64534 -6.6454 10.7128</position>
+		<radius>0.781218</radius>
+		<intensity>114.431 114.431 114.431</intensity>
+	</omni-light>
+	<model>
+		<filename>cup.fbx</filename>
+		<transformation>
+			<position>0 0 0</position>
+			<rotation>0 0 0</rotation>
+			<scale>1 1 1</scale>
+		</transformation>
+		<materials>
+			<material name="/GlassDark">
+				<layer>
+					<diffuse>0.4 0.35 0.3</diffuse>
+					<opacity>1</opacity>
+					<ior>1.5</ior>
+					<fresnel-reflection>0</fresnel-reflection>
+					<refraction-tint>0.8 0.75 0.7</refraction-tint>
+				</layer>
+			</material>
+		</materials>
+	</model>
+</scene>

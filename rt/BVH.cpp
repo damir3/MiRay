@@ -59,9 +59,10 @@ BBox BVH::BoundingBox() const
 
 bool BVH::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr)
 {
+	tr.pos = vTo;
 	bool res = false;
 	for (CollisionVolumeArray::iterator it = m_volumes.begin(), itEnd = m_volumes.end(); it != itEnd; ++it)
-		res |= (*it)->TraceRay(vFrom, vTo, tr);
+		res |= (*it)->TraceRay(vFrom, tr.pos, tr);
 
 	return res;
 }

@@ -27,6 +27,7 @@
 #include "../resources/ImageManager.h"
 #include "../resources/MaterialManager.h"
 #include "../resources/ModelManager.h"
+#include "SceneInterfaces.h"
 
 #ifdef __APPLE__
 #include <OpenGL/GL.h>

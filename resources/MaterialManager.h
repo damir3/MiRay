@@ -21,10 +21,10 @@ public:
 	MaterialResource * Get(const char * strName);
 	MaterialResource * Create(const char * strName);
 	void CleanupMaterials();
-	void LoadTextures(ImageManager * pImageManager, const char * strLocalPath);
+	void LoadTextures(ImageManager * pImageManager);
 
-	bool LoadMaterials(const char * strFilename);
-	bool SaveMaterials(const char * strFilename);
+	bool LoadMaterials(pugi::xml_node node);
+	bool SaveMaterials(pugi::xml_node node);
 };
 
 }

@@ -10,12 +10,16 @@
 #endif
 
 #include "SceneView.h"
-#include "RenderModel.h"
+#include "SceneModel.h"
+#include "OmniLight.h"
 #include "RenderThread.h"
+#include "SceneUtils.h"
 #include "../rt/SoftwareRenderer.h"
 #include "../rt/OpenCLRenderer.h"
 
 using namespace mr;
+
+// ------------------------------------------------------------------------ //
 
 SceneView::SceneView(const char * pResourcesPath)
 	: m_resourcesPath(pResourcesPath)
@@ -26,13 +30,10 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_fFOV(60.f)
 	, m_fNearZ(0.1f)
 	, m_fFarZ(1000.f)
-	, m_bGesture(false)
-	, m_vGestureTarget(Vec3::Null)
-	, m_vGestureTargetNormal(Vec3::Null)
 	, m_matCamera(Matrix::Identity)
 	, m_matView(Matrix::Identity)
 	, m_matViewProj(Matrix::Identity)
-	, m_bgColor(1.f, 1.f, 1.f, 1.f)
+	, m_bgColor(1.f, 1.f, 1.f)
 	, m_bShowGrid(true)
 	, m_bShowWireframe(false)
 	, m_bShowNormals(false)
@@ -41,34 +42,39 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_texture(0)
 	, m_nFrameCount(0)
 	, m_renderMode(RM_SOFTWARE)
-	, m_pImageManager(NULL)
+	, m_pBVH(new BVH())
+	, m_pImageManager(new ImageManager())
 	, m_pModelManager(NULL)
-	, m_pModel(NULL)
-	, m_pRenderModel(NULL)
 	, m_pEnvironmentMap(NULL)
-	, m_pCS(NULL)
 	, m_rcRenderMap(0, 0, 0, 0)
 	, m_pRenderMap(NULL)
 	, m_pBuffer(NULL)
 	, m_pRenderThread(new RenderThread())
+	, m_pGizmoObject(NULL)
+	, m_iMouseDown(0)
+	, m_vTargetPos(Vec3::Null)
+	, m_vTargetNormal(Vec3::Null)
+	, m_vGizmoStartDelta(0.f)
+	, m_iAxis(-1)
+	, m_bTransformation(false)
 {
-	m_vCollisionTriangle[0] = m_vCollisionTriangle[1] = m_vCollisionTriangle[2] = Vec3::Null;
-	m_pImageManager = new ImageManager();
 	m_pModelManager = new ModelManager(m_pImageManager);
+	m_pRenderThread->SetRenderer(new SoftwareRenderer(*m_pBVH));
+
 	ResetCamera();
 }
 
 SceneView::~SceneView()
 {
 	SAFE_DELETE(m_pRenderThread);
-	delete m_pCS;
+	RemoveAllModels();
+	RemoveAllLights();
 	SAFE_RELEASE(m_pBuffer);
 	SAFE_RELEASE(m_pRenderMap);
-	SAFE_DELETE(m_pRenderModel);
 	SAFE_RELEASE(m_pEnvironmentMap);
-	SAFE_RELEASE(m_pModel);
 	delete m_pModelManager;
 	delete m_pImageManager;
+	delete m_pBVH;
 }
 
 bool SceneView::Init()
@@ -80,14 +86,28 @@ void SceneView::Done()
 {
 }
 
-void SceneView::ResetCamera(int i)
-{
-	m_nFrameCount = 0;
-	if (m_pModel)
-		CalculateCameraMatrix(m_matCamera, m_pModel->BoundingBox().Center(), m_pModel->BoundingBox().Size().Length() / powf(2.f, (float)i), -90.f, 10.f);
-	else
-		CalculateCameraMatrix(m_matCamera, Vec3::Null, 30.f, -90.f, 10.f);
+// ------------------------------------------------------------------------ //
 
+void SceneView::Resize(float w, float h, float rw, float rh)
+{
+	m_fWidth = w;
+	m_fHeight = h;
+	m_fRWidth = rw;
+	m_fRHeight = rh;
+	
+	StopRenderThread();
+	
+	int width = (int)m_fRWidth;
+	int height = (int)m_fRHeight;
+	
+	SAFE_RELEASE(m_pRenderMap);
+	m_pRenderMap = m_pImageManager->Create(width, height, Image::TYPE_4F);
+	
+	SAFE_RELEASE(m_pBuffer);
+	m_pBuffer = m_pImageManager->Create(width, height, Image::TYPE_4F);
+	if (m_pBuffer)
+		std::fill(m_pBuffer->DataF(), m_pBuffer->DataF() + m_pBuffer->Width() * m_pBuffer->Height() * m_pBuffer->NumChannels(), 0.f);
+	
 	UpdateMatrices();
 }
 
@@ -98,64 +118,229 @@ void SceneView::SetRenderMode(eRenderMode rm)
 	ResumeRenderThread();
 }
 
-Vec3 SceneView::OmniLight::Intensity(float squared_distance) const
+void SceneView::ResetScene()
 {
-	return m_intensity / squared_distance;
-}
+	StopRenderThread();
 
-Vec3 SceneView::OmniLight::Position(const Vec3 & p) const
-{
-	Vec3 delta = Vec3::Normalize(Vec3Rand()) * m_radius;
-	return Vec3::Dot(delta, p - m_origin) > 0.f ? m_origin + delta : m_origin - delta;
-}
+	RemoveAllModels();
+	RemoveAllLights();
+	ResetCamera();
 
-Vec3 SceneView::OmniLight::Intensity(const Vec3 & rayPos, const Vec3 & rayDir) const
-{
-	Vec3 delta = m_origin - rayPos;
-	float C = delta.LengthSquared() - (m_radius * m_radius);
-	if (C <= 0.f)
-		return Vec3::Null;
-
-	float A = rayDir.LengthSquared();
-	if (A == 0.f) return Vec3::Null; // degenerate ray
-	float B = -2.f * Vec3::Dot(rayDir, delta);
-	float D = B * B - 4.f * A * C;
-	if (D < 0.f) return Vec3::Null; // not intersect
-	float f = (-B - sqrtf(D)) * 0.5f / A;
-	return f >= 0.f && f <= 1.f ? m_intensity : Vec3::Null;
+	ResumeRenderThread();
 }
 
 bool SceneView::LoadScene(const char * pFilename)
 {
-	StopRenderThread();
-
-	printf("Loading scene '%s'...\n", pFilename);
-	SAFE_RELEASE(m_pModel);
-	
-	double tm1 = Timer::GetSeconds();
-
-	m_pModel = m_pModelManager->LoadModel(pFilename);
-	if (!m_pModel)
+	pugi::xml_document doc;
+	if (doc.load_file(pFilename).status != pugi::status_ok)
 		return false;
 
-	double tm2 = Timer::GetSeconds();
+	pugi::xml_node node = doc.child("scene");
+	if (node.empty())
+		return false;
 
-	printf("Scene loading time: %f ms\n", (tm2 - tm1) * 1000.0);
-	Vec3 vCenter = m_pModel->BoundingBox().Center();
-	Vec3 vSize = m_pModel->BoundingBox().Size();
-	float l = vSize.Length();
+	{// set current directory
+		std::string	strLocalPath = pFilename;
+		size_t p1 = strLocalPath.find_last_of('/');
+#ifdef _WIN32
+		size_t p2 = strLocalPath.find_last_of('\\');
+		if (p2 != std::string::npos)
+			p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
+#endif
+
+		if (p1 != std::string::npos)
+			strLocalPath.resize(p1 + 1);
+		
+		if (!strLocalPath.empty())
+		{
+			chdir(strLocalPath.c_str());
+			strLocalPath.clear();
+		}
+	}
+
+	StopRenderThread();
+
+	RemoveAllModels();
+	RemoveAllLights();
+
+	for (pugi::xml_node object = node.first_child(); object; object = object.next_sibling())
+	{
+		if (!strcmp(object.name(), "model"))
+		{
+			SceneModel *pSceneModel = new SceneModel(*m_pBVH);
+			if (pSceneModel->Load(object, m_pModelManager))
+				m_models.push_back(pSceneModel);
+			else
+				SAFE_DELETE(pSceneModel);
+		}
+		else if (!strcmp(object.name(), "omni-light"))
+		{
+			OmniLight *pLight = new OmniLight();
+			if (pLight->Load(object))
+				m_lights.push_back(pLight);
+			else
+				SAFE_DELETE(pLight);
+		}
+		else if (!strcmp(object.name(), "camera"))
+		{
+			Vec3 position(0.f);
+			float yaw = 0.f, pitch = 0.f;
+			ReadVec3(position, "position", object);
+			ReadFloat(yaw, "yaw", object);
+			ReadFloat(pitch, "pitch", object);
+			ReadFloat(m_fFOV, "fov", object);
+			CalculateCameraMatrix(m_matCamera, position, 0.f, yaw, pitch);
+		}
+		else if (!strcmp(object.name(), "environment"))
+		{
+			ReadVec3((Vec3 &)m_bgColor, "color", object);
+
+			pugi::xml_node filename = object.child("map");
+			if (!filename.empty())
+			{
+				SAFE_RELEASE(m_pEnvironmentMap);
+				m_pEnvironmentMap = m_pImageManager->Load(filename.text().get());
+			}
+		}
+	}
+
+	BBox bbox = m_pBVH->BoundingBox();
+	float l = 30.f;
+	if (!bbox.IsEmpty())
+		l = bbox.Size().Length();
 	m_fNearZ = l * 0.001f;
 	m_fFarZ = l * 10.f;
-	printf("center(%g %g %g) size(%g %g %g)\n", vCenter.x, vCenter.y, vCenter.z, vSize.x, vSize.y, vSize.z);
+	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
+	m_matView.Inverse(m_matCamera);
+	m_matViewProj = m_matView * m_matProj;
+	if (m_pRenderThread->Renderer())
+		m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
 
-	SAFE_DELETE(m_pRenderModel);
-	m_pRenderModel = new RenderModel(*m_pModel);
-	
-	CreateBVH();
-
-	ResetCamera();
+	ResumeRenderThread();
 
 	return true;
+}
+
+bool SceneView::SaveScene(const char * pFilename) const
+{
+	pugi::xml_document doc;
+
+	pugi::xml_node scene = doc.append_child("scene");
+
+	{// save environment map
+		pugi::xml_node node = scene.append_child("environment");
+		node.append_child("map").text().set(m_pEnvironmentMap->Name());
+		SaveVec3((Vec3 &)m_bgColor, "color", node);
+	}
+
+	{// save camera
+		pugi::xml_node camera = scene.append_child("camera");
+		SaveVec3(m_matCamera.Pos(), "position", camera);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", camera);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", camera);
+		SaveFloat(m_fFOV, "fov", camera);
+	}
+
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+		(*it)->Save(scene);
+
+	for (auto it = m_models.begin(); it != m_models.end(); ++it)
+		(*it)->Save(scene);
+
+	return doc.save_file(pFilename, "\t", pugi::format_default, pugi::encoding_utf8);
+}
+
+void SceneView::AppendModel(const char * pFilename)
+{
+	StopRenderThread();
+
+	RemoveAllModels();
+
+	SceneModel *pSceneModel = new SceneModel(*m_pBVH);
+	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager, pugi::xml_node()))
+	{
+		m_models.push_back(pSceneModel);
+
+		m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
+		
+		if (m_pRenderThread->Renderer())
+		{// update lights
+			BBox bbox = m_pBVH->BoundingBox();
+			OmniLight * pLight = new OmniLight();
+			pLight->SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
+			pLight->SetRadius(bbox.Size().Length() * 0.04f);
+			pLight->SetIntensity(Vec3(0.3f) * bbox.Size().LengthSquared());
+			RemoveAllLights();
+			m_lights.push_back(pLight);
+			m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
+		}
+		
+		ResetCamera();
+	}
+	else
+		SAFE_DELETE(pSceneModel);
+
+	ResumeRenderThread();
+}
+
+void SceneView::DeleteSelection()
+{
+	for (auto it = m_models.begin(); it != m_models.end(); ++it)
+	{
+		if ((*it) == m_pGizmoObject)
+		{
+			m_models.erase(it);
+			SAFE_DELETE(m_pGizmoObject);
+			StopRenderThread();
+			ResumeRenderThread();
+			return;
+		}
+	}
+
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+	{
+		if ((*it) == m_pGizmoObject)
+		{
+			m_lights.erase(it);
+			SAFE_DELETE(m_pGizmoObject);
+			if (m_pRenderThread->Renderer())
+				m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
+			StopRenderThread();
+			ResumeRenderThread();
+			return;
+		}
+	}
+}
+
+void SceneView::RemoveModel(SceneModel * pModel)
+{
+	auto it = std::find(m_models.begin(), m_models.end(), pModel);
+	if (it != m_models.end())
+		m_models.erase(it);
+
+	delete pModel;
+}
+
+void SceneView::RemoveAllModels()
+{
+	m_pGizmoObject = NULL;
+
+	for (auto it = m_models.begin(); it != m_models.end(); ++it)
+		delete (*it);
+	
+	m_models.clear();
+}
+
+void SceneView::RemoveAllLights()
+{
+	m_pGizmoObject = NULL;
+	if (m_pRenderThread->Renderer())
+		m_pRenderThread->Renderer()->SetLights(0, NULL);
+
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+		delete (*it);
+
+	m_lights.clear();
 }
 
 bool SceneView::SetEnvironmentImage(const char * pFilename)
@@ -172,116 +357,103 @@ bool SceneView::SaveImage(const char * pFilename) const
 	return m_pRenderMap ? m_pImageManager->Save(pFilename, *m_pRenderMap) : false;
 }
 
-void SceneView::CreateBVH()
+// ------------------------------------------------------------------------ //
+
+Vec3 SceneView::GetFrustumPosition(float x, float y, float z) const
 {
-	if (m_pCS)
-	{
-		delete m_pCS;
-		m_pCS = NULL;
-	}
-
-	double tm1 = Timer::GetSeconds();
-
-	size_t numTriangles = 0;
-	for (Model::MeshArray::const_iterator itMesh = m_pModel->Meshes().begin(), itMeshEnd = m_pModel->Meshes().end(); itMesh != itMeshEnd; ++itMesh)
-	{
-		for (Model::GeometryArray::const_iterator itGeom = (*itMesh)->m_geometries.begin(), itGeomEnd = (*itMesh)->m_geometries.end(); itGeom != itGeomEnd; ++itGeom)
-			numTriangles += (*itGeom)->m_indices.size() / 3;
-	}
-
-	m_pCS = new BVH();
-	CollisionVolume * pVolume = m_pCS->CreateVolume(numTriangles);
-
-	for (Model::MeshArray::const_iterator itMesh = m_pModel->Meshes().begin(), itMeshEnd = m_pModel->Meshes().end(); itMesh != itMeshEnd; ++itMesh)
-	{
-		for (Model::GeometryArray::const_iterator itGeom = (*itMesh)->m_geometries.begin(), itGeomEnd = (*itMesh)->m_geometries.end(); itGeom != itGeomEnd; ++itGeom)
-		{
-			Model::Geometry & geom = *(*itGeom);
-			for (const uint32 *pInd = &geom.m_indices[0], *pIndEnd = pInd + geom.m_indices.size(); pInd < pIndEnd; pInd += 3)
-			{
-				CollisionTriangle t(geom.m_vertices[pInd[0]], geom.m_vertices[pInd[1]], geom.m_vertices[pInd[2]],
-									geom.m_pMaterial);
-				pVolume->AddTriangle(t);
-			}
-		}
-	}
-
-	pVolume->Build(30);
-	double tm2 = Timer::GetSeconds();
-
-	m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pCS, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
-	SoftwareRenderer * pSoftwareRenderer = new SoftwareRenderer(*m_pCS);
-	const BBox & bbox = m_pCS->BoundingBox();
-	m_light.SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
-	m_light.SetRadius(m_pCS->BoundingBox().Size().Length() * 0.04f);
-	m_light.SetIntensity(Vec3(0.3f) * m_pCS->BoundingBox().Size().LengthSquared());
-	ILight * pLights[] = {&m_light};
-//	pSoftwareRenderer->SetLights(1, pLights);
-	m_pRenderThread->SetRenderer(pSoftwareRenderer);
-
-	printf("Collision scene creating time: %ld triangles, %d nodes, %d, %f ms\n", pVolume->Triangles().size(),
-		   static_cast<int>(pVolume->Root()->GetNodeCount()),
-		   static_cast<int>(pVolume->Root()->GetChildrenDepth()),
-		   (tm2 - tm1) * 1000.0);
+	Matrix matViewProjInv;
+	matViewProjInv.Inverse(m_matViewProj);
+	Vec4 v(x / m_fRWidth * 2.f - 1.f, -(y / m_fRHeight * 2.f - 1.f), z, 1.f);
+	v.Transform(matViewProjInv);
+	return Vec3(v.x, v.y, v.z) / v.w;
 }
 
-Vec3 SceneView::GetTarget(float x, float y) const
+bool SceneView::GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal)
 {
-	if (m_pCS)
+	TraceResult tr;
+	if (m_pBVH->TraceRay(m_matCamera.Pos(), GetFrustumPosition(x, y, 1.f), tr))
 	{
-		Matrix matViewProjInv;
-		matViewProjInv.Inverse(m_matViewProj);
-		Vec4 v(x / m_fRWidth * 2.f - 1.f, -(y / m_fRHeight * 2.f - 1.f), 1.f, 1.f);
-		v.Transform(matViewProjInv);
-		TraceResult tr;
-		if (m_pCS->TraceRay(m_matCamera.Pos(), Vec3(v.x, v.y, v.z) / v.w, tr))
-			return tr.pos;
+		vPos = tr.pos;
+		vNormal = tr.pTriangle->GetNormal(tr.pc);
+		if (tr.pVolume)
+			vNormal = vNormal.TransformedNormal(tr.pVolume->Transformation());
+		vNormal.Normalize();
+		return true;
 	}
 
-	if (m_pModel)
-		return m_pModel->BoundingBox().Center();
-
-	return Vec3::Null;
+	BBox bbox = m_pBVH->BoundingBox();
+	vPos = bbox.IsEmpty() ? Vec3::Null : bbox.Center();
+	vNormal = Vec3::Null;
+	return false;
 }
 
-void SceneView::BeginGesture(float x, float y)
+bool SceneView::GetRayTranslationAxisDist(const Vec3 & rayTarget, int axis, bool checkIntersection, Vec3 & vIntersectionDir)
 {
-	m_bGesture = true;
-	m_vGestureTarget = GetTarget(x, y);
-	m_vGestureTargetNormal = Vec3::Null;
+	const Vec3 & vPos = m_matGizmo.Pos();
+	const Vec3 & vAxis = Vec3::Normalize(m_matGizmo.Axis(axis));
+	Vec3 vRayDir = rayTarget - m_matCamera.Pos();
+	Vec3 vNormal = Vec3::Cross(vRayDir, vAxis);
+	if (vNormal.Normalize() == 0.f)
+		return false;
+
+	if (checkIntersection)
+	{
+		float d = Vec3::Dot(vNormal, vPos - m_matCamera.Pos());
+		if (fabsf(d) > m_vAxisSize.y)
+			return false;
+	}
+
+	Vec3 vDir = Vec3::Cross(vNormal, vRayDir);
+	float fDist = Vec3::Dot(vDir, m_matCamera.Pos() - vPos) / Vec3::Dot(vDir, vAxis);
+	if (checkIntersection && (fDist < 0.f || fDist > m_vAxisSize.x))
+		return false;
+
+	vIntersectionDir = vAxis * fDist;
+	return true;
 }
 
-void SceneView::EndGesture()
-{
-	m_bGesture = false;
-	m_vGestureTarget = Vec3::Null;
-}
+// ------------------------------------------------------------------------ //
 
-void SceneView::Rotate(float dx, float dy)
+void SceneView::ResetCamera(int i)
 {
+	BBox bbox = m_pBVH->BoundingBox();
+	Vec3 vCenter = Vec3::Null;
+	float l = 30.f;
+	if (!bbox.IsEmpty())
+	{
+		vCenter = bbox.Center();
+		l = bbox.Size().Length();
+	}
+	m_fNearZ = l * 0.001f;
+	m_fFarZ = l * 10.f;
+
 	m_nFrameCount = 0;
-	Matrix matRotation;
-	matRotation.RotationAxis(Vec3::Z, DEG2RAD(-dx * 0.5f), m_vGestureTarget);
-	m_matCamera = m_matCamera * matRotation;
-	float pitch = RAD2DEG(-m_matCamera.AxisZ().Pitch());
-	float dPitch = clamp(pitch - dy * 0.5f, -89.99f, 89.99f) - pitch;
-	matRotation.RotationAxis(m_matCamera.AxisX(), DEG2RAD(dPitch), m_vGestureTarget);
-	m_matCamera = m_matCamera * matRotation;
-
-	// normalize camera matrix
-	CalculateCameraMatrix(m_matCamera, m_matCamera.Pos(), 0.f,
-						  RAD2DEG(m_matCamera.AxisZ().Yaw()), RAD2DEG(m_matCamera.AxisZ().Pitch()));
-
+	CalculateCameraMatrix(m_matCamera, vCenter, l / powf(2.f, (float)i), -90.f, 10.f);
+	
 	UpdateMatrices();
 }
 
-void SceneView::Pan(float dx, float dy)
+void SceneView::RotateCamera(float dx, float dy)
 {
-	m_nFrameCount = 0;
-	float fDistance = Vec3::Dot(m_matCamera.AxisZ(), (m_matCamera.Pos() - m_vGestureTarget));
+	Matrix matRotation;
+	matRotation.RotationAxis(Vec3::Z, DEG2RAD(-dx * 0.5f), m_vTargetPos);
+	m_matCamera = m_matCamera * matRotation;
+	float pitch = RAD2DEG(-m_matCamera.AxisZ().Pitch());
+	float dPitch = clamp(pitch - dy * 0.5f, -89.99f, 89.99f) - pitch;
+	matRotation.RotationAxis(m_matCamera.AxisX(), DEG2RAD(dPitch), m_vTargetPos);
+	m_matCamera = m_matCamera * matRotation;
+	
+	// normalize camera matrix
+	CalculateCameraMatrix(m_matCamera, m_matCamera.Pos(), 0.f,
+						  RAD2DEG(m_matCamera.AxisZ().Yaw()), RAD2DEG(m_matCamera.AxisZ().Pitch()));
+	UpdateMatrices();
+}
+
+void SceneView::TranslateCamera(float dx, float dy)
+{
+	float fDistance = Vec3::Dot(m_matCamera.AxisZ(), (m_matCamera.Pos() - m_vTargetPos));
 	m_matCamera.Pos() -= m_matCamera.Axis(0) * ((dx * 2.f / m_fRWidth) * fDistance / m_matProj.m11);
 	m_matCamera.Pos() += m_matCamera.Axis(1) * ((dy * 2.f / m_fRHeight) * fDistance / m_matProj.m22);
-
 	UpdateMatrices();
 }
 
@@ -290,33 +462,125 @@ void SceneView::Zoom(float x, float y, float d)
 	m_nFrameCount = 0;
 	float fMul = powf(1.03f, fabsf(d));
 	if (d < 0.f) fMul = 1.f / fMul;
-
-	Vec3 vTarget = GetTarget(x, y);
+	
+	Vec3 vTarget, vNormal;
+	GetTarget(x, y, vTarget, vNormal);
 	Vec3 vDir = m_matCamera.Pos() - vTarget;
 	float fDist = vDir.Normalize() * fMul;
 	fDist = clamp(fDist, m_fNearZ, m_fFarZ * 0.9f);
 	m_matCamera.Pos() = vTarget + vDir * fDist;
-
+	
 	UpdateMatrices();
 }
 
-void SceneView::OtherMouseDown(float x, float y)
+void SceneView::UpdateMatrices()
 {
-	Matrix matViewProjInv;
-	matViewProjInv.Inverse(m_matViewProj);
-	Vec4 v(x / m_fRWidth * 2.f - 1.f, -(y / m_fRHeight * 2.f - 1.f), 1.f, 1.f);
-	v.Transform(matViewProjInv);
+	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
+	m_matView.Inverse(m_matCamera);
+	m_matViewProj = m_matView * m_matProj;
+	
+	StopRenderThread();
+	ResumeRenderThread();
+}
 
-	TraceResult tr;
-	if (m_pCS->TraceRay(m_matCamera.Pos(), Vec3(v.x, v.y, v.z) / v.w, tr))
+// ------------------------------------------------------------------------ //
+
+void SceneView::OnMouseDown(float x, float y, eMouseButton button)
+{
+	m_iMouseDown |= button;
+	m_bTransformation = (m_iAxis >= 0);
+	if (m_bTransformation)
 	{
-		m_vGestureTarget = tr.pos;
-		m_vGestureTargetNormal = tr.pTriangle->GetNormal(tr.pc);
-		m_vCollisionTriangle[0] = tr.pTriangle->Vertex(0).pos;
-		m_vCollisionTriangle[1] = tr.pTriangle->Vertex(1).pos;
-		m_vCollisionTriangle[2] = tr.pTriangle->Vertex(2).pos;
+		m_matGizmoStart = m_matGizmo;
+		m_vGizmoStartDelta = m_vAxisDelta;
+	}
+	else
+		GetTarget(x, y, m_vTargetPos, m_vTargetNormal);
+}
+
+void SceneView::OnMouseUp(eMouseButton button)
+{
+	m_iMouseDown &= ~button;
+	m_vTargetPos = Vec3::Null;
+}
+
+void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton button)
+{
+	m_nFrameCount = 0;
+	switch (button)
+	{
+		case MOUSE_LEFT:
+		{
+			if (m_bTransformation)
+			{
+				m_matGizmo = m_matGizmoStart;
+				if (GetRayTranslationAxisDist(GetFrustumPosition(x, y, 1.f), m_iAxis, false, m_vAxisDelta))
+				{
+					m_matGizmo.Pos() += m_vAxisDelta - m_vGizmoStartDelta;
+					m_pGizmoObject->SetTransformation(m_matGizmo);
+					UpdateMatrices();
+				}
+			}
+			else
+				RotateCamera(dx, dy);
+			break;
+		}
+		case MOUSE_RIGHT:
+		{
+			TranslateCamera(dx, dy);
+			break;
+		}
+		default:
+		{
+			m_iAxis = -1;
+			if (m_pGizmoObject)
+			{
+				Vec4 vCenter(m_matGizmo.Pos(), 1.f);
+				vCenter.Transform(m_matViewProj);
+				m_vAxisSize.x = 300.f * vCenter.w / (m_fWidth * m_matProj.m11);
+				m_vAxisSize.y = m_vAxisSize.x * 0.05f;
+				Vec3 vTargetPos = GetFrustumPosition(x, y, 1.f);
+				for (int i = 0; i < 3; i++)
+				{
+					if (GetRayTranslationAxisDist(vTargetPos, i, true, m_vAxisDelta))
+						m_iAxis = i;
+				}
+			}
+			break;
+		}
 	}
 }
+
+void SceneView::OnMouseClick(float x, float y, eMouseButton button)
+{
+	m_pGizmoObject = NULL;
+
+	TraceResult tr;
+	tr.pos = GetFrustumPosition(x, y, 1.f);
+	if (m_pBVH->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+	{
+		for (auto it = m_models.begin(); it != m_models.end(); ++it)
+		{
+			if ((*it)->GetVolume() == tr.pVolume)
+			{
+				m_pGizmoObject = (*it);
+				break;
+			}
+		}
+	}
+
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+	{
+		if ((*it)->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+			m_pGizmoObject = (*it);
+	}
+
+	if (m_pGizmoObject)
+		m_matGizmo = m_pGizmoObject->Transformation();
+
+}
+
+// ------------------------------------------------------------------------ //
 
 //void SceneView::RenderScene(int width, int height, int samples)
 //{
@@ -348,271 +612,39 @@ void SceneView::OtherMouseDown(float x, float y)
 //	printf("Render scene time: %dx%d (%d threads) %f ms\n", width, height, numCPU, (tm2 - tm1) * 1000.0);
 //}
 
-void SceneView::Resize(float w, float h, float rw, float rh)
+void SceneView::DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float size) const
 {
-	m_fWidth = w;
-	m_fHeight = h;
-	m_fRWidth = rw;
-	m_fRHeight = rh;
+	Vec4 vCenter(pos, 1.f);
+	vCenter.Transform(m_matViewProj);
+	float l = size * vCenter.w / (m_fWidth * m_matProj.m11);
+	float r1 = l * 0.02f;
+	float r2 = l * 0.04f;
 
-	StopRenderThread();
-
-	int width = (int)m_fRWidth;
-	int height = (int)m_fRHeight;
-
-	SAFE_RELEASE(m_pRenderMap);
-	m_pRenderMap = m_pImageManager->Create(width, height, Image::TYPE_4F);
-	
-	SAFE_RELEASE(m_pBuffer);
-	m_pBuffer = m_pImageManager->Create(width, height, Image::TYPE_4F);
-	if (m_pBuffer)
-		std::fill(m_pBuffer->DataF(), m_pBuffer->DataF() + m_pBuffer->Width() * m_pBuffer->Height() * m_pBuffer->NumChannels(), 0.f);
-
-	UpdateMatrices();
+	Vec3 p1 = pos + dir * (l * 0.7f);
+	Vec3 p2 = pos + dir * l;
+//	DrawLine(pos, p1, c, 1.f);
+	DrawCylinder(pos, p1, r1, c, 8);
+	DrawCone(p1, p2, r2, c, 16);
 }
 
-void SceneView::DrawGrid()
+void SceneView::DrawGizmo(const Matrix & mat, const BBox & bbox) const
 {
-	glDisable(GL_BLEND);
-	glDisable(GL_LINE_SMOOTH);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_LINE_SMOOTH);
-	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	glLineWidth(1.f);
-	
-//	glDepthMask(GL_FALSE);
-	
-	glBegin(GL_LINES);
-	glColor4f(0.75f, 0.75f, 0.75f, 1.f);
-	for (int x = -9; x < 10; x++)
-	{
-		if (x == 0) continue;
-		glVertex3fv(Vec3((float)x, -10.f, 0.f));
-		glVertex3fv(Vec3((float)x, 10.f, 0.f));
-		glVertex3fv(Vec3(-10.f, (float)x, 0.f));
-		glVertex3fv(Vec3(10.f, (float)x, 0.f));
-	}
-	glColor4f(0.5f, 0.5f, 0.5f, 1.f);
-	for (int x = -9; x < 10; x++)
-	{
-		glVertex3fv(Vec3(x * 10.f, -100.f, 0.f));
-		glVertex3fv(Vec3(x * 10.f, 100.f, 0.f));
-		glVertex3fv(Vec3(-100.f, x * 10.f, 0.f));
-		glVertex3fv(Vec3(100.f, x * 10.f, 0.f));
-	}
-	
-	glVertex3fv(Vec3(100.f, 100.f, 0.f));
-	glVertex3fv(Vec3(100.f, -100.f, 0.f));
-	
-	glVertex3fv(Vec3(100.f, 100.f, 0.f));
-	glVertex3fv(Vec3(-100.f, 100.f, 0.f));
-	
-	glVertex3fv(Vec3(-100.f, -100.f, 0.f));
-	glVertex3fv(Vec3(100.f, -100.f, 0.f));
-	
-	glVertex3fv(Vec3(-100.f, -100.f, 0.f));
-	glVertex3fv(Vec3(-100.f, 100.f, 0.f));
-	
-	glColor3f(1.f, 0.f, 0.f);
-	glVertex3fv(Vec3::Null);
-	glVertex3fv(Vec3(100.f, 0.f, 0.f));
+	glPushMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glMultMatrixf(mat);
+	DrawWireframeBox(bbox, Color(128, 128, 128, 128));
+	glPopMatrix();
 
-	glColor3f(0.f, 1.f, 0.f);
-	glVertex3fv(Vec3::Null);
-	glVertex3fv(Vec3(0.f, 100.f, 0.f));
+	if (m_renderMode == RM_OPENGL)
+		glClear(GL_DEPTH_BUFFER_BIT);
 
-	glColor3f(0.f, 0.f, 1.f);
-	glVertex3fv(Vec3::Null);
-	glVertex3fv(Vec3(0.f, 0.f, 100.f));
-
-	glEnd();
-	
-//	glDepthMask(GL_TRUE);
-	//glDisable(GL_LINE_SMOOTH);
-}
-
-void SceneView::DrawWireframeBox(const BBox & box, const Color & c) const
-{
-	glDisable(GL_BLEND);
-	glDisable(GL_LINE_SMOOTH);
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_LINE_SMOOTH);
-	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	glLineWidth(1.f);
-		
-	glBegin(GL_LINES);
-	
-	glColor4ubv(c);
-
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMins.z));
-	
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMins.z));
-	
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMaxs.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMaxs.z));
-	
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMaxs.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMaxs.z));
-	
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMins.z));
-
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMins.z));
-
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMaxs.z));
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMaxs.z));
-	
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMaxs.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMaxs.z));
-
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMins.x, box.vMins.y, box.vMaxs.z));
-
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMins.y, box.vMaxs.z));
-
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMins.x, box.vMaxs.y, box.vMaxs.z));
-	
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMins.z));
-	glVertex3fv(Vec3(box.vMaxs.x, box.vMaxs.y, box.vMaxs.z));
-
-	glEnd();
-}
-
-void SceneView::DrawBox(const BBox & bbox, const Color & c) const
-{
-	glBegin(GL_QUADS);
-	glColor4ubv(VertexColor(c, -Vec3::X));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, Vec3::X));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, -Vec3::Y));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, Vec3::Y));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, -Vec3::Z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMins.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMins.z));
-	
-	glColor4ubv(VertexColor(c, Vec3::Z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMins.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMins.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glVertex3fv(Vec3(bbox.vMaxs.x, bbox.vMaxs.y, bbox.vMaxs.z));
-	glEnd();
-}
-
-void SceneView::DrawCollisionNode(const CollisionNode * pCN, byte level) const
-{
-	if (!pCN)
-		return;
-	
-	static Color colors[] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255), Color(255, 255, 0), Color(255, 0, 255), Color(0, 255, 255), Color(255, 128, 0)};
-	DrawWireframeBox(pCN->BoundingBox(), colors[level % 7]);
-
-//	const sTriangleCutArray & triangles = pCN->Triangles();
-//	if (!triangles.empty())
-//	{
-//		Color c(255, 255, 255);
-//		glBegin(GL_TRIANGLES);
-//		for (sTriangleCutArray::const_iterator it = triangles.begin(), itEnd = triangles.end(); it != itEnd; ++it)
-//		{
-//			glColor3ubv(VertexColor(c, it->v[1]));
-//			glVertex3fv(it->v[0]);
-//			glColor3ubv(VertexColor(c, it->v[1]));
-//			glVertex3fv(it->v[1]);
-//			glColor3ubv(VertexColor(c, it->v[2]));
-//			glVertex3fv(it->v[2]);
-//		}
-//		glEnd();
-//		
-//		glPolygonOffset(-4.f, -4.f);
-//		glPolygonMode(GL_FRONT, GL_LINE);
-//		glEnable(GL_POLYGON_OFFSET_LINE);
-//		glDepthMask(GL_FALSE);
-//		
-//		glColor4ub(0, 128, 255, 255);
-//		glBegin(GL_TRIANGLES);
-//		for (sTriangleCutArray::const_iterator it = triangles.begin(), itEnd = triangles.end(); it != itEnd; ++it)
-//		{
-//			glVertex3fv(it->v[0]);
-//			glVertex3fv(it->v[1]);
-//			glVertex3fv(it->v[2]);
-//		}
-//		glEnd();
-//		
-//		glDepthMask(GL_TRUE);
-//		glDisable(GL_POLYGON_OFFSET_LINE);
-//		glPolygonMode(GL_FRONT, GL_FILL);
-//	}
-
-	DrawCollisionNode(pCN->Child(0), level + 1);
-	DrawCollisionNode(pCN->Child(1), level + 1);
-}
-
-void SceneView::UpdateMatrices()
-{
-	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
-	m_matView.Inverse(m_matCamera);
-	m_matViewProj = m_matView * m_matProj;
-
-	StopRenderThread();
-	ResumeRenderThread();
+	static const Color axisColor[] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)};
+	for (int i = 0; i < 3; i++)
+		DrawArrow(mat.Pos(), mat.Axis(i), m_iAxis == i ? Color(255, 255, 0) : axisColor[i], 300.f);
 }
 
 void SceneView::Draw()
 {
-//	if (m_pRenderMap && m_renderMode != RM_OPENGL)
-//	{// render frame to render map
-//#ifdef _WIN32
-//		SYSTEM_INFO sysinfo;
-//		::GetSystemInfo(&sysinfo);
-//		int numCPU = static_cast<int>(sysinfo.dwNumberOfProcessors);
-//#else
-//		int numCPU = static_cast<int>(::sysconf(_SC_NPROCESSORS_ONLN));
-//#endif
-//
-//		double tm1 = Timer::GetSeconds();
-//
-//		SoftwareRenderer renderer(*m_pCS);
-//		int nScale = m_nFrameCount < 2 ? (2 << (1 - m_nFrameCount)) : 1;
-//		m_rcRenderMap = RectI(0, 0, m_pRenderMap->Width() / nScale, m_pRenderMap->Height() / nScale);
-//		renderer.Render(*m_pRenderMap, &m_rcRenderMap, m_matCamera, m_matViewProj,
-//						m_bgColor, m_pEnvironmentMap, 1, numCPU, std::max(m_nFrameCount - 2, 0));
-//		renderer.Join();
-//
-//		if (!m_bGesture)
-//			m_nFrameCount++;
-//
-//		double tm2 = Timer::GetSeconds();
-//
-//		printf("Render scene: %d %dx%d (%d threads) %f ms\n", m_nFrameCount, m_width, m_height, numCPU, (tm2 - tm1) * 1000.0);
-//	}
-
     glViewport(0, 0, (int)m_fWidth, (int)m_fHeight);
 	glClearColor(m_bgColor.r, m_bgColor.g, m_bgColor.b, m_bgColor.a);
 	glClearDepth(1.f);
@@ -634,67 +666,46 @@ void SceneView::Draw()
 		if (m_bShowGrid)
 			DrawGrid();
 
-		if (m_pRenderModel)
+		for (auto it = m_models.begin(); it != m_models.end(); ++it)
 		{
+			CollisionVolume * pVolume = (*it)->GetVolume();
+
+			glPushMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glMultMatrixf(pVolume->Transformation());
+
 			if (m_bShowWireframe)
-				m_pRenderModel->DrawWireframe();
+				(*it)->DrawWireframe();
 			else
-				m_pRenderModel->Draw();
+				(*it)->Draw();
 
 			if (m_bShowNormals)
-				m_pRenderModel->DrawNormals(m_pModel->BoundingBox().Size().Length() * 0.001f);
-		}
+				(*it)->DrawNormals(m_fNearZ);
 
-	//	for (Model::MeshArray::const_iterator itMesh = m_pModel->Meshes().begin(), itMeshEnd = m_pModel->Meshes().end(); itMesh != itMeshEnd; ++itMesh)
-	//		DrawMesh(*(*itMesh));
+			if (m_bShowBVH)
+				DrawCollisionNode(pVolume->Root(), 0);
 
-		if (m_bShowBVH)
-		{
-			for (size_t i = 0; i < m_pCS->NumVolumes(); i++)
-				DrawCollisionNode(m_pCS->Volume(i)->Root(), 0);
+			glPopMatrix();
 		}
 	}
 
 	DrawRenderMap();
 
-	if (m_pModel)
+//	if (m_pModel)
 	{
 		glMatrixMode(GL_PROJECTION);
 		glLoadMatrixf(m_matProj);
 		glMatrixMode(GL_MODELVIEW);
 		glLoadMatrixf(m_matView);
 
-		if (m_bGesture)
-		{
-			Vec3 vBoxExt = Vec3( fabsf(Vec3::Dot(m_vGestureTarget - m_matCamera.Pos(), m_matCamera.AxisZ())) * 0.005f );
-			DrawBox(BBox(m_vGestureTarget - vBoxExt, m_vGestureTarget + vBoxExt), Color(0, 128, 255));
-		}
-	
-		{
-			Vec3 vBoxExt = Vec3(m_light.Radius());
-			ColorF c = Vec3::Normalize(m_light.Intensity());
-			DrawBox(BBox(m_light.Origin() - vBoxExt, m_light.Origin() + vBoxExt), c);
-		}
+		if (m_iMouseDown && !m_bTransformation)
+			DrawArrow(m_vTargetPos, m_vTargetNormal, Color(255, 255, 0), 200.f);
 
-		glLineWidth(1.f);
-		glDepthMask(GL_FALSE);
-		glBegin(GL_LINES);
-		
-		glColor3ub(255, 0, 0);
-		glVertex3fv(m_vCollisionTriangle[0]);
-		glVertex3fv(m_vCollisionTriangle[1]);
-		glVertex3fv(m_vCollisionTriangle[1]);
-		glVertex3fv(m_vCollisionTriangle[2]);
-		glVertex3fv(m_vCollisionTriangle[2]);
-		glVertex3fv(m_vCollisionTriangle[0]);
-		
-		glColor3ub(0, 255, 0);
-		glVertex3fv(m_vGestureTarget);
-		glVertex3fv(m_vGestureTarget + m_vGestureTargetNormal * (m_pModel->BoundingBox().Size().Length() * 0.01f));
+		for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+			(*it)->Draw();
 
-		glEnd();
-		glDepthMask(GL_TRUE);
-//		glLineWidth(1.f);
+		if (m_pGizmoObject)
+			DrawGizmo(m_matGizmo, m_pGizmoObject->OOBB());
 	}
 }
 
@@ -707,7 +718,7 @@ void SceneView::UpdateRenderMapTexture()
 	{
 		m_width = m_pRenderMap->Width();
 		m_height = m_pRenderMap->Height();
-		
+
 		if (m_texture)
 		{
 			glDeleteTextures(1, &m_texture);

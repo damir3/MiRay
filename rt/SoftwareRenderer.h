@@ -44,6 +44,8 @@ class SoftwareRenderer
 	typedef TVec2<int>	Vec2I;
 	Vec2I	m_pos;
 	Vec2I	m_delta;
+	Vec2	m_random;
+	Matrix	m_matRandom;
 
 	float	m_fDistEpsilon;
 	float	m_fRayLength;
@@ -65,7 +67,7 @@ class SoftwareRenderer
 		sResult(const ColorF & c) : color(c.r, c.g, c.b), opacity(c.a) {}
 	};
 
-	static Vec3 RandomDirection(const Vec3 & normal);
+	Vec3 RandomDirection(const Vec3 & normal) const;
 	ColorF EnvironmentColor(const Vec3 & v) const;
 	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const;
 	ColorF RenderPixel(const Vec2 & p) const;

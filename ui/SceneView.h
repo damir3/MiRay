@@ -7,24 +7,32 @@
 //
 #pragma once
 
-#include "../resources/Model.h"
-#include "../rt/Light.h"
-
-namespace mr
-{
-	class ImageManager;
-	class ModelManager;
-	class RenderModel;
-
-	class BVH;
-	class CollisionNode;
-	class CollisionTriangle;
-}
-
 namespace mr
 {
 
+class Image;
+class ImageManager;
+class ModelManager;
 class RenderThread;
+
+class BVH;
+class CollisionVolume;
+class CollisionNode;
+class CollisionTriangle;
+struct TraceResult;
+
+class ITransformable;
+class ISceneLight;
+
+class SceneModel;
+
+enum eMouseButton
+{
+	MOUSE_NONE		= 0,
+	MOUSE_LEFT		= 1,
+	MOUSE_RIGHT		= 2,
+	MOUSE_MIDDLE	= 4,
+};
 
 class SceneView
 {
@@ -41,9 +49,6 @@ private:
 	float	m_fWidth, m_fHeight;
 	float	m_fRWidth, m_fRHeight;
 	float	m_fFOV, m_fNearZ, m_fFarZ;
-	bool	m_bGesture;
-	Vec3	m_vGestureTarget;
-	Vec3	m_vGestureTargetNormal;
 	Matrix	m_matCamera;
 	Matrix	m_matView;
 	Matrix	m_matProj;
@@ -57,51 +62,54 @@ private:
 	GLuint	m_texture;
 	int		m_nFrameCount;
 	eRenderMode		m_renderMode;
+	BVH				*m_pBVH;
 	ImageManager	*m_pImageManager;
 	ModelManager	*m_pModelManager;
-	Model			*m_pModel;
-	RenderModel		*m_pRenderModel;
 	Image			*m_pEnvironmentMap;
-	BVH				*m_pCS;
 	RectI			m_rcRenderMap;
 	Image			*m_pRenderMap;
 	Image			*m_pBuffer;
 	RenderThread	*m_pRenderThread;
-	Vec3	m_vCollisionTriangle[3];
+	ITransformable	*m_pGizmoObject;
+	int				m_iMouseDown;
+	Vec3			m_vTargetPos;
+	Vec3			m_vTargetNormal;
+	Matrix			m_matGizmo;
+	Matrix			m_matGizmoStart;
+	Vec3			m_vGizmoStartDelta;
+	Vec2			m_vAxisSize;
+	int				m_iAxis;
+	Vec3			m_vAxisDelta;
 
-	class OmniLight : public ILight
-	{
-		Vec3	m_origin;
-		float	m_radius;
-		Vec3	m_intensity;
-		
-	public:
-		void SetOrigin(const Vec3 & o) { m_origin = o; }
-		void SetRadius(float r) { m_radius = r; }
-		void SetIntensity(const Vec3 & i) { m_intensity = i; }
+//	enum eTransformationType
+//	{
+//		TT_NONE,
+//		TT_MOVE,
+//		TT_ROTATE,
+//		TT_SCALE,
+//	};
+//	eTransformationType	m_transformation;
+	bool			m_bTransformation;
 
-		const Vec3 & Origin() const { return m_origin; }
-		float Radius() const { return m_radius; }
-		const Vec3 & Intensity() const { return m_intensity; }
+	std::vector<ISceneLight *>	m_lights;
+	std::vector<SceneModel *>	m_models;
 
-		Vec3 Position(const Vec3 & p) const;
-		Vec3 Intensity(float squared_distance) const; // diffuse
-		Vec3 Intensity(const Vec3 & rayPos, const Vec3 & rayDir) const; // specular
-	};
+	void RemoveAllModels();
+	void RemoveModel(SceneModel * pModel);
 
-	OmniLight		m_light;
+	void RemoveAllLights();
 
-	void CreateBVH();
-
-	Vec3 GetTarget(float x, float y) const;
-	void DrawGrid();
-	void DrawCollisionNode(const CollisionNode * pCN, byte level) const;
-	void DrawWireframeBox(const BBox & box, const Color & c) const;
-	void DrawBox(const BBox & box, const Color & c) const;
+	Vec3 GetFrustumPosition(float x, float y, float z) const;
+	bool GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal);
+	bool GetRayTranslationAxisDist(const Vec3 & rayTarget, int axis, bool checkIntersection, Vec3 & vIntersectionDir);
+	void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float size) const;
+	void DrawGizmo(const Matrix & mat, const BBox & bbox) const;
 
 	void UpdateRenderMapTexture();
 	void DrawRenderMap();
 
+	void RotateCamera(float dx, float dy);
+	void TranslateCamera(float dx, float dy);
 	void UpdateMatrices();
 
 public:
@@ -127,23 +135,30 @@ public:
 
 	bool Init();
 	void Done();
-	
+
+	void ResetScene();
 	bool LoadScene(const char * pFilename);
+	bool SaveScene(const char * pFilename) const;
+
+	void AppendModel(const char * pFilename);
+
+	void DeleteSelection();
+
+	void Resize(float w, float h, float rw, float rh);
+
 	bool SetEnvironmentImage(const char * pFilename);
 	bool SaveImage(const char * pFilename) const;
 
-	void BeginGesture(float x, float y);
-	void Pan(float dx, float dy);
-	void Rotate(float dx, float dy);
-	void EndGesture();
-	void Zoom(float x, float y, float d);
+	void OnMouseDown(float x, float y, eMouseButton button);
+	void OnMouseUp(eMouseButton button);
+	void OnMouseClick(float x, float y, eMouseButton button);
+	void OnMouseMove(float x, float y, float dx, float dy, eMouseButton button);
 
 	void ResetCamera(int i = 0);
+	void Zoom(float x, float y, float d);
+
 //	void RenderScene(int width, int height, int samples);
 
-	void OtherMouseDown(float x, float y);
-
-	void Resize(float w, float h, float rw, float rh);
 	void Draw();
 
 	void StopRenderThread();

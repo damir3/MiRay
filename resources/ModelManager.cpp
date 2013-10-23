@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
+#include <unistd.h>
+
 #include "ModelManager.h"
 
 using namespace mr;
@@ -14,14 +16,13 @@ using namespace mr;
 
 ModelManager::ModelManager(ImageManager * pImageManager)
 	: m_pImageManager(pImageManager)
-	, m_pMaterialManager(new MaterialManager())
 	, m_pSdkManager(NULL)
 	, m_pImporter(NULL)
 {
 	m_pSdkManager = FbxManager::Create();
 	if (m_pSdkManager)
 	{
-		//		AppContextSingleton::GetAppContext().GetLog()->Error("Unable to create the FBX SDK manager");
+//		AppContextSingleton::GetAppContext().GetLog()->Error("Unable to create the FBX SDK manager");
 		FbxIOSettings * ios = FbxIOSettings::Create(m_pSdkManager, IOSROOT);
 		m_pSdkManager->SetIOSettings(ios);
 
@@ -31,8 +32,6 @@ ModelManager::ModelManager(ImageManager * pImageManager)
 
 ModelManager::~ModelManager()
 {
-	SAFE_DELETE(m_pMaterialManager);
-
 	if (m_pImporter)
 	{
 		m_pImporter->Destroy();
@@ -48,7 +47,7 @@ ModelManager::~ModelManager()
 
 // ------------------------------------------------------------------------ //
 
-Model * ModelManager::LoadModel(const char * strFilename)
+Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 {
 	Model * pModel = static_cast<Model *>(Find(strFilename));
 	if (pModel)
@@ -80,19 +79,15 @@ Model * ModelManager::LoadModel(const char * strFilename)
 			if (SceneSystemUnit.GetScaleFactor() != 1.0)
 				FbxSystemUnit(1.0).ConvertScene(m_pScene);
 
-			std::string strMaterialFilename = strFilename;
-			size_t p = strMaterialFilename.find_last_of('.');
-			if (p != std::string::npos)
-				strMaterialFilename.resize(p);
-			strMaterialFilename.append(".MiRay.xml");
-
-			m_pMaterialManager->LoadMaterials(strMaterialFilename.c_str());
-
 			FbxTime time;
 			pModel = new Model(*this, strFilename);
+
+			if (!node.empty())
+				pModel->MaterialManagerPtr()->LoadMaterials(node);
+
 			CollectMeshes(*pModel, m_pScene->GetRootNode(), (FbxAnimLayer *)NULL, time);
 
-			m_pMaterialManager->CleanupMaterials();
+			pModel->MaterialManagerPtr()->CleanupMaterials();
 
 			{// load textures
 				std::string	strLocalPath = strFilename;
@@ -106,13 +101,11 @@ Model * ModelManager::LoadModel(const char * strFilename)
 				if (p1 != std::string::npos)
 					strLocalPath.resize(p1 + 1);
 
-				if (strLocalPath.empty())
-					strLocalPath = "./";
+				if (!strLocalPath.empty())
+					chdir(strLocalPath.c_str());
 
-				m_pMaterialManager->LoadTextures(m_pImageManager, strLocalPath.c_str());
+				pModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
 			}
-
-			m_pMaterialManager->SaveMaterials(strMaterialFilename.c_str());
 		}
 	}
 
@@ -167,11 +160,11 @@ void ReadMaterialTextureName(std::string & strFilename, const FbxSurfaceMaterial
 	}
 }
 
-void ModelManager::AddMesh(Model & scene, FbxNode * pFbxNode, FbxAMatrix & pGlobalPosition,
+void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlobalPosition,
 						  const FbxVector4 * pControlPoints, const FbxVector4 * pNormalArray)
 {
-	scene.m_meshes.push_back(new Model::Mesh());
-	Model::Mesh & mesh = *scene.m_meshes.back();
+	model.m_meshes.push_back(new Model::Mesh());
+	Model::Mesh & mesh = *model.m_meshes.back();
 	
 	FbxMesh * pFbxMesh = pFbxNode->GetMesh();
 	const int numPolygons = pFbxMesh->GetPolygonCount();
@@ -357,10 +350,10 @@ void ModelManager::AddMesh(Model & scene, FbxNode * pFbxNode, FbxAMatrix & pGlob
 				std::string strMaterial = pFbxMesh->GetName();
 				strMaterial += "/";
 				strMaterial += pFbxMaterial->GetName();
-				geom.m_pMaterial = m_pMaterialManager->Get(strMaterial.c_str());
+				geom.m_pMaterial = model.MaterialManagerPtr()->Get(strMaterial.c_str());
 				if (!geom.m_pMaterial)
 				{
-					geom.m_pMaterial = m_pMaterialManager->Create(strMaterial.c_str());
+					geom.m_pMaterial = model.MaterialManagerPtr()->Create(strMaterial.c_str());
 					geom.m_pMaterial->Create();
 
 //					ReadMaterialTextureName(geom.m_pMaterial->m_diffuseTexName, pFbxMaterial, FbxSurfaceMaterial::sDiffuse);
@@ -397,7 +390,7 @@ void ModelManager::AddMesh(Model & scene, FbxNode * pFbxNode, FbxAMatrix & pGlob
 		}
 	}
 	
-	scene.m_bbox.AddToBounds(mesh.m_bbox);
+	model.m_bbox.AddToBounds(mesh.m_bbox);
 }
 
 // ------------------------------------------------------------------------ //
@@ -1085,7 +1078,7 @@ void ModelManager::ComputeSkinDeformation(FbxAMatrix & pGlobalPosition, FbxMesh 
 	}
 }
 
-void ModelManager::AddAnimatedMesh(Model & scene, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & pTime, FbxAMatrix & pGlobalPosition, FbxPose * pPose)
+void ModelManager::AddAnimatedMesh(Model & model, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & pTime, FbxAMatrix & pGlobalPosition, FbxPose * pPose)
 {
 	FbxMesh* pFbxMesh = pFbxNode->GetMesh();
 	const int lVertexCount = pFbxMesh->GetControlPointsCount();
@@ -1137,14 +1130,14 @@ void ModelManager::AddAnimatedMesh(Model & scene, FbxNode * pFbxNode, FbxAnimLay
 		FbxVector4* pNormalArray = bHasNormal ? new FbxVector4[lNormalCount] : NULL;
 		RecalculateMeshNormals(pFbxMesh, pVertexArray, pNormalArray);
 		
-		AddMesh(scene, pFbxNode, pGlobalPosition, pVertexArray, pNormalArray);
+		AddMesh(model, pFbxNode, pGlobalPosition, pVertexArray, pNormalArray);
 		
 		delete [] pNormalArray;
 		delete [] pVertexArray;
 	}
 	else
 	{
-		AddMesh(scene, pFbxNode, pGlobalPosition, pFbxMesh->GetControlPoints(), NULL);
+		AddMesh(model, pFbxNode, pGlobalPosition, pFbxMesh->GetControlPoints(), NULL);
 	}
 	
 	//if (lMeshCache)
@@ -1193,7 +1186,7 @@ void ModelManager::AddAnimatedMesh(Model & scene, FbxNode * pFbxNode, FbxAnimLay
 	//}
 }
 
-void ModelManager::CollectMeshes(Model & scene, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & time)
+void ModelManager::CollectMeshes(Model & model, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & time)
 {
 	if (pFbxNode->GetVisibility())
 	{
@@ -1207,7 +1200,7 @@ void ModelManager::CollectMeshes(Model & scene, FbxNode * pFbxNode, FbxAnimLayer
 			FbxAMatrix lGlobalPosition = pFbxNode->EvaluateGlobalTransform(time);
 			FbxAMatrix lGeometryOffset = GetGeometry(pFbxNode);
 			FbxAMatrix lGlobalOffPosition = lGlobalPosition * lGeometryOffset;
-			AddAnimatedMesh(scene, pFbxNode, pFbxAnimLayer, time, lGlobalOffPosition, NULL);
+			AddAnimatedMesh(model, pFbxNode, pFbxAnimLayer, time, lGlobalOffPosition, NULL);
 			//AddMesh(builder, pFbxNode, lGlobalOffPosition, pFbxNode->GetMesh()->GetControlPoints());
 		}
 	}
@@ -1215,7 +1208,7 @@ void ModelManager::CollectMeshes(Model & scene, FbxNode * pFbxNode, FbxAnimLayer
 	const int lChildCount = pFbxNode->GetChildCount();
 	for (int lChildIndex = 0; lChildIndex < lChildCount; ++lChildIndex)
 	{
-		CollectMeshes(scene, pFbxNode->GetChild(lChildIndex), pFbxAnimLayer, time);
+		CollectMeshes(model, pFbxNode->GetChild(lChildIndex), pFbxAnimLayer, time);
 	}
 }
 

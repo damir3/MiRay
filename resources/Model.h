@@ -18,17 +18,18 @@ typedef std::vector<uint32>		IndexArray;
 class Image;
 class MaterialResource;
 class ModelManager;
+class MaterialManager;
 
 class Model : public IResource
 {
 public:
 	struct Geometry
 	{
-		MaterialResource * m_pMaterial;
+		MaterialResource *m_pMaterial;
 		VertexArray		m_vertices;
 		IndexArray		m_indices;
 		BBox			m_bbox;
-		
+
 		Geometry();
 		~Geometry();
 	};
@@ -57,7 +58,10 @@ public:
 	
 	const BBox & BoundingBox() const { return m_bbox; }
 	const MeshArray & Meshes() const { return m_meshes; }
-	
+	MaterialManager * MaterialManagerPtr() const { return m_pMaterialManager; }
+
+	void Save(pugi::xml_node node) const;
+
 protected:
 	friend ModelManager;
 	
@@ -66,6 +70,7 @@ protected:
 	
 	BBox			m_bbox;
 	MeshArray		m_meshes;
+	MaterialManager	*m_pMaterialManager;
 };
 	
 }

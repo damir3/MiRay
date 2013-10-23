@@ -85,8 +85,8 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 		const CollisionNode * pNode = *(--ppTopNode);
 		if (!ray.TestIntersection(pNode->Center(), pNode->Extents()))
 			continue;
-		
-		if (pNode->Triangles().empty())
+
+		if (pNode->Child(0))
 		{
 			assert(pNode->Child(0) && pNode->Child(1));
 			if (ray.Origin()[pNode->Axis()] > pNode->Dist())

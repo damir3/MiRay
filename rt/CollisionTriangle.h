@@ -15,7 +15,7 @@ namespace mr
 struct TraceResult
 {
 	const class CollisionTriangle * pTriangle;
-	const class CollisionVolume * pVolume;
+	class CollisionVolume * pVolume;
 	float	fraction;
 	bool	backface;
 	Vec3	pos;

@@ -54,12 +54,8 @@ void MaterialManager::CleanupMaterials()
 		(*it)->Release();
 }
 
-bool MaterialManager::LoadMaterials(const char *strFilename)
+bool MaterialManager::LoadMaterials(pugi::xml_node doc)
 {
-	pugi::xml_document doc;
-	if (doc.load_file(strFilename).status != pugi::status_ok)
-		return false;
-
 	pugi::xml_node materials = doc.child("materials");
 	for (pugi::xml_node material = materials.child("material"); material; material = material.next_sibling("material"))
 	{
@@ -70,14 +66,11 @@ bool MaterialManager::LoadMaterials(const char *strFilename)
 		MaterialResource * pMaterial = Create(strName);
 		pMaterial->Load(material);
 	}
-
 	return true;
 }
 
-bool MaterialManager::SaveMaterials(const char * strFilename)
+bool MaterialManager::SaveMaterials(pugi::xml_node doc)
 {
-	pugi::xml_document doc;
-
 	pugi::xml_node materials = doc.append_child("materials");
 	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
 	{
@@ -87,12 +80,11 @@ bool MaterialManager::SaveMaterials(const char * strFilename)
 
 		pMaterial->Save(material);
 	}
-
-	return doc.save_file(strFilename, "\t", pugi::format_default, pugi::encoding_utf8);
+	return true;
 }
 
-void MaterialManager::LoadTextures(ImageManager * pImageManager, const char * strLocalPath)
+void MaterialManager::LoadTextures(ImageManager * pImageManager)
 {
 	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
-		static_cast<MaterialResource *>(*it)->LoadTextures(pImageManager, strLocalPath);
+		static_cast<MaterialResource *>(*it)->LoadTextures(pImageManager);
 }

@@ -61,7 +61,7 @@ public:
 
 	MaterialTexture	m_bumpLevelTexture;
 
-	void LoadTextures(ImageManager * pImageManager, const char * strLocalPath);
+	void LoadTextures(ImageManager * pImageManager);
 
 	void Load(pugi::xml_node node);
 	void Save(pugi::xml_node node);
@@ -268,12 +268,12 @@ ePixelFormat PixelFormat(Image::eType type)
 	}
 }
 
-void LoadTexture(MaterialTexture & texture, ImageManager * pImageManager, const char * strLocalPath)
+void LoadTexture(MaterialTexture & texture, ImageManager * pImageManager)
 {
 	if (texture.Filename().empty())
 		return;
 
-	Image * pTexture = pImageManager->Load((strLocalPath + texture.Filename()).c_str());
+	Image * pTexture = pImageManager->Load(texture.Filename().c_str());
 	if (!pTexture)
 		return;
 
@@ -282,24 +282,24 @@ void LoadTexture(MaterialTexture & texture, ImageManager * pImageManager, const 
 								   pTexture->Width() * pTexture->PixelSize(), pTexture->Data());
 }
 
-void MaterialLayerImpl::LoadTextures(ImageManager * pImageManager, const char * strLocalPath)
+void MaterialLayerImpl::LoadTextures(ImageManager * pImageManager)
 {
-	LoadTexture(m_ambientTexture, pImageManager, strLocalPath);
-	LoadTexture(m_emissiveTexture, pImageManager, strLocalPath);
-	LoadTexture(m_diffuseTexture, pImageManager, strLocalPath);
-	LoadTexture(m_opacityTexture, pImageManager, strLocalPath);
-	LoadTexture(m_iorTexture, pImageManager, strLocalPath);
-	LoadTexture(m_reflectionTexture, pImageManager, strLocalPath);
-	LoadTexture(m_reflectionTintTexture, pImageManager, strLocalPath);
-	LoadTexture(m_reflectionRoughnessTexture, pImageManager, strLocalPath);
-	LoadTexture(m_reflectionExitColorTexture, pImageManager, strLocalPath);
-	LoadTexture(m_refractionTintTexture, pImageManager, strLocalPath);
-	LoadTexture(m_refractionRoughnessTexture, pImageManager, strLocalPath);
-	LoadTexture(m_refractionExitColorTexture, pImageManager, strLocalPath);
-	LoadTexture(m_bumpLevelTexture, pImageManager, strLocalPath);
+	LoadTexture(m_ambientTexture, pImageManager);
+	LoadTexture(m_emissiveTexture, pImageManager);
+	LoadTexture(m_diffuseTexture, pImageManager);
+	LoadTexture(m_opacityTexture, pImageManager);
+	LoadTexture(m_iorTexture, pImageManager);
+	LoadTexture(m_reflectionTexture, pImageManager);
+	LoadTexture(m_reflectionTintTexture, pImageManager);
+	LoadTexture(m_reflectionRoughnessTexture, pImageManager);
+	LoadTexture(m_reflectionExitColorTexture, pImageManager);
+	LoadTexture(m_refractionTintTexture, pImageManager);
+	LoadTexture(m_refractionRoughnessTexture, pImageManager);
+	LoadTexture(m_refractionExitColorTexture, pImageManager);
+	LoadTexture(m_bumpLevelTexture, pImageManager);
 
 	if (!m_bumpMapName.empty())
-		m_pNormalmap = pImageManager->LoadNormalmap((strLocalPath + m_bumpMapName).c_str());
+		m_pNormalmap = pImageManager->LoadNormalmap(m_bumpMapName.c_str());
 }
 
 // ------------------------------------------------------------------------ //
@@ -341,10 +341,10 @@ void MaterialResource::Save(pugi::xml_node node)
 		(*it)->Save(node.append_child("layer"));
 }
 
-void MaterialResource::LoadTextures(ImageManager * pImageManager, const char * strLocalPath)
+void MaterialResource::LoadTextures(ImageManager * pImageManager)
 {
 	for (auto it = m_layers.begin(); it != m_layers.end(); ++it)
-		(*it)->LoadTextures(pImageManager, strLocalPath);
+		(*it)->LoadTextures(pImageManager);
 }
 
 size_t MaterialResource::NumLayers() const

@@ -10,7 +10,9 @@
 
 using namespace mr;
 
-Model::Model(ModelManager & owner, const char * strName) : IResource(owner, strName)
+Model::Model(ModelManager & owner, const char * strName)
+	: IResource(owner, strName)
+	, m_pMaterialManager(new MaterialManager())
 {
 	m_bbox.ClearBounds();
 }
@@ -22,6 +24,15 @@ Model::~Model()
 		delete m_meshes.back();
 		m_meshes.pop_back();
 	}
+
+	SAFE_DELETE(m_pMaterialManager);
+}
+
+// ------------------------------------------------------------------------ //
+
+void Model::Save(pugi::xml_node node) const
+{
+	m_pMaterialManager->SaveMaterials(node);
 }
 
 // ------------------------------------------------------------------------ //

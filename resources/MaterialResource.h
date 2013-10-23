@@ -31,7 +31,7 @@ public:
 	void Load(pugi::xml_node node);
 	void Save(pugi::xml_node node);
 
-	void LoadTextures(ImageManager * pImageManager, const char * strLocalPath);
+	void LoadTextures(ImageManager * pImageManager);
 	
 	size_t NumLayers() const;
 	const class MaterialLayer * Layer(size_t i) const;
