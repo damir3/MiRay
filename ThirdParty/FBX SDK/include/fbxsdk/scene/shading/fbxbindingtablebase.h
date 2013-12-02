@@ -24,7 +24,7 @@
 /** A binding table represents a collection of bindings
   * from source types such as FbxObject, or FbxLayerElements
   * to destinations which can be of similar types.
-  * \See FbxBindingTableEntry.
+  * \see FbxBindingTableEntry.
   * \nosubgrouping
   */
 class FBXSDK_DLL FbxBindingTableBase : public FbxObject

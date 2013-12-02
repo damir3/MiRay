@@ -515,7 +515,7 @@ public:
 protected:
     bool OpenFile(EOpenFlag pFlag, EMCFileCount pFileCount, double pSamplingFrameRate, const char* pChannelName, const char* pInterpretation, unsigned int pSampleCount, unsigned int pPointCount, double pFrameStartOffset, FbxStatus* pStatus, EMCDataType pMCDataType = eDoubleVectorArray, EMCBinaryFormat pBinaryFormat = eMCX); 
 
-    virtual void Construct( const FbxCache* pFrom );
+    virtual void Construct( const FbxObject* pFrom );
     virtual void ConstructProperties(bool pForceSet);
     virtual void Destruct(bool pRecursive);
 

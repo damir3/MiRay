@@ -996,9 +996,7 @@ public:
 		/** This version is an improved version of the ConvertPivotAnimation(). It fully supports all the
 		  * attributes defined in the pivot sets and can process animation data defined on different animation
 		  * stack. 
-		  * \param pAnimStackName The name of animation stack on which the conversion will take place.
-		  *                       If equals an empty string, the first animation stack will be used.
-          *                       If equals \c NULL, convert the animation on all the animation stacks at once.
+		  * \param pAnimStack The animation stack on which the conversion will take place. If equals \c NULL, convert the animation on all the animation stacks.
 		  * \param pConversionTarget If set to EPivotSet::eDestinationPivot,
 		  *                          convert animation data from the EPivotSet::eSourcePivot pivot context
 		  *                          to the EPivotSet::eDestinationPivot pivot context. Otherwise, the
@@ -1023,7 +1021,7 @@ public:
 		  *          In the case when there are no geometric nodes in the scene tree, specifying the animation stack
 		  *          is safe and somewhat faster.
 		 */
-		void ConvertPivotAnimationRecursive(const char* pAnimStackName, EPivotSet pConversionTarget, double pFrameRate, bool pKeyReduce=true);
+		void ConvertPivotAnimationRecursive(FbxAnimStack* pAnimStack, EPivotSet pConversionTarget, double pFrameRate, bool pKeyReduce=true);
 
 		/** Reset all the pivot sets to the default pivot context and convert the animation.
 		  * \param pFrameRate Resampling frame rate in frames per second.
@@ -1047,8 +1045,9 @@ public:
 	//@}
 
 	/**
-	  * \name Node Transform Evaluation
+	  * \name Node Evaluation Functions
 	  */
+	//@{
 		/** Returns this node's global transformation matrix at the specified time. The node's translation, rotation and scaling limits are taken into consideration.
 		  * \param pTime The time used for evaluate. If FBXSDK_TIME_INFINITE is used, this returns the default value, without animation curves evaluation.
 		  * \param pPivotSet The pivot set to take into account
@@ -1085,7 +1084,6 @@ public:
 
 		/** Returns this node's LclRotation property at the specified time.
 		  * No pre/post rotation, rotation pivot, rotation offset or any other transform is taken into consideration. The rotation limit is applied.
-		  * \param pNode The transform node to evaluate.
 		  * \param pTime The time used for evaluate. If FBXSDK_TIME_INFINITE is used, this returns the default value, without animation curves evaluation.
 		  * \param pPivotSet The pivot set to take into account
 		  * \param pApplyTarget Applies the necessary transform to align into the target node
@@ -1105,7 +1103,16 @@ public:
 		  * \remarks This function is the equivalent of calling Scene->GetEvaluator()->GetNodeLocalScaling().
 		  */
 		FbxVector4& EvaluateLocalScaling(FbxTime pTime=FBXSDK_TIME_INFINITE, FbxNode::EPivotSet pPivotSet=FbxNode::eSourcePivot, bool pApplyTarget=false, bool pForceEval=false);
-	//@{
+
+		/** Compute the node's bounding box and its center in global coordinates.
+		* \param pBBoxMin The minimum value of the bounding box upon successful return.
+		* \param pBBoxMax The maximum value of the bounding box upon successful return.
+		* \param pBBoxCenter The center value of the bounding box upon successful return.
+		* \param pTime If different from FBXSDK_TIME_INFINITE, time used to compute the bounding box for deformed geometry.
+		* \param pAnimLayerId The animation layer used to compute the bounding box for deformed geometry.
+		* \return \c true if successful, otherwise \c false.
+		* \remark If geometry have been unloaded from memory, their bounding box cannot be calculated and will use any value set previously. */
+		bool EvaluateGlobalBoundingBoxMinMaxCenter(FbxVector4& pBBoxMin, FbxVector4& pBBoxMax, FbxVector4& pBBoxCenter, const FbxTime& pTime=FBXSDK_TIME_INFINITE, int pAnimLayerId=0);
 	//@}
 
 	/**
@@ -1973,7 +1980,7 @@ public:
 		{
 			if( !mRotationOffset )
 			{
-			#if( defined(__GNUC__) && __GNUC__ < 4 )
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mRotationOffset = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mRotationOffset = FbxNew< FbxVector4 >(pV);
@@ -1990,7 +1997,7 @@ public:
 		{
 			if( !mRotationPivot )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mRotationPivot = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mRotationPivot = FbxNew< FbxVector4 >(pV);
@@ -2007,7 +2014,7 @@ public:
 		{
 			if( !mPreRotation )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mPreRotation = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mPreRotation = FbxNew< FbxVector4 >(pV);
@@ -2024,7 +2031,7 @@ public:
 		{
 			if( !mPostRotation )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mPostRotation = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mPostRotation = FbxNew< FbxVector4 >(pV);
@@ -2041,7 +2048,7 @@ public:
 		{
 			if( !mScalingOffset )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mScalingOffset = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else                    
 				mScalingOffset = FbxNew< FbxVector4 >(pV);
@@ -2058,7 +2065,7 @@ public:
 		{
 			if( !mScalingPivot )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mScalingPivot = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else                    
 				mScalingPivot = FbxNew< FbxVector4 >(pV);
@@ -2075,7 +2082,7 @@ public:
 		{
 			if( !mGeometricTranslation )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mGeometricTranslation = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mGeometricTranslation = FbxNew< FbxVector4 >(pV);
@@ -2092,7 +2099,7 @@ public:
 		{
 			if( !mGeometricRotation )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mGeometricRotation = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mGeometricRotation = FbxNew< FbxVector4 >(pV);
@@ -2109,7 +2116,7 @@ public:
 		{
 			if( !mGeometricScaling )
 			{
-			#if (defined(__GNUC__) && __GNUC__ < 4)
+			#if defined(__GNUC__) && (__GNUC__ < 4)
 				mGeometricScaling = FbxNew< FbxVector4 >((FbxVector4&)pV);
 			#else
 				mGeometricScaling = FbxNew< FbxVector4 >(pV);
@@ -2358,7 +2365,7 @@ public:
     bool					mCorrectInheritType;
 
 protected:
-	virtual void Construct(const FbxNode* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 	virtual void Destruct(bool pRecursive);
 
@@ -2370,8 +2377,8 @@ private:
 
 	void				ResetLimitsRecursive(FbxNode* pNode);
 
-	void				ConvertPivotAnimationRecurseLoop(const char* pAnimStackName, const EPivotSet pConversionTarget, const double pFrameRate, const bool pKeyReduce, GeomInstSet& pGeomInstSet);
-	void				ConvertPivotAnimation(const char* pAnimStackName, const EPivotSet pConversionTarget, const double pFrameRate, const bool pKeyReduce, GeomInstSet& pGeomInstSet);
+	void				ConvertPivotAnimationRecurseLoop(FbxAnimStack* pAnimStack, const EPivotSet pConversionTarget, const double pFrameRate, const bool pKeyReduce, GeomInstSet& pGeomInstSet);
+	void				ConvertPivotAnimation(FbxAnimStack* pAnimStack, const EPivotSet pConversionTarget, const double pFrameRate, const bool pKeyReduce, GeomInstSet& pGeomInstSet);
 	bool				ConvertPivotAnimation_SetupMatrixConverter(FbxAnimCurveFilterMatrixConverter& pConverter, const EPivotSet& pSrcSet, const EPivotSet& pDstSet, const double pFrameRate, const bool pKeyReduce, GeomInstSet& pGeomInstSet);
 	void				ConvertPivotAnimation_ApplyGeometryPivot(const EPivotSet& pSrcSet, const EPivotSet& pDstSet, GeomInstSet& pGeomInstSet);
 

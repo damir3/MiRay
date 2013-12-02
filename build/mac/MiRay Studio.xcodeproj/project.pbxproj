@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2612780817702D0200AD2797 /* libfbxsdk.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2612780717702D0200AD2797 /* libfbxsdk.dylib */; };
-		2612780917702ECE00AD2797 /* libfbxsdk.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2612780717702D0200AD2797 /* libfbxsdk.dylib */; };
 		262585511771C090006FD438 /* libcommon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854D1771C090006FD438 /* libcommon.a */; };
 		262585521771C090006FD438 /* libresources.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854E1771C090006FD438 /* libresources.a */; };
 		262585531771C090006FD438 /* librt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854F1771C090006FD438 /* librt.a */; };
 		262585541771C090006FD438 /* libui.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262585501771C090006FD438 /* libui.a */; };
 		262BADAA1764875200D91D70 /* libfreeimage-3.15.4.dylib-x86_64 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */; };
+		2646ED1418493C1D0071CBB0 /* libfbxsdk.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2646ED1318493C1D0071CBB0 /* libfbxsdk.dylib */; };
+		2646ED1518493C350071CBB0 /* libfbxsdk.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2646ED1318493C1D0071CBB0 /* libfbxsdk.dylib */; };
 		264A4E21172D2E1100B85FA0 /* SceneView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 264A4E20172D2E1100B85FA0 /* SceneView.mm */; };
 		264A4F24172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 in Frameworks */ = {isa = PBXBuildFile; fileRef = 264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */; };
 		26870840172D2A3D00D46007 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2687083F172D2A3D00D46007 /* Cocoa.framework */; };
@@ -37,7 +37,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				2612780817702D0200AD2797 /* libfbxsdk.dylib in CopyFiles */,
+				2646ED1518493C350071CBB0 /* libfbxsdk.dylib in CopyFiles */,
 				262BADAA1764875200D91D70 /* libfreeimage-3.15.4.dylib-x86_64 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -58,11 +58,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2612780717702D0200AD2797 /* libfbxsdk.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfbxsdk.dylib; path = "../../ThirdParty/FBX SDK/lib/gcc4/ub/release/libfbxsdk.dylib"; sourceTree = "<group>"; };
 		2625854D1771C090006FD438 /* libcommon.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcommon.a; path = build/Release/libcommon.a; sourceTree = "<group>"; };
 		2625854E1771C090006FD438 /* libresources.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresources.a; path = build/Release/libresources.a; sourceTree = "<group>"; };
 		2625854F1771C090006FD438 /* librt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librt.a; path = build/Release/librt.a; sourceTree = "<group>"; };
 		262585501771C090006FD438 /* libui.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libui.a; path = build/Release/libui.a; sourceTree = "<group>"; };
+		2646ED1318493C1D0071CBB0 /* libfbxsdk.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfbxsdk.dylib; path = "../../ThirdParty/FBX SDK/lib/clang/ub/release/libfbxsdk.dylib"; sourceTree = "<group>"; };
 		264A4E1F172D2E1100B85FA0 /* SceneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneView.h; sourceTree = "<group>"; };
 		264A4E20172D2E1100B85FA0 /* SceneView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SceneView.mm; sourceTree = "<group>"; };
 		264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libfreeimage-3.15.4.dylib-x86_64"; path = "../../ThirdParty/FreeImage/libfreeimage-3.15.4.dylib-x86_64"; sourceTree = "<group>"; };
@@ -92,11 +92,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2646ED1418493C1D0071CBB0 /* libfbxsdk.dylib in Frameworks */,
 				262585511771C090006FD438 /* libcommon.a in Frameworks */,
 				262585521771C090006FD438 /* libresources.a in Frameworks */,
 				262585531771C090006FD438 /* librt.a in Frameworks */,
 				262585541771C090006FD438 /* libui.a in Frameworks */,
-				2612780917702ECE00AD2797 /* libfbxsdk.dylib in Frameworks */,
 				26ABD2DF17686079008FC669 /* OpenCL.framework in Frameworks */,
 				264A4F24172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 in Frameworks */,
 				26870840172D2A3D00D46007 /* Cocoa.framework in Frameworks */,
@@ -127,11 +127,11 @@
 		2687083E172D2A3D00D46007 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2646ED1318493C1D0071CBB0 /* libfbxsdk.dylib */,
 				2625854D1771C090006FD438 /* libcommon.a */,
 				2625854E1771C090006FD438 /* libresources.a */,
 				2625854F1771C090006FD438 /* librt.a */,
 				262585501771C090006FD438 /* libui.a */,
-				2612780717702D0200AD2797 /* libfbxsdk.dylib */,
 				264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */,
 				26ABD2DE17686079008FC669 /* OpenCL.framework */,
 				26870866172D2AC100D46007 /* OpenGL.framework */,
@@ -351,8 +351,7 @@
 				INFOPLIST_FILE = "../../MiRay Studio/mac/MiRay Studio-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../ThirdParty/FreeImage\"",
-					"\"$(SRCROOT)/../../ThirdParty/FBX SDK/lib/gcc4/ub/release\"",
+					"/Users/damir/Code/MiRay/ThirdParty/FBX\\ SDK/lib/clang/ub/release",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -368,8 +367,7 @@
 				INFOPLIST_FILE = "../../MiRay Studio/mac/MiRay Studio-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../ThirdParty/FreeImage\"",
-					"\"$(SRCROOT)/../../ThirdParty/FBX SDK/lib/gcc4/ub/release\"",
+					"/Users/damir/Code/MiRay/ThirdParty/FBX\\ SDK/lib/clang/ub/release",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;

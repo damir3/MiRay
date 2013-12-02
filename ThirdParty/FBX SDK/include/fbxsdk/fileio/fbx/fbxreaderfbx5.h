@@ -35,6 +35,7 @@ public:
 	virtual ~FbxReaderFbx5();
 
     virtual bool FileOpen(char* pFileName, bool pIgnoredArg);
+    virtual bool FileOpen(char* pFileName, EFileOpenSpecialFlags pFlags){ return FbxReader::FileOpen(pFileName, pFlags); }
 	virtual bool FileOpen(char* pFileName);
     virtual bool FileOpen(FbxFile * pFile);
 	virtual bool FileOpen(FbxStream * pStream, void* pStreamData);

@@ -16,6 +16,7 @@
 #include <fbxsdk/fbxsdk_def.h>
 
 #include <fbxsdk/core/base/fbxtimecode.h>
+#include <fbxsdk/core/base/fbxstring.h>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
@@ -24,6 +25,8 @@
 #define FBXSDK_TIME_ZERO			FbxTime(FBXSDK_TC_ZERO)
 #define FBXSDK_TIME_EPSILON			FbxTime(FBXSDK_TC_EPSILON)
 #define FBXSDK_TIME_ONE_SECOND		FbxTime(FBXSDK_TC_SECOND)
+#define FBXSDK_TIME_ONE_MINUTE		FbxTime(FBXSDK_TC_MINUTE)
+#define FBXSDK_TIME_ONE_HOUR		FbxTime(FBXSDK_TC_HOUR)
 #define FBXSDK_TIME_ASSERT_EPSILON	0.5
 #define FBXSDK_TIME_FORWARD			1
 #define FBXSDK_TIME_BACKWARD		-1
@@ -147,7 +150,7 @@ public:
 
 		/** Get time mode associated with frame rate.
 		  * \param pFrameRate The frame rate value.
-		  * \param lPrecision The tolerance value.
+		  * \param pPrecision The tolerance value.
 		  * \return The corresponding time mode identifier or \c eDefaultMode if no time 
 		  * mode associated to the given frame rate is found.
 		  */
@@ -237,13 +240,19 @@ public:
 		  * \param pRound  If \c true the return value is rounded to the nearest integer.
 		  * \return        The snapped time value.
 		  */
-		FbxTime	GetFramedTime(bool pRound=true);
+		FbxTime	GetFramedTime(bool pRound=true) const;
 
 		/** Set time in frame format.
 		  * \param pFrames The number of frames.
 		  * \param pTimeMode The time mode identifier which will dictate the extraction algorithm.
 		  */
 		void SetFrame(FbxLongLong pFrames, EMode pTimeMode=eDefaultMode);
+
+		/** Set time in frame format, including fractions.
+		  * \param pFrames The number of frames in decimal value.
+		  * \param pTimeMode The time mode identifier which will dictate the extraction algorithm.
+		  */
+		void SetFramePrecise(FbxDouble pFrames, EMode pTimeMode=eDefaultMode);
 
 		/** Get number of hours in time.
 		  * \return Hours value.
@@ -261,11 +270,16 @@ public:
 		int GetSecondCount() const;
 
 		/** Get number of frames in time.
-		  * frames exceeding last full second.
 		  * \param pTimeMode Time mode identifier.
-		  * \return Frames values.
+		  * \return Integer value representing the frame count.
 		  */
 		FbxLongLong GetFrameCount(EMode pTimeMode=eDefaultMode) const;
+
+		/** Get precise number of frames in time, including fractions.
+		  * \param pTimeMode Time mode identifier.
+		  * \return Decimal value representing the frame count, including fractions.
+		  */
+		FbxDouble GetFrameCountPrecise(EMode pTimeMode=eDefaultMode) const;
 
 		/** Get number of fields in time.
 		  * \param pTimeMode Time mode identifier.
@@ -324,6 +338,16 @@ public:
 		  * if parameter pInfo is not valid.
 		  */
 		char* GetTimeString(char* pTimeString, const FbxUShort& pTimeStringSize, int pInfo=5, EMode pTimeMode=eDefaultMode, EProtocol pTimeFormat=eDefaultProtocol) const;
+
+		enum EElement {eHours, eMinutes, eSeconds, eFrames, eField, eResidual};
+
+		/** Get the time in a human readable format.
+		* \param pStart The starting element type used to format the time string.
+		* \param pEnd The last element type used to format the time string.
+		* \param pTimeMode The time mode requested.
+		* \param pTimeFormat The time format requested.
+		* \return The human readable time string. */
+		FbxString GetTimeString(EElement pStart=eHours, EElement pEnd=eResidual, EMode pTimeMode=eDefaultMode, EProtocol pTimeFormat=eDefaultProtocol) const;
 
         /** Set time in a human readable format.
 		  * \param pTime An array of a maximum of 18 characters.

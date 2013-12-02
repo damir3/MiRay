@@ -188,9 +188,11 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     virtual FbxObject& Copy(const FbxObject& pObject);
+    virtual void InitControlPoints(int pCount)                                  { ParentClass::InitControlPoints(pCount); }
+    virtual void SetControlPointAt(const FbxVector4 &pCtrlPoint , int pIndex)   { ParentClass::SetControlPointAt(pCtrlPoint, pIndex); }    
 
 protected:
-	virtual void Construct(const FbxPatch* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
     EType mUType, mVType;

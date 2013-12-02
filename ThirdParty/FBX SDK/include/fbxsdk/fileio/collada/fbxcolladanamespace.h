@@ -32,7 +32,6 @@ public:
 
     /** Pop the newparam and setparam elements found in this element.
       * Call this method at the end of importing an element.
-      * \param pElement The specific element.
       */
     void Pop();
 

@@ -17,6 +17,7 @@
 
 #include <fbxsdk/core/base/fbxtime.h>
 #include <fbxsdk/scene/fbxcollection.h>
+#include <fbxsdk/scene/animation/fbxanimevalstate.h>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
@@ -121,16 +122,16 @@ public:
         /** Get the thumbnail image associated to this animation stack.
           * This method exists for legacy reasons. In the newer FBX files, there can only be one 
           * thumbnail image and it belongs to the FbxDocument.
-          * \return Pointer to the thumbnail.
+          * \return Pointer to the document thumbnail.
           */
-        FbxThumbnail* GetTakeThumbnail();
+        FBX_DEPRECATED FbxThumbnail* GetTakeThumbnail();
 
-        /** Set the take thumbnail.
+        /** Does nothing.
           * This method exists for legacy reasons. In the newer FBX files, there can only be one 
           * thumbnail image and it belongs to the FbxDocument.
           * \param pTakeThumbnail The referenced thumbnail object.
           */
-        void SetTakeThumbnail(FbxThumbnail* pTakeThumbnail);
+        FBX_DEPRECATED void SetTakeThumbnail(FbxThumbnail* pTakeThumbnail);
 
         /** Bake all the animation layers on the base layer.
           * This function will process all the properties on every animation layer and generate a re-sampled set of
@@ -147,21 +148,21 @@ public:
           * \remarks If this AnimStack contains only one AnimLayer, the function will return false and do nothing.
           */
         bool BakeLayers(FbxAnimEvaluator* pEvaluator, FbxTime pStart, FbxTime pStop, FbxTime pPeriod);
-                        
     //@}
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+	FbxAnimEvalState* GetEvaluationState() const;
 
 protected:
-	virtual void Construct(const FbxAnimStack* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
+	virtual void Destruct(bool pRecursive);
 
-    virtual FbxAnimStack* GetAnimStack();
-
-    FbxPropertyT<FbxReference> TakeThumbnail;    
+private:
+	FbxAnimEvalState* mEvalState;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };
 

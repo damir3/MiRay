@@ -145,7 +145,7 @@ public:
       */
     virtual bool				Read(FbxDocument* pDocument) = 0;
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Reads extension plug-ins name, version and parameters, so that we can remember if a plug-in was used during export.
 	  * This is especially useful for extension plug-ins that modify the scene and also to warn users during import if an
 	  * extension plug-in was used that could be missing.
@@ -155,7 +155,7 @@ public:
 	  * FBX 6 and FBX 7 does implement it.
       */
 	virtual void				PluginReadParameters(FbxObject& pParams);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 	/** Opens the file with specific EFileOpenSpecialFlags
       * \param pFileName     Name of the File to open.
@@ -242,11 +242,11 @@ public:
 
 protected:
 	void						SetDefaultRenderResolution(const char* pCamName, const char* pResolutionMode, double pW, double pH);
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	void						PluginsReadBegin(FbxScene& pScene);
 	void						PluginsRead(const char* pName, const char* pVersion);
 	void						PluginsReadEnd(FbxScene& pScene);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
     FbxReader&					operator=(FbxReader const&) { return *this; }
     virtual bool				CheckDuplicateNodeNames(FbxNode* pRootNode, FbxString& pDuplicateNodeNameList);
 

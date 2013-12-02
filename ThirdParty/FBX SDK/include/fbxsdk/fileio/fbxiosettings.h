@@ -265,7 +265,6 @@ public:
 		  * \param pValue
 		  * \param pMinValue
 		  * \param pMaxValue
-		  * \param pValueType
 		  * \param pVisible   (used by the UI to show or not that property)
 		  * \param pSavable   (to enable a read & write to an XML file)
 		  * \param pEnabled   (used by the widget UI to show enabled or disabled)
@@ -569,7 +568,7 @@ public:
 	};
 
 protected:
-	virtual void Construct(const FbxIOSettings* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 	virtual void Destruct(bool pRecursive);
 

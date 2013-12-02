@@ -26,17 +26,21 @@
 	#include <crtdbg.h>
 #endif
 
-#if defined(FBXSDK_ALLOC_DEBUG)
-	#if defined(FBXSDK_ENV_MAC)
-		#include <malloc/malloc.h>
-	#else
-		#include <malloc.h>
-	#endif
+#if defined(FBXSDK_ENV_MAC)
+	#include <malloc/malloc.h>
+#else
+	#include <malloc.h>
 #endif
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
-#define FBXSDK_MEMORY_ALIGNMENT ((size_t)8U)
+#if defined(FBXSDK_CPU_32) && !defined(FBXSDK_ENV_IOS)
+	#define FBXSDK_MEMORY_ALIGNMENT ((size_t)8U)
+#else
+	#define FBXSDK_MEMORY_ALIGNMENT ((size_t)16U)
+#endif
+
+#define FBXSDK_MEMORY_COPY(dst, src, size) {memcpy(dst,src,size);}
 
 typedef void*	(*FbxMallocProc)(size_t);			//! Function pointer signature used to replace "malloc"
 typedef void*	(*FbxCallocProc)(size_t, size_t);	//! Function pointer signature used to replace "calloc"
@@ -99,7 +103,6 @@ FBXSDK_DLL FbxFreeProc FbxGetDefaultFreeHandler();
 	FBXSDK_DLL void* FbxCalloc(size_t pCount, size_t pSize);
 	FBXSDK_DLL void* FbxRealloc(void* pData, size_t pSize);
 	FBXSDK_DLL void FbxFree(void* pData);
-	FBXSDK_DLL void* FbxMallocAligned(size_t pSize);
 	FBXSDK_DLL char* FbxStrDup(const char* pString);
 	FBXSDK_DLL wchar_t* FbxStrDupWC(const wchar_t* pString);
 

@@ -15,89 +15,50 @@
 
 #include <fbxsdk/fbxsdk_def.h>
 
-#if defined(FBXSDK_COMPILER_MSC)
-	#if defined(FBXSDK_CPU_32)
-		#if _MSC_VER <= 1600
-			#define SIZE_OF_STDSTRING 32
-		#elif _MSC_VER == 1700
-			#define SIZE_OF_STDSTRING 28
-		#endif
-	#elif defined(FBXSDK_CPU_64)
-		#if _MSC_VER <= 1600
-			#define SIZE_OF_STDSTRING 48
-		#elif _MSC_VER == 1700
-			#define SIZE_OF_STDSTRING 40
-		#endif
-	#endif
-#elif defined(FBXSDK_COMPILER_GNU)
-	#if defined(FBXSDK_CPU_32)
-		#define SIZE_OF_STDSTRING 4
-	#elif defined(FBXSDK_CPU_64)
-		#define SIZE_OF_STDSTRING 8
-	#endif
-#endif
-
-#if !defined(SIZE_OF_STDSTRING)
-    #error Unsupported architecture!
-#endif
-
-#define FBXSDK_STRING_OPAQUE_OBJECT_HEADER void* mOpaqueChunk[SIZE_OF_STDSTRING/sizeof(void*)]
-#ifndef FBXSDK_STRING_OPAQUE_OBJECT
-    #define FBXSDK_STRING_OPAQUE_OBJECT FBXSDK_STRING_OPAQUE_OBJECT_HEADER
-#endif
-
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
-//Conversions between WideChar, UTF8 and ANSI
-
 /** Convert string from UTF8 to wide-char
-  * \param inUTF8               input string
-  * \param pOutWideChar         output string
-  * \param pOutWideCharSize     size of the allocated output string buffer
-  * \remark Output buffer should be release by caller
-  */
-FBXSDK_DLL void FbxUTF8ToWC(const char* pInUTF8, wchar_t*& pOutWideChar, size_t* pOutWideCharSize = NULL);
+* \param pInUTF8 Input string
+* \param pOutWideChar output string
+* \param pOutWideCharSize size of the allocated output string buffer
+* \remark Output buffer should be release by caller */
+FBXSDK_DLL void FbxUTF8ToWC(const char* pInUTF8, wchar_t*& pOutWideChar, size_t* pOutWideCharSize=NULL);
 
 /** Convert string from wide-char to UTF8
-  * \param inWideChar            input string
-  * \param pOutUTF8              output string
-  * \param pOutUTF8Size          size of the allocated output string buffer
-  * \remark Output buffer should be release by caller
-  */
-FBXSDK_DLL void FbxWCToUTF8(const wchar_t* pInWideChar, char*& pOutUTF8, size_t* pOutUTF8Size = NULL);
+* \param pInWideChar input string
+* \param pOutUTF8 output string
+* \param pOutUTF8Size size of the allocated output string buffer
+* \remark Output buffer should be release by caller */
+FBXSDK_DLL void FbxWCToUTF8(const wchar_t* pInWideChar, char*& pOutUTF8, size_t* pOutUTF8Size=NULL);
 
 #if defined(FBXSDK_ENV_WIN)
-    /** Convert string from wide-char to ANSI
-      * \param pInWideChar          input string
-      * \param pOutANSI             output string
-      * \param pOutANSISize         size of the allocated output string buffer
-      * \remark Output buffer should be release by caller
-      */
-    FBXSDK_DLL void FbxWCToAnsi(const wchar_t* pInWideChar, char*& pOutANSI, size_t* pOutANSISize = NULL);
+	/** Convert string from wide-char to ANSI
+	* \param pInWideChar input string
+	* \param pOutANSI output string
+	* \param pOutANSISize size of the allocated output string buffer
+	* \remark Output buffer should be release by caller */
+	FBXSDK_DLL void FbxWCToAnsi(const wchar_t* pInWideChar, char*& pOutANSI, size_t* pOutANSISize=NULL);
 
-    /** Convert string from ANSI to wide-char
-      * \param inANSI               input string
-      * \param pOutWideChar         output string
-      * \param pOutWideCharSize     size of the allocated output string buffer
-      * \remark Output buffer should be release by caller
-      */
-    FBXSDK_DLL void FbxAnsiToWC(const char* pInANSI, wchar_t*& pOutWideChar, size_t* pOutWideCharSize = NULL);
+	/** Convert string from ANSI to wide-char
+	* \param pInANSI input string
+	* \param pOutWideChar output string
+	* \param pOutWideCharSize size of the allocated output string buffer
+	* \remark Output buffer should be release by caller */
+	FBXSDK_DLL void FbxAnsiToWC(const char* pInANSI, wchar_t*& pOutWideChar, size_t* pOutWideCharSize=NULL);
 
-    /** Convert string from ANSI to UTF8
-      * \param inANSI               input string
-      * \param outUTF8              output string
-      * \param pOutUTF8Size         size of the allocated output string buffer
-      * \remark Output buffer should be release by caller
-      */
-    FBXSDK_DLL void FbxAnsiToUTF8(const char* pInANSI, char*& pOutUTF8, size_t* pOutUTF8Size = NULL);
+	/** Convert string from ANSI to UTF8
+	* \param pInANSI input string
+	* \param outUTF8 output string
+	* \param pOutUTF8Size size of the allocated output string buffer
+	* \remark Output buffer should be release by caller */
+	FBXSDK_DLL void FbxAnsiToUTF8(const char* pInANSI, char*& pOutUTF8, size_t* pOutUTF8Size=NULL);
 
-    /** Convert string from UTF8 to ANSI
-      * \param pInUTF8              input string
-      * \param outANSI              output string
-      * \param pOutANSISize         size of the allocated output string buffer
-      * \remark Output buffer should be release by caller
-      */
-    FBXSDK_DLL void FbxUTF8ToAnsi(const char* pInUTF8, char*& pOutANSI, size_t* pOutANSISize = NULL);
+	/** Convert string from UTF8 to ANSI
+	* \param pInUTF8 input string
+	* \param pOutANSI output string
+	* \param pOutANSISize size of the allocated output string buffer
+	* \remark Output buffer should be release by caller */
+	FBXSDK_DLL void FbxUTF8ToAnsi(const char* pInUTF8, char*& pOutANSI, size_t* pOutANSISize=NULL);
 #endif
 
 /** Utility class to manipulate strings.
@@ -113,12 +74,12 @@ public:
 		FbxString();
 
 		/** Copy constructor.
-		* \param pStr The FbxString to be copied. */
-		FbxString(const FbxString& pStr);
+		* \param pString The FbxString to be copied. */
+		FbxString(const FbxString& pString);
 
 		/** String constructor.
-		* \param pStr The string used to construct FbxString. */
-		FbxString(const char* pStr);
+		* \param pString The string used to construct FbxString. */
+		FbxString(const char* pString);
 
 		/** Character constructor.
 		* \param pChar The character used to construct FbxString.
@@ -153,6 +114,9 @@ public:
 		//! Get string length like "C" strlen().
 		size_t GetLen() const;
 
+		//! Get string length like "C" strlen().
+		size_t Size() const;
+
 		//! Return \c true if string length equal zero.
 		bool IsEmpty() const;
 
@@ -181,16 +145,16 @@ public:
 	*/
 	//@{
 		/** FbxString assignment operator.
-		* \param pStr The FbxString to be assigned. */
-		const FbxString& operator=(const FbxString& pStr);
+		* \param pString The FbxString to be assigned. */
+		const FbxString& operator=(const FbxString& pString);
 
 		/** Character assignment operator.
 		* \param pChar The character to be assigned. */
 		const FbxString& operator=(char pChar);
 
 		/** String assignment operator.
-		* \param pStr The string to be assigned. */
-		const FbxString& operator=(const char* pStr);
+		* \param pString The string to be assigned. */
+		const FbxString& operator=(const char* pString);
 
 		/** Int assignment operator.
 		* \param pValue The int value to be assigned. */
@@ -205,131 +169,151 @@ public:
 		const FbxString& operator=(double pValue);
 
 		/** FbxString append.
-		* \param pKStr  The FbxString to be appended. */
-		const FbxString& operator+=(const FbxString& pKStr);
+		* \param pString The FbxString to be appended. */
+		const FbxString& operator+=(const FbxString& pString);
 
 		/** Character append.
 		* \param pChar  The character to be appended. */
 		const FbxString& operator+=(char pChar);
 
 		/** String append.
-		* \param pStr    The string to be appended. */
-		const FbxString& operator+=(const char* pStr);
+		* \param pString The string to be appended. */
+		const FbxString& operator+=(const char* pString);
 
 		/** Integer append.
-		* \param pValue  The int value to be appended. */
+		* \param pValue The int value to be appended. */
 		const FbxString& operator+=(int pValue);
 
 		/** Float append.
-		* \param pValue  The float value to be appended. */
+		* \param pValue The float value to be appended. */
 		const FbxString& operator+=(float pValue);
 
 		/** Double append.
-		* \param pValue  The double value to be appended. */
+		* \param pValue The double value to be appended. */
 		const FbxString& operator+=(double pValue);
 
 		/** Equality operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator== (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator== (const FbxString& pString) const;
 
 		/** Inequality operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator!= (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator!= (const FbxString& pString) const;
 
 		/** Inferior to operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator< (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator< (const FbxString& pString) const;
 
 		/** Inferior or equal to operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator<= (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator<= (const FbxString& pString) const;
 
 		/** Superior or equal to operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator>= (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator>= (const FbxString& pString) const;
 
 		/** Superior to operator.
-		* \param pStr    The FbxString to be compared. */
-		bool operator> (const FbxString& pStr) const;
+		* \param pString The FbxString to be compared. */
+		bool operator> (const FbxString& pString) const;
 
 		/** Equality operator.
-		* \param pStr    The string to be compared. */
-		bool operator== (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator== (const char* pString) const;
 
 		/** Inequality operator.
-		* \param pStr    The string to be compared. */
-		bool operator!= (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator!= (const char* pString) const;
 
 		/** Inferior to operator.
-		* \param pStr    The string to be compared. */
-		bool operator< (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator< (const char* pString) const;
 
 		/** Inferior or equal to operator.
-		* \param pStr    The string to be compared. */
-		bool operator<= (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator<= (const char* pString) const;
 
 		/** Superior or equal to operator.
-		* \param pStr    The string to be compared. */
-		bool operator>= (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator>= (const char* pString) const;
 
 		/** Superior to operator.
-		* \param pStr    The string to be compared. */
-		bool operator> (const char* pStr) const;
+		* \param pString The string to be compared. */
+		bool operator> (const char* pString) const;
 
 		/** FbxString concatenation.
-		* \param pKStr1  FbxString 1 to be concatenated to FbxString 2.
-		* \param pKStr2  FbxString 2 to be concatenated to FbxString 1 */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr1, const FbxString& pKStr2);
+		* \param pString1 FbxString 1 to be concatenated to FbxString 2.
+		* \param pString2 FbxString 2 to be concatenated to FbxString 1 */
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString1, const FbxString& pString2);
 
 		/** Character concatenation.
-		* \param pKStr  FbxString to be concatenated to Character.
+		* \param pString  FbxString to be concatenated to Character.
 		* \param pChar  Character to be concatenated to FbxString */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr, char pChar);
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString, char pChar);
+
+		/** Character concatenation.
+		* \param pChar  Character to be concatenated to FbxString
+		* \param pString  FbxString to be concatenated to Character. */
+		friend FBXSDK_DLL FbxString operator+(char pChar, const FbxString& pString);
 
 		/** String concatenation.
-		* \param pKStr  FbxString to be concatenated to String.
-		* \param pStr  String to be concatenated to FbxString */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr, const char* pStr);
+		* \param pString1  FbxString to be concatenated to String.
+		* \param pString2  String to be concatenated to FbxString */
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString1, const char* pString2);
+
+		/** String concatenation.
+		* \param pString1  String to be concatenated to FbxString
+		* \param pString2  FbxString to be concatenated to String. */
+		friend FBXSDK_DLL FbxString operator+(const char* pString1, const FbxString& pString2);
 
 		/** Integer concatenation.
-		* \param pKStr  FbxString to be concatenated to Integer.
+		* \param pString  FbxString to be concatenated to Integer.
 		* \param pValue  Integer to be concatenated to FbxString */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr, int pValue);
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString, int pValue);
+
+		/** Integer concatenation.
+		* \param pValue  Integer to be concatenated to FbxString 
+		* \param pString  FbxString to be concatenated to Integer. */
+		friend FBXSDK_DLL FbxString operator+(int pValue, const FbxString& pString);
 
 		/** Float concatenation.
-		* \param pKStr  FbxString to be concatenated to Float.
+		* \param pString  FbxString to be concatenated to Float.
 		* \param pValue  Float to be concatenated to FbxString */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr, float pValue);
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString, float pValue);
+
+		/** Float concatenation.
+		* \param pValue  Float to be concatenated to FbxString
+		* \param pString  FbxString to be concatenated to Float. */
+		friend FBXSDK_DLL FbxString operator+( float pValue, const FbxString& pString);
 
 		/** Double concatenation.
-		* \param pKStr  FbxString to be concatenated to Double.
+		* \param pString  FbxString to be concatenated to Double.
 		* \param pValue  Double to be concatenated to FbxString */
-		friend FBXSDK_DLL FbxString operator+(const FbxString& pKStr, double pValue);
+		friend FBXSDK_DLL FbxString operator+(const FbxString& pString, double pValue);
 
 		//! Cast operator.
 		operator const char*() const;
 
 		/** String assignment function with maximum length.
-		  * \param pStr The string to be assigned.
+		  * \param pString The string to be assigned.
 		  * \param pLength The maximum length of string to be assigned. */
-		const FbxString& Copy(const char* pStr, size_t pLength);
+		const FbxString& Copy(const char* pString, size_t pLength);
 
 		/** Append as "C" strncat().
-		* \param pStr The string to be appended.
+		* \param pString The string to be appended.
 		* \param pLength The length of chars to be appended. */
-		const FbxString& Append(const char* pStr, size_t pLength);
+		const FbxString& Append(const char* pString, size_t pLength);
 
 		/** Compare as "C" strcmp().
-		* \param pStr    The string to be compared. */
-		int Compare(const char* pStr) const;
+		* \param pString    The string to be compared. */
+		int Compare(const char* pString) const;
 
 		/** Compare as "C" stricmp().
-		* \param pStr    The string to be compared. */
-		int CompareNoCase(const char* pStr) const;
+		* \param pString    The string to be compared. */
+		int CompareNoCase(const char* pString) const;
 
 		/** Swap the contents of two strings.
-		* \param pStr The FbxString to be swapped. */
-		void Swap(FbxString& pStr);
+		* \param pString The FbxString to be swapped. */
+		void Swap(FbxString& pString);
 
 		//! Uppercase conversion.
 		FbxString Upper() const;
@@ -444,28 +428,49 @@ public:
 	//@}
 
 private:
-    FBXSDK_STRING_OPAQUE_OBJECT;
+	// Lengths/sizes in characters. 
+	// Note: an extra character is always allocated.
+	char* mData; // Actual string (zero terminated).
+
+	FbxString(size_t pSrc1Len, const char* pSrc1Data, size_t pSrc2Len, const char* pSrc2Data); // Previously ConcatCopy
+	void Init();
+
+	//! Invalidate string.
+	void Invalidate();
+
+	void FreeBuffer();
+	void FreeBuffer(char *&pOldData);
+
+	bool AllocCopy(FbxString& pDest, size_t pCopyLen, size_t pCopyIndex) const;
+	bool AllocBuffer(size_t pLen);
+	bool AllocBuffer(size_t pLen, char*& pOldData);
+
+	bool AssignCopy(size_t pSrcLen, const char* pSrcData);
+	bool ConcatInPlace(size_t pSrcLen, const char* pSrcData);
+
+	bool IsIn(char pChar, const char* pString) const;
+	bool InternalFindAndReplace(const char* pFind, const char* pReplaceBy, size_t& pStartPosition); 
 };
 
 FBXSDK_INCOMPATIBLE_WITH_ARRAY(FbxString);
 
 //! FbxString concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr1, const FbxString& pKStr2);
+FBXSDK_DLL FbxString operator+(const FbxString& pString1, const FbxString& pString2);
 
 //! Character concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr, char pChar);
+FBXSDK_DLL FbxString operator+(const FbxString& pString, char pChar);
 
 //! String concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr, const char* pStr);
+FBXSDK_DLL FbxString operator+(const FbxString& pString1, const char* pString2);
 
 //! Integer concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr, int pValue);
+FBXSDK_DLL FbxString operator+(const FbxString& pString, int pValue);
 
 //! Float concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr, float pValue);
+FBXSDK_DLL FbxString operator+(const FbxString& pString, float pValue);
 
 //! Double concatenation.
-FBXSDK_DLL FbxString operator+(const FbxString& pKStr, double pValue);
+FBXSDK_DLL FbxString operator+(const FbxString& pString, double pValue);
 
 /** Functor class to compare FbxString, and is suitable for use in FbxMap. */
 class FbxStringCompare
@@ -495,7 +500,7 @@ public:
 
 /** Remove the given char in the given string.
 * \param pString The given string.
-* \param lToRemove The given char ought to be removed.
+* \param pToRemove The given char that ought to be removed.
 * \remarks Strings used in this function are case-sensitive. */
 inline void FbxRemoveChar(FbxString& pString, char pToRemove)
 {

@@ -139,13 +139,13 @@ public:
 	FbxBindingTable* GetTableByTargetName( const char* pName );
 
   	/** Returns the binding table that has the given target type.
-	* \param pTargetType The target type to look for.
+	* \param pTargetName The target type to look for.
 	* \return A const pointer to the binding table with the given target type, or NULL if there is no such binding table.
 	*/
 	const FbxBindingTable* GetTableByTargetType( const char* pTargetName ) const;
 	
 	/** Returns the binding table that has the given target type.
-	* \param pTargetType The target type to look for.
+	* \param pTargetName The target type to look for.
 	* \return A pointer to the binding table with the given target type, or NULL if there is no such binding table.
 	*/
 	FbxBindingTable* GetTableByTargetType( const char* pTargetName );

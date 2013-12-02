@@ -308,10 +308,19 @@ public:
 		* Frees and set to \c NULL all layers and clear the polygon and the control point array. */
 		void Reset();
 
+        /** Generate vertex normals on the mesh.
+        * The normal computation takes into consideration, as much as possible, the smoothing groups.
+		* \param pOverwrite If true, re-generate normals data regardless of availability, otherwise left untouched if exist.
+        * \param pByCtrlPoint If true, the recomputed normals will be defined by control points instead of by polygon vertex.
+        * \param pCW True if the normals are calculated clockwise, false otherwise (counter-clockwise).
+		* \return \c true if successfully generated normals data, or if already available and pOverwrite is false. */
+		bool GenerateNormals(bool pOverwrite=false, bool pByCtrlPoint = false, bool pCW=false);
+
 		/** Compute the vertex normals on the mesh.
 		* The normals are per vertex and are the average of all the polygon normals associated with each vertex.
-		* \param pCW True if the normals are calculated clockwise, false otherwise (counter-clockwise). */
-		void ComputeVertexNormals(bool pCW=false);
+		* \param pCW True if the normals are calculated clockwise, false otherwise (counter-clockwise).
+        * \remark This function is deprecated. Please use GenerateNormals(true, true, pCW) */
+		FBX_DEPRECATED void ComputeVertexNormals(bool pCW=false);
 
 		/** Compares the normals calculated by doing cross-products between the polygon vertex and by the ones
 		* stored in the normal array.
@@ -381,7 +390,7 @@ public:
 		void MergePointsForPolygonVerteNormals(FbxArray<int> &pMergeList);
 	//@}
 
-	/** \name Edge management functions
+	/** \name Edge management functions */
 	//@{
 		/** Automatically generate edge data for the mesh. Clears all previously stored edge information */
 		void BuildMeshEdgeArray();
@@ -731,7 +740,7 @@ public:
     void ComputeComponentMaps(ComponentMap& pEdgeToPolyMap, ComponentMap& pPolyToEdgeMap);
 
 protected:
-	virtual void Construct(const FbxMesh* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
 
 	void InitTextureIndices(FbxLayerElementTexture* pLayerElementTexture, FbxLayerElement::EMappingMode pMappingMode);
@@ -759,7 +768,7 @@ protected:
 		PolygonIndexDef* mV2PV;
 		int* mV2PVOffset;
 		int* mV2PVCount;
-		int* mPVEdge;
+		FbxArray<FbxSet2<int>* > mPVEdge;
 		bool mValid;
 
 		//Used for fast search in GetMeshEdgeIndexForPolygon this array does not follow the same allocation as the above ones because
@@ -781,6 +790,9 @@ protected:
 private:
     bool GenerateTangentsData(FbxLayerElementUV* pUVSet, int pLayerIndex, bool pOverwrite=false);
     void FillMeshEdgeTable(FbxArray<int>& pTable, int* pValue, void (*FillFct)(FbxArray<int>& pTable, int pIndex, int* pValue));
+    void ComputeNormalsPerCtrlPoint(FbxArray<VertexNormalInfo>& lNormalInfo, bool pCW=false);
+    void ComputeNormalsPerPolygonVertex(FbxArray<VertexNormalInfo>& lNormalInfo, bool pCW=false);
+    void GenerateNormalsByCtrlPoint(bool pCW);
 
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };

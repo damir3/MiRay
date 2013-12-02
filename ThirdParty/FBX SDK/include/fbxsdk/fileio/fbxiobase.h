@@ -32,10 +32,12 @@ class FBXSDK_DLL FbxIOBase : public FbxObject
 public:
     /** Initializes the object.
       * \param pFileName     The name of the file to access.
+      * \param pFileFormat   Unused in this class implementation.
+      * \param pIOSettings   Unused in this class implementation.
       * \return              \c True if successful, returns \c False otherwise.
       * \remarks             To identify the error, inspect \e mStatus.
       */
-    virtual bool Initialize(const char *pFileName);
+    virtual bool Initialize(const char *pFileName, int pFileFormat=-1, FbxIOSettings* pIOSettings=NULL);
 
     /** Returns the file name.
        * \return     The file name or an empty string if no filename has been set.
@@ -50,7 +52,7 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxIOBase* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 
     int DetectReaderFileFormat(const char *pFileName);
     int DetectWriterFileFormat(const char *pFileName);

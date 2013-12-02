@@ -129,7 +129,7 @@ public:
 	virtual FbxObject&	Copy(const FbxObject& pObject);
 
 protected:
-	virtual void Construct(const FbxThumbnail* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 	virtual void Destruct(bool pRecursive);
 

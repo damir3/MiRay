@@ -359,6 +359,7 @@ private:
     /** Read node animation from file
       * \param pFileObject      File object to read
       *	\param pScene           Scene to read animation
+      * \param pAnimStack       The animation stack to read from
       * \param pTakeInfo        Take info to read from
       */
     bool ReadNodeAnimation(FbxIO& pFileObject, FbxScene& pScene, FbxAnimStack& pAnimStack, FbxTakeInfo* pTakeInfo);
@@ -384,7 +385,9 @@ private:
 
     /** Set time shift for node animation from take information
       * \param pScene           Scene to read
-      *	\param pTakeInfo        take info to read from
+      *	\param pAnimStack       The animation stack to modify
+      * \param pTimeOffsetType  A value from the FbxTakeInfo::EImportOffsetType enumeration that indicates the time shift offset type
+      * \param pTimeOffset      The time shift offset
       * \return if time shifting is successful return \c true, otherwise return \c false.
       */
     bool TimeShiftNodeAnimation(FbxScene& pScene, FbxAnimStack& pAnimStack, int pTimeOffsetType, FbxTime pTimeOffset);
@@ -454,6 +457,8 @@ private:
 
     /** Read character information from file
       *	\param pCharacter       Character object to fill
+      *	\param pInputType       Unused.
+      *	\param pInputIndex      Unused.
       */
     void ReadCharacter(FbxCharacter& pCharacter,int& pInputType, int& pInputIndex);
 
@@ -673,13 +678,18 @@ private:
       */
     bool ReadMeshEdges                  ( FbxMesh& pMesh );
 
+    //** Read FBX subdiv, base mesh, finest mesh, current subdiv level...
+    //*	\param pSubdiv                            fbx subdiv
+    //*	\param pObjectName                        Object Name
+    //*	\param pReferencedObject                  pointer of reference object
+    //* \return if reading subdiv object is successful return \c true, otherwise return \c false. 
+    //*/
+    //bool ReadSubdiv( FbxSubDiv& pSubdiv, FbxString& pObjectName, FbxObject* pReferencedObject);
+
     /** Read FBX subdiv, base mesh, finest mesh, current subdiv level...
     *	\param pSubdiv                            fbx subdiv
-    *	\param pObjectName                        Object Name
-    *	\param pReferencedObject                  pointer of reference object
     * \return if reading subdiv object is successful return \c true, otherwise return \c false. 
     */
-    //bool ReadSubdiv( FbxSubDiv& pSubdiv, FbxString& pObjectName, FbxObject* pReferencedObject);
     bool ReadSubdiv( FbxSubDiv& pSubdiv);
 
     /** Read properties and flags for fbx document
@@ -833,8 +843,8 @@ private:
 
     /** Read texture layer elements for geometry
       *	\param pGeometry                geometry to fill
-      * \param pName                    Layer name
       * \param pElementsTexture         texture layer element array
+      * \param pTextureType             the type of elements to read
       * \return if reading texture layer elements is successful return \c true, otherwise return \c false.        
       */
     bool ReadLayerElementsTexture (FbxGeometry* pGeometry, FbxArray<FbxLayerElement*>& pElementsTexture, FbxLayerElement::EType pTextureType);
@@ -842,7 +852,7 @@ private:
     /** Read UV layer elements for geometry
       *	\param pGeometry                geometry to fill
       * \param pElementsUV              UV layer element array
-      * \param pPropName                Property name
+      * \param pTextureType             the type of elements to read
       * \return if reading UV layer elements is successful return \c true, otherwise return \c false.        
       */
     bool ReadLayerElementsChannelUV (FbxGeometry* pGeometry, FbxArray<FbxLayerElement*>& pElementsUV, FbxLayerElement::EType pTextureType);
@@ -877,21 +887,21 @@ private:
 
     /** Read edge crease layer elements for geometry
       *	\param pGeometry                geometry to fill
-      * \param pElementsVisibility      edge crease layer element array
+      * \param pElementsEdgeCrease      edge crease layer element array
       * \return if reading edge crease layer elements is successful return \c true, otherwise return \c false.        
       */
     bool ReadLayerElementEdgeCrease     (FbxGeometry*pGeometry, FbxArray<FbxLayerElement*>& pElementsEdgeCrease);
 
     /** Read vertex crease layer elements for geometry
       * \param pGeometry                geometry to fill
-      * \param pElementsVisibility      vertex crease layer element array
+      * \param pElementsVertexCrease    vertex crease layer element array
       * \return if reading vertex crease layer elements is successful return \c true, otherwise return \c false.        
       */
     bool ReadLayerElementVertexCrease   (FbxGeometry*pGeometry, FbxArray<FbxLayerElement*>& pElementsVertexCrease);
 
     /** Read hole layer elements for geometry
       * \param pGeometry                geometry to fill
-      * \param pElementsVisibility      vertex crease layer element array
+      * \param pElementsHole            hole layer element array
       * \return if reading hole layer elements is successful return \c true, otherwise return \c false.        
       */
     bool ReadLayerElementHole           (FbxGeometry*pGeometry, FbxArray<FbxLayerElement*>& pElementsHole);

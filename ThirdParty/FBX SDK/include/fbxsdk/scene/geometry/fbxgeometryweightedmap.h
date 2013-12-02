@@ -73,7 +73,7 @@ public:
     virtual FbxObject& Copy(const FbxObject& pObject);
 
 protected:
-	virtual void Construct(const FbxGeometryWeightedMap* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
     // Real weigths table

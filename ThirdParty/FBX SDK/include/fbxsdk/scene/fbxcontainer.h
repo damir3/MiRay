@@ -89,7 +89,7 @@ public:
     FbxContainerTemplate* mContainerTemplate;
 
 protected:
-	virtual void Construct(const FbxContainer* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };

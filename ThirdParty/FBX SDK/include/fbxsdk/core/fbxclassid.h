@@ -97,7 +97,6 @@ public:
 	const char* GetFbxFileTypeName(bool pAskParent=false) const;
 
 	/** Retrieve the FBX file Object Sub Type string associated to this class.
-	* \param pAskParent If \c true, retrieve the parent ClassId, but only if self ClassId is not valid.
 	* \return The FBX file Object Sub Type string associated to this class. */
 	const char* GetFbxFileSubTypeName() const;
 

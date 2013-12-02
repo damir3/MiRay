@@ -58,6 +58,7 @@ public:
 
     /** Copy the matrix animation to the FBX node TRS properties.
       * \param pFBXNode The destination FBX node.
+      * \param pAnimLayer The animation layer whose X, Y and Z curves will be set up.
       * \param pUnitConversion The unit conversion from local element to global.
       */
     void ToFBX(FbxNode * pFBXNode, FbxAnimLayer * pAnimLayer,

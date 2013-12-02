@@ -107,7 +107,7 @@ public:
       *                           using the GetStatus() function.
       * \remarks                  You do not need to give the pFileFormat if the suffix of pFileName is recognized
 	  */
-	virtual bool Initialize(const char* pFileName, const int pFileFormat=-1, FbxIOSettings * pIOSettings=NULL);
+	virtual bool Initialize(const char* pFileName, int pFileFormat=-1, FbxIOSettings * pIOSettings=NULL);
 
 	/** Initialize object.
 	  *	\param pStream            stream to access.
@@ -183,7 +183,7 @@ public:
       */
 	  bool Import(FbxDocument* pDocument, bool pNonBlocking=false);
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
     /** Check if the importer is currently importing.
 	  * \param pImportResult  This parameter, after the import finished, will contain the result of the import success or failure.
       * \return               Return true if the importer is currently importing.
@@ -193,7 +193,7 @@ public:
       *                       since it will also free up the thread's allocations when its done.
       */
 	  bool IsImporting(bool& pImportResult);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 	/** Get the progress status in non-blocking mode.
 	  *	\param pStatus Optional current status string.
@@ -208,7 +208,7 @@ public:
       void SetProgressCallback(FbxProgressCallback pCallback, void* pArgs=NULL);
 
     /** Explicitly set the embedding extraction folder. If this is never called, the FBX SDK will determine the best folder to extract embedded files.
-      * \param pExtractionFolder The file path name where the embedded files should be extracted.
+      * \param pExtractFolder The file path name where the embedded files should be extracted.
       */
 	void SetEmbeddingExtractionFolder(const char* pExtractFolder);
 
@@ -307,8 +307,9 @@ public:
 	bool GetFrameRate(FbxTime::EMode &pTimeMode);
 
 protected:
-	virtual void Construct(const FbxImporter* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
+	virtual void SetOrCreateIOSettings(FbxIOSettings* pIOSettings, bool pAllowNULL);
 
 	void Reset();
     bool FileOpen(FbxFile* pFile = NULL);
@@ -334,12 +335,12 @@ private:
 	FbxTime::EMode			mFrameRate;
     bool					mParseForStatistics;
     FbxStatistics			mStatistics;
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	FbxThread*				mImportThread;
 	FbxImportThreadArg*		mImportThreadArg;
 	bool					mImportThreadResult;
 	bool					mIsThreadImporting;
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
     FbxProgress				mProgress;
     FbxFile*				mFile;
 	FbxStream*				mStream;

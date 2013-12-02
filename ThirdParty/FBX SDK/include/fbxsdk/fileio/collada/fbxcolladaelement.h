@@ -189,7 +189,7 @@ private:
 };
 
 /** Convert from ID to URL, just add a prefix "#".
-  * \param The ID string.
+  * \param pID The ID string.
   * \return Return the URL string.
   */
 inline const FbxString URL(const FbxString & pID)

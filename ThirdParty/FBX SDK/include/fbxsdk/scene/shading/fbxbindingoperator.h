@@ -187,6 +187,7 @@ public:
         virtual ~Function() {}
 
 		/** Run the operator on the given object.
+		  * \param pOperator The operator that will be applied.
 		  * \param pObject The object that will be evaluated.
 		  * \param pResultType Will be filled by the type of the result.
 		  * \param pResult Will be filled by a pointer to a buffer that hold the result.
@@ -259,7 +260,7 @@ public:
     {
     public:
 		/** To register the binding function creator.
-		* \param The binding function creator to register.
+		* \param pCreator The binding function creator to register.
 		*/
         static void RegisterFunctionCreator(FunctionCreatorBase const& pCreator)
         {
@@ -267,7 +268,7 @@ public:
         }
 
 		/** To unregister the binding function creator.
-		* \param The binding function creator to unregister.
+		* \param pCreator The binding function creator to unregister.
 		*/
         static void UnregisterFunctionCreator(FunctionCreatorBase const& pCreator)
         {
@@ -275,7 +276,7 @@ public:
         }
 
 		/** To find the binding function creator by name.
-		* \param Name of the operation function creator to find.
+		* \param pName The name of the operation function creator to find.
 		*/
         static const FunctionCreatorBase* FindCreator(const char* pName)
         {
@@ -305,7 +306,7 @@ public:
     bool GetEntryProperty(const FbxObject* pObject, const char* pEntryDestinationName, FbxProperty & pProp) const;
 
 protected:
-    virtual void Construct(const FbxBindingOperator* pFrom);
+    virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
     virtual void ConstructProperties(bool pForceSet);
 

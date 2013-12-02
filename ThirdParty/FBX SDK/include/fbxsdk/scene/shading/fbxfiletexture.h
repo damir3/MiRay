@@ -115,7 +115,7 @@ public:
 	void SetMediaName(const char* pMediaName);
 
 protected:
-	virtual void Construct(const FbxFileTexture* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 
 	void Init();

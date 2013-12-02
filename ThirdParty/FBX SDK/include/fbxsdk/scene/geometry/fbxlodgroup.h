@@ -205,7 +205,7 @@ public:
     virtual FbxObject& Copy(const FbxObject& pObject);
 
 protected:
-	virtual void Construct(const FbxLODGroup* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
 
 private:

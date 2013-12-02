@@ -537,7 +537,7 @@ public:
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 	virtual FbxObject& Copy(const FbxObject& pObject);
 
-	virtual bool operator==(FbxTexture const& pTexture) const;
+	bool operator==(FbxTexture const& pTexture) const;
 
 	void SetUVTranslation(FbxVector2& pT);
 	FbxVector2& GetUVTranslation();
@@ -547,7 +547,7 @@ public:
 	FbxString GetTextureType();
 
 protected:
-	virtual void Construct(const FbxTexture* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 
     virtual bool PropertyNotify(EPropertyNotifyType pType, FbxProperty& pProperty);

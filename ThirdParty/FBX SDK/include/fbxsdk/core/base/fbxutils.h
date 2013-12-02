@@ -20,7 +20,7 @@
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Retrieve the environment variable value.
 	* \return A new string containing the environment variable value. */
 	FBXSDK_DLL FbxString FbxGetEnv(const char* pEnvVar);
@@ -133,7 +133,7 @@ public:
 	* \remark This function work for relative paths. It will search from the current work path. */
 	static bool Delete(const char* pFolderPathUTF8);
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Verify if the folder contains items or not.
 	* \param pFolderPath_UTF8 The folder path to test if it contains items.
 	* \return True if the folder contain any kind of entry type. */

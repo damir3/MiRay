@@ -329,7 +329,7 @@ public:
 	}
 
 	/** Append the elements of another array at the end of this array if they are not present.
-	* \param pArray Another array. */
+	* \param pOther Another array. */
 	inline void AddArrayNoDuplicate(const FbxArray<T>& pOther)
 	{
 		for( int i = 0, c = pOther.mSize; i < c; ++i )
@@ -339,7 +339,7 @@ public:
 	}
 
 	/** Remove the elements of another array from this array is they are present.
-	* \param pArray Another array. */
+	* \param pOther Another array. */
 	inline void RemoveArray(const FbxArray<T>& pOther)
 	{
 		for( int i = 0, c = pOther.mSize; i < c; ++i )

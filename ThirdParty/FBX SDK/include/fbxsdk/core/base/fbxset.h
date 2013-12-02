@@ -245,17 +245,17 @@ public:
 		return ConstIterator();
 	}
 
-	/** Query a value in the set.
-	* \param pKey The key.
-	* \return The key if success, NULL if it's not found. */
+	/** Find a given value in the set.
+	* \param pValue The value to find.
+	* \return The value in the set, or NULL if the value is not found in the set. */
 	inline const RecordType* Find(const ValueType& pValue) const
 	{
 		return mTree.Find(pValue);
 	}
 
-	/** Query a value in the set.
-	* \param pKey The key.
-	* \return The key if success, NULL if it's not found. */
+	/** Find a given value in the set.
+	* \param pValue The value to find.
+	* \return The value in the set, or NULL if the value is not found in the set. */
 	inline RecordType* Find(const ValueType& pValue)
 	{
 		return mTree.Find(pValue);
@@ -298,7 +298,7 @@ public:
 	}
 
 	/** Intersect with another set.
-	* \param The other set.
+	* \param pOther The other set.
 	* \return The intersection set of the two sets. */
 	inline FbxSet2 Intersect(const FbxSet2& pOther) const
 	{
@@ -313,7 +313,7 @@ public:
 	}
 
 	/** Unite with another set.
-	* \param The other set.
+	* \param pOther The other set.
 	* \return The union set of the two sets (no duplicated items). */
 	inline FbxSet2 Union(const FbxSet2& pOther) const
 	{

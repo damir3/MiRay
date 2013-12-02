@@ -15,7 +15,7 @@
 
 #include <fbxsdk/fbxsdk_def.h>
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 
 #include <fbxsdk/core/sync/fbxclock.h>
 #include <fbxsdk/core/sync/fbxthread.h>
@@ -183,6 +183,6 @@ private:
 
 #include <fbxsdk/fbxsdk_nsend.h>
 
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 #endif /* _FBXSDK_CORE_SYNC_H_ */

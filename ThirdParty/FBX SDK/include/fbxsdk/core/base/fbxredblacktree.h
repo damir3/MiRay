@@ -759,94 +759,6 @@ protected:
 
     AllocatorType mAllocator;
 
-    /** Sanity check on the tree. Check if all red-black tree
-      * properties hold. Also check if all key-values pairs are ordered
-      * properly.
-      */
-    inline void IsSane()
-    {
-        FBX_ASSERT((mRoot == 0) || (mRoot->mColor == RecordType::eBlack));
-        FBX_ASSERT(((mRoot == 0) && (mSize == 0)) || (mRoot != 0) && (mSize != 0));
-        IsSubTreeSane(mRoot);
-
-        ComputeBlackDepth(mRoot, 0);
-
-        RecordType* lNode = mRoot;
-        unsigned int lLeafBlackDepth = 0;
-        while (lNode)
-        {
-            if (lNode->mLeftChild == 0)
-            {
-                lLeafBlackDepth = lNode->mBlackDepth + ((lNode->mColor == RecordType::eBlack) ? 1 : 0);
-            }
-
-            lNode = lNode->mLeftChild;
-        }
-
-        CheckLeavesBlackDepth(mRoot, lLeafBlackDepth);
-    }
-
-    inline void IsSubTreeSane(const RecordType* pNode) const
-    {
-        Compare lCompareKeys;
-
-        if (pNode)
-        {
-            FBX_ASSERT(pNode != pNode->mParent);
-            FBX_ASSERT(pNode != pNode->mLeftChild);
-            FBX_ASSERT(pNode != pNode->mRightChild);
-
-            // Check for two consecutive red nodes
-            FBX_ASSERT((pNode->mColor == RecordType::eBlack) ||
-                     (pNode->mLeftChild == NULL) ||
-                     (pNode->mLeftChild->mColor == RecordType::eBlack));
-
-            FBX_ASSERT((pNode->mColor == RecordType::eBlack) ||
-                     (pNode->mRightChild == NULL) ||
-                     (pNode->mRightChild->mColor == RecordType::eBlack));
-
-            // Check key ordering
-            FBX_ASSERT((pNode->mLeftChild == 0 ||
-                      lCompareKeys(pNode->GetKey(), pNode->mLeftChild->GetKey()) > 0));
-
-            FBX_ASSERT((pNode->mRightChild == 0 ||
-                      lCompareKeys(pNode->GetKey(), pNode->mRightChild->GetKey()) < 0));
-
-            IsSubTreeSane(pNode->mLeftChild);
-            IsSubTreeSane(pNode->mRightChild);
-        }
-    }
-
-    inline void ComputeBlackDepth(RecordType* pNode, unsigned int pDepth)
-    {
-        if (pNode)
-        {
-            pNode->mBlackDepth = pDepth;
-            if (pNode->mColor == RecordType::eBlack)
-            {
-                pDepth++;
-            }
-
-            ComputeBlackDepth(pNode->mLeftChild, pDepth);
-            ComputeBlackDepth(pNode->mRightChild, pDepth);
-        }
-    }
-
-    inline void CheckLeavesBlackDepth(RecordType* pNode, unsigned int pBlackDepth)
-    {
-        if (pNode)
-        {
-            if ((pNode->mLeftChild == 0) || pNode->mRightChild == 0)
-            {
-                int lBlackDepth = pNode->mBlackDepth + ((pNode->mColor == RecordType::eBlack) ? 1 : 0);
-                FBX_ASSERT(lBlackDepth == pBlackDepth);
-            }
-
-            CheckLeavesBlackDepth(pNode->mLeftChild, pBlackDepth);
-            CheckLeavesBlackDepth(pNode->mRightChild, pBlackDepth);
-        }
-    }
-
     inline RecordType* DuplicateSubTree(const RecordType* pNode)
     {
         RecordType* lNewSubTree = 0;
@@ -1344,6 +1256,89 @@ protected:
             return 0;
         }
     }
+
+#if 0
+    inline void IsSane()
+    {
+        FBX_ASSERT((mRoot == 0) || (mRoot->mColor == RecordType::eBlack));
+        FBX_ASSERT(((mRoot == 0) && (mSize == 0)) || (mRoot != 0) && (mSize != 0));
+        IsSubTreeSane(mRoot);
+
+        ComputeBlackDepth(mRoot, 0);
+
+        RecordType* lNode = mRoot;
+        unsigned int lLeafBlackDepth = 0;
+        while (lNode)
+        {
+            if (lNode->mLeftChild == 0)
+            {
+                lLeafBlackDepth = lNode->mBlackDepth + ((lNode->mColor == RecordType::eBlack) ? 1 : 0);
+            }
+
+            lNode = lNode->mLeftChild;
+        }
+
+        CheckLeavesBlackDepth(mRoot, lLeafBlackDepth);
+    }
+
+    inline void IsSubTreeSane(const RecordType* pNode) const
+    {
+        Compare lCompareKeys;
+
+        if (pNode)
+        {
+            FBX_ASSERT(pNode != pNode->mParent);
+            FBX_ASSERT(pNode != pNode->mLeftChild);
+            FBX_ASSERT(pNode != pNode->mRightChild);
+
+            // Check for two consecutive red nodes
+            FBX_ASSERT((pNode->mColor == RecordType::eBlack) ||
+                     (pNode->mLeftChild == NULL) ||
+                     (pNode->mLeftChild->mColor == RecordType::eBlack));
+
+            FBX_ASSERT((pNode->mColor == RecordType::eBlack) ||
+                     (pNode->mRightChild == NULL) ||
+                     (pNode->mRightChild->mColor == RecordType::eBlack));
+
+            // Check key ordering
+            FBX_ASSERT((pNode->mLeftChild == 0 ||
+                      lCompareKeys(pNode->GetKey(), pNode->mLeftChild->GetKey()) > 0));
+
+            FBX_ASSERT((pNode->mRightChild == 0 ||
+                      lCompareKeys(pNode->GetKey(), pNode->mRightChild->GetKey()) < 0));
+
+            IsSubTreeSane(pNode->mLeftChild);
+            IsSubTreeSane(pNode->mRightChild);
+        }
+    }
+
+	inline void ComputeBlackDepth(RecordType* pNode, unsigned int pDepth)
+	{
+		if( pNode )
+		{
+			pNode->mBlackDepth = pDepth;
+			if( pNode->mColor == RecordType::eBlack )
+			{
+				pDepth++;
+			}
+			ComputeBlackDepth(pNode->mLeftChild, pDepth);
+			ComputeBlackDepth(pNode->mRightChild, pDepth);
+		}
+	}
+
+	inline void CheckLeavesBlackDepth(RecordType* pNode, unsigned int pBlackDepth)
+	{
+		if( pNode )
+		{
+			if( pNode->mLeftChild == 0 || pNode->mRightChild == 0 )
+			{
+				FBX_ASSERT((pNode->mBlackDepth + ((pNode->mColor == RecordType::eBlack) ? 1 : 0)) == pBlackDepth);
+			}
+			CheckLeavesBlackDepth(pNode->mLeftChild, pBlackDepth);
+			CheckLeavesBlackDepth(pNode->mRightChild, pBlackDepth);
+		}
+	}
+#endif
 };
 
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/

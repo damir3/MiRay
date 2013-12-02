@@ -377,6 +377,16 @@ public:
     //! Return name of the filter.
     virtual const char* GetName() const;
 
+    /**
+	 * \name Exposed parent class methods.
+	 */
+	//@{
+    virtual bool Apply(FbxAnimStack* pAnimStack, FbxStatus* pStatus=NULL)                   { return FbxAnimCurveFilter::Apply(pAnimStack, pStatus); }
+    virtual bool Apply(FbxObject* pObj, FbxAnimStack* pAnimStack, FbxStatus* pStatus=NULL)  { return FbxAnimCurveFilter::Apply(pObj, pAnimStack, pStatus); }
+    virtual bool Apply(FbxAnimCurveNode& pCurveNode, FbxStatus* pStatus = NULL)             { return FbxAnimCurveFilter::Apply(pCurveNode, pStatus);       }
+    virtual bool Apply(FbxAnimCurve** pCurve, int pCount, FbxStatus* pStatus = NULL)        { return FbxAnimCurveFilter::Apply(pCurve, pCount, pStatus);   }
+    //@}
+
     /**Compensate parent's scale to children's scale. 
      * \param pCurve    In pCurve, index 0 is the curve to be filtered. index 1 is the parent curve.
      * \param pCount    Need to be 2.
@@ -450,7 +460,6 @@ public:
     virtual bool NeedApply(FbxAnimCurve** pCurve, int pCount, FbxStatus* pStatus=NULL);
 
      /** This filter expects to work with interdependent curves. Receiving one single curve is useless.
-       * \param pStatus        The FbxStatus object to hold error codes.
        * \return              \c false
        */
     virtual bool NeedApply(FbxAnimCurve& /*pCurve*/, FbxStatus* pStatus=NULL) { FBX_UNUSED(pStatus); return false; }
@@ -1169,6 +1178,8 @@ public:
 	 */
 	//@{
     virtual bool NeedApply(FbxAnimCurve** pCurve, int pCount, FbxStatus* pStatus=NULL)          { return FbxAnimCurveFilter::NeedApply(pCurve, pCount,pStatus); }
+    virtual bool NeedApply(FbxAnimCurveNode& pCurveNode, FbxStatus* pStatus=NULL)               { return FbxAnimCurveFilter::NeedApply(pCurveNode, pStatus);    }
+    virtual bool Apply(FbxAnimCurveNode& pCurveNode, FbxStatus* pStatus = NULL)                 { return FbxAnimCurveFilter::Apply(pCurveNode, pStatus);        }
     //@}
 
     /** This filter expects to work with interdependent curves. Passing the animation stack makes no sense

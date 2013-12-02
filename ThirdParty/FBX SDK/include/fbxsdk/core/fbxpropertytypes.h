@@ -516,10 +516,14 @@ private:
 };
 
 /** Retrieve a type enumeration memory footprint size
-  * \param pType The type enumeration
-  * \return The size of this type in memory
-  */
+* \param pType The type enumeration
+* \return The size of this type in memory */
 FBXSDK_DLL const size_t FbxTypeSizeOf(const EFbxType pType);
+
+/** Retrieve a type enumeration component count
+* \param pType The type enumeration
+* \return The number of component used by this type */
+FBXSDK_DLL const size_t FbxTypeComponentCount(const EFbxType pType);
 
 // Type management for properties
 inline EFbxType FbxTypeOf(const FbxChar&){ return eFbxChar; }

@@ -198,8 +198,15 @@ public:
       * \param pCtrlPoint         The value of the control point.
       * \param pNormal            The value of the normal.
       * \param pIndex             The specified index.
+      * \param pI2DSearch         Unused in this implementation.
       */
-    virtual void SetControlPointAt(FbxVector4 &pCtrlPoint, FbxVector4 &pNormal , int pIndex);
+    virtual void SetControlPointAt(const FbxVector4 &pCtrlPoint, const FbxVector4 &pNormal , int pIndex, bool pI2DSearch = false);
+
+    /** Sets the control point for a specified index.
+      * \param pCtrlPoint         The value of the control point.
+      * \param pIndex             The specified index.
+      */
+    virtual void SetControlPointAt(const FbxVector4 &pCtrlPoint, int pIndex) { ParentClass::SetControlPointAt(pCtrlPoint, pIndex); }
 
      /** Returns the NURBS surface's control points.
        * \param pStatus         The FbxStatus object to hold error codes.
@@ -219,7 +226,7 @@ public:
     void RebuildRegions();
 
 protected:
-	virtual void Construct(const FbxTrimNurbsSurface* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 
 private:
     bool			mFlipNormals;

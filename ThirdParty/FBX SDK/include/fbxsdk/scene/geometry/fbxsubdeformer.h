@@ -87,7 +87,7 @@ class FBXSDK_DLL FbxSubDeformer : public FbxObject
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxSubDeformer* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual FbxStringList GetTypeFlags() const { return FbxStringList(); }
 
 	// Local

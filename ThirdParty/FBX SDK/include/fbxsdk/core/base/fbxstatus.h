@@ -64,8 +64,8 @@ public:
       */
     bool            operator!=(const FbxStatus& rhs)    const   { return (mCode != rhs.mCode); }
     /** Non-Equivalence operator.
-      * \param pCode Status code to compare.
-      * \return \c True if the code member of this instance equals \e pCode and \c False otherwise.
+      * \param rhs Status code to compare.
+      * \return \c True if the code member of this instance equals \e rhs and \c False otherwise.
       */
     bool            operator!=(const EStatusCode rhs)   const   { return (mCode != rhs); }
 
@@ -87,12 +87,12 @@ public:
     EStatusCode     GetCode() const { return mCode; }
 
     /** Change the current code of the instance.
-      * \param pCode New code value.
+      * \param rhs New code value.
       */
     void            SetCode(const EStatusCode rhs);
 
     /** Change the current code of the instance.
-      * \param pCode New code value.
+      * \param rhs New code value.
       * \param pErrorMsg Optional error description string. This string can have formatting characters
       *                  The function will use the vsnprintf function to assemble the final string
       *                  using an internal buffer of 4096 characters.

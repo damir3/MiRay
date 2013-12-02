@@ -117,7 +117,7 @@ public:
 	inline int GetOrder() const { return mOrder; }
 
     /** Sets the step of the curve.
-    * \param pOrder           The curve step.
+    * \param pStep            The curve step.
     * \remarks                To tessellate curve, it denotes the evaluation frequency between two neighbor knots.
     */
     inline void SetStep( int pStep ) { mStep = pStep; }
@@ -210,8 +210,11 @@ public:
 
 	bool mIsRational;
 
+    virtual void SetControlPointAt(const FbxVector4 &pCtrlPoint , int pIndex) { ParentClass::SetControlPointAt(pCtrlPoint, pIndex); }
+    virtual void InitControlPoints(int pCount)                                { ParentClass::InitControlPoints(pCount);             }
+
 protected:
-	virtual void Construct(const FbxNurbsCurve* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
 
 	void Reset();

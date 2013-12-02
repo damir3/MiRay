@@ -34,7 +34,7 @@ public:
     virtual ~FbxFile();
 
 	/** Opens a file on disk using the specified read/write mode.
-	  * \param pFileName Filename in UTF8 (compatible with ASCII)
+	  * \param pFileName_UTF8 Filename in UTF8 (compatible with ASCII)
       * \param pMode Mode in which to open the file, e.g. eReadOnly, eCreateReadWrite, etc.
       * \param pBinary Whether the file is to be opened in binary or text mode.
 	  * \return True if opening is successful.
@@ -55,8 +55,8 @@ public:
     virtual bool        Close();
 
     /** Seek to a specific position in the file, starting from either beginning, current position or end
-	  * \parameter pOffset Offset to seek to (advance the file position cursor) starting from pSeekPos
-      * \parameter pSeekPos Starting position from which to seek to.  Beginning, current position or end.
+	  * \param pOffset Offset to seek to (advance the file position cursor) starting from pSeekPos
+      * \param pSeekPos Starting position from which to seek to.  Beginning, current position or end.
 	  */
     virtual void		Seek(const FbxInt64 pOffset, const ESeekPos pSeekPos=eBegin);
 
@@ -66,30 +66,30 @@ public:
     virtual FbxInt64	Tell() const;
 
 	/** Read a part of the file into a buffer
-      * \parameter pDstBuf Pre-allocated buffer in which to read data
-      * \parameter pSize Size of the data chunk to be read in bytes
+      * \param pDstBuf Pre-allocated buffer in which to read data
+      * \param pSize Size of the data chunk to be read in bytes
 	  * \return Number of bytes read.
 	  */
     virtual	size_t		Read(void* pDstBuf, const size_t pSize);
 
 	/** Read a part of the file as a string into a buffer
-      * \parameter pDstBuf Pre-allocated buffer in which to read the string
-      * \parameter pSize Size of the data chunk to be read in characters
-      * \parameter pStopAtFirstWhiteSpace If true, will stop reading at first white space, otherwise it will stop at the first line feed (\n)
+      * \param pDstBuf Pre-allocated buffer in which to read the string
+      * \param pDstSize Size of the data chunk to be read in characters
+      * \param pStopAtFirstWhiteSpace If true, will stop reading at first white space, otherwise it will stop at the first line feed (\n)
 	  * \return Pointer on the data read.  Equivalent to parameter pDstBuf
 	  */
 	virtual char*		ReadString(char* pDstBuf, const size_t pDstSize, bool pStopAtFirstWhiteSpace=false);
 
 	/** Write a buffer to an opened file
-      * \parameter pSrcBuf Pre-allocated buffer from which to write data
-      * \parameter pSize Size of the data chunk to be written in bytes
+      * \param pSrcBuf Pre-allocated buffer from which to write data
+      * \param pSize Size of the data chunk to be written in bytes
 	  * \return Number of bytes written.
 	  */
     virtual size_t		Write(const void* pSrcBuf, const size_t pSize);
 
 	/** Write a formatted string to an opened file
-      * \parameter pFormat Pre-allocated format buffer from which to write data
-      * \parameter ... Variable number of arguments describing the values in the previous parameter. 
+      * \param pFormat Pre-allocated format buffer from which to write data
+      * \param ... Variable number of arguments describing the values in the previous parameter. 
 	  * \return True if data was successfully written
 	  */
     virtual bool		WriteFormat(const char* pFormat, ...);
@@ -99,7 +99,7 @@ public:
       * Please note that this function considers the current file cursor as the beginning of the file.
       * It is therefore required to use Seek(0) prior to calling it if we want the size specified by the
       * pSize parameter to be absolute.
-      * \parameter pSize New desired file size
+      * \param pSize New desired file size
 	  * \return True if file was successfully truncated
 	  */
     virtual bool		Truncate(const FbxInt64 pSize);
@@ -115,8 +115,8 @@ public:
 	virtual FbxInt64	GetSize();
 
     /** Unused function in this default implementation.  Must be implemented by memory files.       
-      * \parameter pMemPtr Unused
-	  * \parameter pSize Unused
+      * \param pMemPtr Unused
+	  * \param pSize Unused
 	  */
 	virtual void		GetMemoryFileInfo(void** pMemPtr, size_t pSize);
 
@@ -162,7 +162,7 @@ class FBXSDK_DLL FbxFileUtils
 {
 public:
 	/** Delete a file from disk.
-	  * \param pFileName The file to be deleted.
+	  * \param pFileName_UTF8 The file to be deleted.
 	  * \return True if delete is successful.
 	  */
     static bool Delete(const char* pFileName_UTF8);
@@ -205,7 +205,7 @@ public:
 
 	/** Get some content of a file.
 	  * \param pStr The content get from file.
-	  * \param size The size of content.
+	  * \param pSize The size of content.
 	  * \param pStream The opened stream of file.
 	  */
 	static char* FGets(char* pStr, int pSize, FILE* pStream);

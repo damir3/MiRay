@@ -15,7 +15,7 @@
 
 #include <fbxsdk/fbxsdk_def.h>
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 
 #include <fbxsdk/core/fbxloadingstrategy.h>
 #include <fbxsdk/core/fbxmodule.h>
@@ -59,6 +59,6 @@ private:
 
 #include <fbxsdk/fbxsdk_nsend.h>
 
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 #endif /* _FBXSDK_CORE_SCOPED_LOADING_FILENAME_H_ */

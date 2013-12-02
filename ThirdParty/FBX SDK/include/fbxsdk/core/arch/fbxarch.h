@@ -14,16 +14,21 @@
   * 
   * List of available preprocessor defines that can appear on various systems:
   *
-  * Operating System:
+  * Operating System Environment:
   *    FBXSDK_ENV_WIN (Windows)
-  *    FBXSDK_ENV_WINRT (Windows RT)
+  *    FBXSDK_ENV_WINSTORE (Windows Store App)
   *    FBXSDK_ENV_MAC (MacOSX)
+  *    FBXSDK_ENV_IOS (iOS)
   *    FBXSDK_ENV_LINUX (Linux)
   *
   * Architecture:
   *    FBXSDK_ARCH_IX86 (Intel x86)
   *    FBXSDK_ARCH_AMD64 (AMD64)
   *    FBXSDK_ARCH_ARM (Advanced RISC Machine)
+  *
+  * Endianness:
+  *    FBXSDK_LITTLE_ENDIAN
+  *    FBXSDK_BIG_ENDIAN
   *
   * Processor:
   *    FBXSDK_CPU_32 (32bit processor)
@@ -33,6 +38,7 @@
   *    FBXSDK_COMPILER_MSC (Microsoft Compiler)
   *    FBXSDK_COMPILER_GNU (GNU Compiler)
   *    FBXSDK_COMPILER_INTEL (Intel Compiler)
+  *    FBXSDK_COMPILER_CLANG (Clang Compiler)
   *
   * These definitions are based on the information found here:
   * http://predef.sourceforge.net/index.php
@@ -47,19 +53,22 @@
 
 	#if defined(WINAPI_FAMILY)
 		#if WINAPI_FAMILY_ONE_PARTITION(WINAPI_FAMILY, WINAPI_PARTITION_APP)
-			#define FBXSDK_ENV_WINRT 1
+			#define FBXSDK_ENV_WINSTORE 1
 		#endif
 	#endif
 
 	#if defined(_M_X64)
 		#define FBXSDK_ARCH_AMD64 1
 		#define FBXSDK_CPU_64 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(_M_IX86)
 		#define FBXSDK_ARCH_IX86 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(_M_ARM)
 		#define FBXSDK_ARCH_ARM 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_BIG_ENDIAN 1
 	#else
 		#error Unsupported architecture!
 	#endif
@@ -76,22 +85,41 @@
 
 #elif defined(__APPLE__) || defined(__MACH__) //Apple MacOS/X ---------------------------
 
+    #include "TargetConditionals.h"
+
 	#define FBXSDK_ENV_MAC 1
+
+    #if defined(TARGET_OS_IPHONE) || defined(TARGET_IPHONE_SIMULATOR)
+        #define FBXSDK_ENV_IOS 1
+    #endif
 
 	#if defined(__i386__)
 		#define FBXSDK_ARCH_IX86 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(__x86_64__) || defined(__x86_64)
 		#define FBXSDK_ARCH_AMD64 1
 		#define FBXSDK_CPU_64 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(__arm__)
 		#define FBXSDK_ARCH_ARM 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_BIG_ENDIAN 1
 	#else
 		#error Unsupported architecture!
 	#endif
 
-	#define FBXSDK_COMPILER_GNU 1
+	#if defined(__GNUC__)
+		#define FBXSDK_COMPILER_GNU 1
+	#endif
+
+    #if defined(__clang__)
+        #define FBXSDK_COMPILER_CLANG 1
+	#endif
+
+	#if !defined(FBXSDK_COMPILER_GNU) && !defined(FBXSDK_COMPILER_CLANG)
+		#error Unsupported compiler!
+	#endif
 
 #elif defined(__linux__) || defined(__CYGWIN__) //Linux ---------------------------------
 
@@ -100,17 +128,24 @@
 	#if defined(__i386__)
 		#define FBXSDK_ARCH_IX86 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(__x86_64__) || defined(__x86_64)
 		#define FBXSDK_ARCH_AMD64 1
 		#define FBXSDK_CPU_64 1
+		#define FBXSDK_LITTLE_ENDIAN 1
 	#elif defined(__arm__)
 		#define FBXSDK_ARCH_ARM 1
 		#define FBXSDK_CPU_32 1
+		#define FBXSDK_BIG_ENDIAN 1
 	#else
 		#error Unsupported architecture!
 	#endif
 
-	#define FBXSDK_COMPILER_GNU 1
+	#if defined(__GNUC__)
+		#define FBXSDK_COMPILER_GNU 1
+	#else
+		#error Unsupported compiler!
+	#endif
 
 #else
 	#error Unsupported platform!
@@ -155,6 +190,12 @@
     #endif
 #else
 	#error Unsupported compiler!
+#endif
+
+#ifdef FBXSDK_COMPILER_CLANG
+	#define FBX_UNUSED(p) _Pragma(FBX_STRINGIFY(unused(p)))
+#else
+	#define FBX_UNUSED(p) (p)
 #endif
 
 //---------------------------------------------------------------------------------------

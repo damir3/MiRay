@@ -21,7 +21,7 @@
 
 typedef bool (*FbxProgressCallback)(void* pArgs, float pPercentage, const char* pStatus);
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	class FbxSpinLock;
 #endif
 
@@ -83,7 +83,7 @@ private:
 	float GetPercent() const;
 	bool ExecuteCallback() const;
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
     FbxSpinLock*		mLock;
 #endif
     float				mCurrent;

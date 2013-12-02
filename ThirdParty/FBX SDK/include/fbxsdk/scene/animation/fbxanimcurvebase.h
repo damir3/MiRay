@@ -246,7 +246,7 @@ public:
     virtual bool Retrieve(FbxIO* pFileObject) = 0;
 
 protected:
-	virtual void Construct(const FbxAnimCurveBase* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 
 private:
     EExtrapolationType mPreExtrapolation;

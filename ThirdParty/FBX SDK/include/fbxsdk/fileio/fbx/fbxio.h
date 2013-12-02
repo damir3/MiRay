@@ -1640,8 +1640,8 @@ public:
     bool GetHaveLoadedEmbededFile() const;
 
 	/** Get the maximum byte count written
-	* \param pSize handler of the maximum byte count written
-	* \return the address of the memory file
+	* \param pMemPtr The address of the memory file
+	* \param[out] pSize Stores the maximum byte count written
 	*/
     void GetMemoryFileInfo(void** pMemPtr, size_t& pSize) const;
 

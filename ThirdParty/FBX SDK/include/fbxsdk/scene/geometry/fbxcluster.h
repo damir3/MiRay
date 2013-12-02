@@ -270,7 +270,7 @@ public:
 
 
 protected:
-    virtual void Construct(const FbxCluster* pFrom);
+    virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
 
     virtual FbxStringList GetTypeFlags() const;

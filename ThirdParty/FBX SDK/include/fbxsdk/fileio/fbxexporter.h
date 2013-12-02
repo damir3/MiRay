@@ -144,7 +144,7 @@ public:
 		  */
 		bool Export(FbxDocument* pDocument, bool pNonBlocking=false);
 
-	#ifndef FBXSDK_ENV_WINRT
+	#ifndef FBXSDK_ENV_WINSTORE
 		/** Check if the exporter is currently exporting.
 		  * \param pExportResult  This parameter, after the export finished, will contain the result of the export success or failure.
 		  * \return               Return true if the exporter is currently exporting.
@@ -154,7 +154,7 @@ public:
 		  *                       since it will also free up the thread's allocations when its done.
 		  */
 		bool IsExporting(bool& pExportResult);
-	#endif /* !FBXSDK_ENV_WINRT */
+	#endif /* !FBXSDK_ENV_WINSTORE */
 
 		/** Get the progress status in non-blocking mode.
 		  *	\param pStatus Optional current status string.
@@ -182,12 +182,25 @@ public:
 		  */
 		bool IsFBX();
 
-		/** Get writable version for the current file format.
-		  * \return \c char** string array of writable versions
-		  * \remarks the strings returned match the writers registered for the current format
-		  * ex: "FBX" for format 0, "DXF" for format 1, etc
+		/** Get the list of writable versions for the current file format.
+		  * \return \c NULL or a null terminated array of strings.
+		  * \remarks the strings returned match the writers registered for the current format. 
+          * The array items can be retrieved with the following code:
+          * \code
+          *   char const* const* lWV = lExporter->GetCurrentWritableVersions();
+          *   if (lWV)
+          *   {
+          *       int i = 0;
+          *       while (lWV[i] != NULL)
+          *       {
+          *           printf("fmt = %s\n", lWV[i]);
+          *           i++;
+          *       }
+          *   }
+          * \endcode
+		  * 
 		  */
-		const char* GetCurrentWritableVersions();
+		char const* const* GetCurrentWritableVersions();
 
 		/** Set file version for a given file format.
 		  * \param pVersion String description of the file format.
@@ -206,6 +219,12 @@ public:
 		  * \param pResolutionMode     resolution mode.
 		  * \param pW                  width.
 		  * \param pH                  height.
+          * \remark These values are ignored when exporting to FBX 7.x and higher. With FBX version 6.x and lower, 
+          *         the HeaderInfo is still accessible for legacy reasons and any other custom writers. For FBX filles,
+          *         these values are used by the FBX QuickTime plug-in (obsolete now) to help it get the window size 
+          *         without loading the whole file. The information contained in the FbxIOFileHeaderInfo is a duplicate
+          *         of AspectRatioMode, AspectWidth and AspectHeight properties defined in the FbxCamera class. 
+          *         Retrieveing the FileHeaderInfo starting from FBX 7.x will always return the uninitialized structure.
 		  */
 		void SetDefaultRenderResolution(FbxString pCamName, FbxString pResolutionMode, double pW, double pH);
 
@@ -223,8 +242,9 @@ public:
 	bool Export(FbxDocument* pDocument, FbxIO* pFbxObject);
 
 protected:
-	virtual void Construct(const FbxExporter* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
+	virtual void SetOrCreateIOSettings(FbxIOSettings* pIOSettings, bool pAllowNULL);
 
 	void Reset();
 	bool FileCreate();
@@ -235,12 +255,12 @@ private:
 
 	int								mFileFormat;
 	FbxWriter*						mWriter;
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
     FbxThread*						mExportThread;
     FbxExportThreadArg*				mExportThreadArg;
     bool							mExportThreadResult;
     bool							mIsThreadExporting;
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
     FbxProgress						mProgress;
 	FbxStream*                      mStream;
 	void*                           mStreamData;

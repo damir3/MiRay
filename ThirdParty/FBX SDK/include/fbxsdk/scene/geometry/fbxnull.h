@@ -104,7 +104,7 @@ public:
     virtual FbxObject& Copy(const FbxObject& pObject);
 
 protected:
-    virtual void Construct(const FbxNull* pFrom);
+    virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
 
 public:

@@ -19,7 +19,6 @@
 #include <fbxsdk/core/fbxobject.h>
 #include <fbxsdk/core/fbxsymbol.h>
 #include <fbxsdk/core/fbxpropertydef.h>
-#include <fbxsdk/core/fbxpropertytypes.h>
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
@@ -39,105 +38,8 @@ public:
     }
 };
 
-/***********************************************
-FbxPropertyFlagsExt
-************************************************/
-class FBXSDK_DLL FbxPropertyFlagsExt {
-public:
-    typedef FbxUInt32 kFlagType;
-    // Make sure type is large enough to hold the flags.
-    FBX_ASSERT_STATIC( sizeof( kFlagType ) * 8 >= FbxPropertyAttr::eFlagCount );
-
-    explicit FbxPropertyFlagsExt( FbxPropertyAttr::EFlags pFlags )
-        :
-    mFlagData(0), mMaskData(0)
-    {
-        ModifyFlags( pFlags, true );
-    }
-
-    FbxPropertyFlagsExt(): 
-		mFlagData(0), mMaskData(0)
-    {
-    }
-
-    //This is just to get FbxPropertyPage::ChangeEntryItemState to work.
-    inline FbxPropertyFlagsExt Clone(FbxPropertyPage* /*pPage*/)
-    {
-        return FbxPropertyFlagsExt();
-    }
-
-    inline bool SetMask( FbxPropertyAttr::EFlags pFlags )
-    {
-        mMaskData |= pFlags;
-        return true;
-    }
-
-    inline bool UnsetMask( FbxPropertyAttr::EFlags pFlags )
-    {
-        mMaskData &= ~pFlags;
-        return true;
-    }
-
-    inline FbxPropertyAttr::EFlags GetMask() const { return (FbxPropertyAttr::EFlags) (mMaskData); }
-
-    inline FbxPropertyAttr::EFlags GetFlags() const { return (FbxPropertyAttr::EFlags) (mFlagData); }
-
-    inline bool ModifyFlags( FbxPropertyAttr::EFlags pFlags, bool pValue )
-    {
-        SetMask( pFlags );
-        mFlagData = pValue ? mFlagData | pFlags : mFlagData & ~pFlags;
-        return true;
-    }
-
-    inline FbxPropertyAttr::EFlags GetMergedFlags( FbxPropertyAttr::EFlags pFlags ) const
-    {
-        kFlagType lTemp = (kFlagType)pFlags & ~(GetMask());     // zero out flags that we override
-        return (FbxPropertyAttr::EFlags) (lTemp | GetFlags());                   // fill those flags with our values.
-    }
-
-    /** Retrieves the inheritance type of the flags of the property.
-    * Use this method to determine if this property's flags is overridden from the default
-    * flags, or from the referenced object, if this object is a clone.
-    * \param pFlags The specified flags
-    * \return The inheritance type of the flags of the property.
-    */
-    inline FbxPropertyAttr::EInheritType GetFlagsInheritType( FbxPropertyAttr::EFlags pFlags ) const
-    {
-        // If some, but not all, of the flags are overridden this returns FbxPropertyAttr::eOverride
-        return (GetMask() & pFlags) != 0 ? FbxPropertyAttr::eOverride : FbxPropertyAttr::eInherit;
-    }
-
-    /** Sets specified flags with a specified mask and updates the mask.
-    * \param pMask The specified mask
-    * \param pFlags The specified flags
-    * \return \c true
-    */
-    inline bool SetFlags( FbxPropertyAttr::EFlags pMask, FbxPropertyAttr::EFlags pFlags )
-    {
-        kFlagType lFlags = GetFlags() & ~pMask;     // zero out flags we are going to overwrite
-        lFlags |= pFlags;                           // overwrite them
-        mFlagData = lFlags;                         // set them
-        return SetMask( pMask );                    // update the mask
-    }
-
-    inline bool Equal( const FbxPropertyFlagsExt& pOther, FbxPropertyAttr::EFlags pFlags ) const
-    {
-        kFlagType lMyFlags = GetFlags() & pFlags;
-        kFlagType lOthersFlags = pOther.GetFlags() & pFlags;
-        return lMyFlags == lOthersFlags;
-    }
-
-private:
-
-    kFlagType mFlagData;
-    kFlagType mMaskData;
-};
-
-
-/***********************************************
-FbxPropertyInfo
-************************************************/
-class FBXSDK_DLL FbxPropertyInfo {
+class FBXSDK_DLL FbxPropertyInfo
+{
 public:
     FBXSDK_FRIEND_NEW();
     static FbxPropertyInfo* Create(const char* pName, FbxPropertyPage* pTypeInfo)         { return FbxNew< FbxPropertyInfo >(pName,pTypeInfo); }
@@ -317,70 +219,21 @@ private:
         }
     }
 
-    int                         mRef;
-    FbxStringSymbol            mName;
-    FbxStringSymbol            mLabel;
-    EFbxType                    mType;
-    FbxPropertyPage*               mTypeInfo;      // Sub property
-    int                         mUserTag;
-    void*                       mMinMaxValue[eValueCount];  
-    void*                       mUserData;
-    FbxConnectionPointFilter*  mFilter;
-    FbxAutoDeletePtr<FbxStringList>     mEnumList;
+    int								mRef;
+    FbxStringSymbol					mName;
+    FbxStringSymbol					mLabel;
+    EFbxType						mType;
+    FbxPropertyPage*				mTypeInfo;
+    int								mUserTag;
+    void*							mMinMaxValue[eValueCount];  
+    void*							mUserData;
+    FbxConnectionPointFilter*		mFilter;
+    FbxAutoDeletePtr<FbxStringList>	mEnumList;
 };
 
-/***********************************************
-FbxPropertyValue
-************************************************/
-class FBXSDK_DLL FbxPropertyValue {
-public:
-    FBXSDK_FRIEND_NEW();
-    static FbxPropertyValue*   Create(void* pData,EFbxType pType)  { return FbxNew< FbxPropertyValue >(pData,pType); }
-    void                        Destroy()                           { FbxDelete(this); }
-    FbxPropertyValue*          Clone(FbxPropertyPage* )           { return FbxNew< FbxPropertyValue >(mValue,mType); }
-
-    inline void IncRef() { mRef++; }
-    inline void DecRef() { mRef--; if (mRef==0) FbxDelete(this); }
-    inline int  GetRef() { return mRef; }
-
-    bool Get(void* pValue, EFbxType pValueType)
-    {
-        return mValue ? FbxTypeCopy(pValue,pValueType,mValue,mType) : false;
-    }
-    bool Set(const void* pValue, EFbxType pValueType)
-    {
-        return mValue ? FbxTypeCopy(mValue,mType,pValue,pValueType) : false;
-    }
-private:
-	FbxPropertyValue(void* pValue,EFbxType pType)
-        : mRef(0)
-        , mType(pType)
-        , mValue(0)
-    {
-      size_t lSize = FbxTypeSizeOf(mType);
-        if (lSize) {
-            mValue = FbxTypeAllocate(mType);
-            if (pValue && mType != eFbxReference ) {
-                FbxTypeCopy(mValue,mType,pValue,mType);
-            }
-        }
-    }
-    ~FbxPropertyValue()
-    {
-        FbxTypeDeallocate( mType, mValue );
-    }
-
-    int			mRef;
-    EFbxType	mType;
-    void*		mValue;
-};
-
-/***********************************************
-FbxPropertyConnect
-************************************************/
 #if defined(FBXSDK_COMPILER_MSC)
-#pragma warning (push)
-#pragma warning (disable: 4355)
+	#pragma warning (push)
+	#pragma warning (disable: 4355)
 #endif
 
 class FBXSDK_DLL FbxPropertyConnect
@@ -459,137 +312,116 @@ public:
         return lCP ? (FbxPropertyConnect * )lCP->GetData() : 0;
     }
 
-    int                 mRef;
-    FbxConnectionPoint mConnectionPoint;
-    FbxPropertyPage*   mPage;
-    FbxInt      mId;
+    int					mRef;
+    FbxConnectionPoint	mConnectionPoint;
+    FbxPropertyPage*	mPage;
+    FbxInt				mId;
 
 private:
-    FbxPropertyConnect(FbxPropertyPage* pPage,FbxInt pId)
-        : mRef(0)
-        , mConnectionPoint(this)
-        , mPage(pPage)
-        , mId(pId)
-    {
-    }
-    ~FbxPropertyConnect()
-    {
-		if( FbxObject::GetWipeMode() ) mConnectionPoint.WipeConnectionList();
-    }
+	FbxPropertyConnect(FbxPropertyPage* pPage,FbxInt pId) :
+		mRef(0),
+		mConnectionPoint(this),
+		mPage(pPage),
+		mId(pId)
+	{
+	}
+
+	~FbxPropertyConnect(){ if( FbxObject::GetWipeMode() ) mConnectionPoint.WipeConnectionList(); }
 };
+
 #if defined(FBXSDK_COMPILER_MSC)
-#pragma warning (pop)
+	#pragma warning (pop)
 #endif
 
-/***********************************************
-FbxPropertyEntry
-************************************************/
-class FBXSDK_DLL FbxPropertyEntry {
+class FBXSDK_DLL FbxPropertyEntry
+{
 public:
-    FBXSDK_FRIEND_NEW();
-    static FbxPropertyEntry* Create(FbxInt pParentId, FbxPropertyInfo* pInfo, FbxPropertyValue* pValue, FbxPropertyConnect* pConnect)
-    {
-        return FbxNew< FbxPropertyEntry >(pParentId,pInfo,pValue,pConnect);
-    }
-    void                     Destroy() { FbxDelete(this); }
+	static FbxPropertyEntry* Create(FbxInt pParentId, FbxPropertyInfo* pInfo, FbxPropertyValue* pValue, FbxPropertyConnect* pConnect){ return FbxNew<FbxPropertyEntry>(pParentId, pInfo, pValue, pConnect); }
+
+	void Destroy() { FbxDelete(this); }
         
-    inline FbxInt   GetParentId() { return mParentId; }
-    inline bool             IsEmpty()     { return (mInfo || mValue || mConnect || mFlags.GetMask() != 0) ? false : true; }
+	inline FbxInt GetParentId(){ return mParentId; }
+	inline bool IsEmpty(){ return (mInfo || mValue || mConnect || mFlags.GetMask() != 0) ? false : true; }
 
-    inline FbxPropertyInfo*    Get(const FbxPropertyInfo* /*pType*/) { return mInfo; }
-    void                        Set(FbxPropertyInfo* pInfo)
-    {
-        FbxPropertyInfo* lInfo = mInfo;
-        if (pInfo) pInfo->IncRef();
-        mInfo=pInfo;
-        if (lInfo) lInfo->DecRef();
-    }
+	inline FbxPropertyInfo* Get(const FbxPropertyInfo* /*pType*/){ return mInfo; }
 
-    inline FbxPropertyValue*   Get(const FbxPropertyValue* /*pType*/) { return mValue; }
-    void                        Set(FbxPropertyValue* pValue)
-    {
-        FbxPropertyValue* lValue = mValue;
-        if (pValue) pValue->IncRef();
-        mValue=pValue;
-        if (lValue) lValue->DecRef();
-    }
+	void Set(FbxPropertyInfo* pInfo)
+	{
+		FbxPropertyInfo* lInfo = mInfo;
+		if( pInfo ) pInfo->IncRef();
+		mInfo = pInfo;
+		if( lInfo ) lInfo->DecRef();
+	}
 
-    inline FbxPropertyConnect* Get(const FbxPropertyConnect* /*pType*/) { return mConnect; }
-    void                        Set(FbxPropertyConnect* pConnect)
-    {
-        FbxPropertyConnect* lConnect = mConnect;
-        if (pConnect) pConnect->IncRef();
-        mConnect=pConnect;
-        if (lConnect) lConnect->DecRef();
-    }
+	inline FbxPropertyValue* Get(const FbxPropertyValue* /*pType*/){ return mValue; }
 
-    inline FbxPropertyFlagsExt* Get(const FbxPropertyFlagsExt* /*pType*/)
-    {
-        return &mFlags;
-    }
+	void Set(FbxPropertyValue* pValue)
+	{
+		FbxPropertyValue* lValue = mValue;
+		if( pValue ) pValue->IncRef();
+		mValue = pValue;
+		if( lValue ) lValue->DecRef();
+	}
 
-    inline void Set( FbxPropertyFlagsExt pType )
-    {
-        mFlags = pType;
-    }
+	inline FbxPropertyConnect* Get(const FbxPropertyConnect* /*pType*/){ return mConnect; }
 
-    inline void Set( FbxPropertyFlagsExt* pType )
-    {
-        mFlags = pType ? *pType : FbxPropertyFlagsExt( FbxPropertyAttr::eNone );
-    }
+	void Set(FbxPropertyConnect* pConnect)
+	{
+		FbxPropertyConnect* lConnect = mConnect;
+		if( pConnect ) pConnect->IncRef();
+		mConnect = pConnect;
+		if( lConnect ) lConnect->DecRef();
+	}
+
+	inline FbxPropertyFlags* Get(const FbxPropertyFlags* /*pType*/){ return &mFlags; }
+	inline void Set(FbxPropertyFlags pType){ mFlags = pType; }
+	inline void Set(FbxPropertyFlags* pType){ mFlags = pType ? *pType : FbxPropertyFlags(FbxPropertyAttr::eNone); }
 
 private:
-	FbxPropertyEntry(FbxInt pParentId,FbxPropertyInfo *pInfo,FbxPropertyValue *pValue,FbxPropertyConnect *pConnect)
-        : mInfo(pInfo)
-        , mValue(pValue)
-        , mConnect(pConnect)
-        , mParentId(pParentId)
-        , mFlags(FbxPropertyAttr::eNone)
-    {
-        if (mInfo)  mInfo->IncRef();
-        if (mValue) mValue->IncRef();
-        if (mConnect) mConnect->IncRef();
-    }
-    ~FbxPropertyEntry()
-    {
-        if (mInfo)  mInfo->DecRef();
-        if (mValue) mValue->DecRef();
-        if (mConnect) mConnect->DecRef();
-    }
+	FbxPropertyEntry(FbxInt pParentId,FbxPropertyInfo *pInfo,FbxPropertyValue *pValue,FbxPropertyConnect *pConnect) :
+		mInfo(pInfo),
+		mValue(pValue),
+		mConnect(pConnect),
+		mParentId(pParentId),
+		mFlags(FbxPropertyAttr::eNone)
+	{
+		if( mInfo ) mInfo->IncRef();
+		if( mValue ) mValue->IncRef();
+		if( mConnect ) mConnect->IncRef();
+	}
 
-    FbxPropertyInfo*       mInfo;
-    FbxPropertyValue*      mValue;
-    FbxPropertyConnect*    mConnect;
-    FbxInt          mParentId;
+	~FbxPropertyEntry()
+	{
+		if( mInfo ) mInfo->DecRef();
+		if( mValue ) mValue->DecRef();
+		if( mConnect ) mConnect->DecRef();
+	}
 
-    // Since mFlags is only a 32bit int, don't bother storing a pointer to it.
-    FbxPropertyFlagsExt       mFlags;
+	FbxPropertyInfo*	mInfo;
+	FbxPropertyValue*	mValue;
+	FbxPropertyConnect*	mConnect;
+	FbxInt				mParentId;
+	FbxPropertyFlags	mFlags;
 
-    friend class FbxPropertyPage;
+	FBXSDK_FRIEND_NEW();
+	friend class FbxPropertyPage;
 };
 
-/***********************************************
-FbxPropertyIdGenerator
-************************************************/
 class FBXSDK_DLL FbxPropertyIdGenerator
 {
 public:
-FbxPropertyIdGenerator() :  mRef(0), mNextId(0) { }
+	FbxPropertyIdGenerator() : mRef(0), mNextId(0) {}
 
-inline FbxInt GetNextId() const { return mNextId; }
-inline FbxInt GetNextIdAndInc() { return mNextId++; }
+	inline FbxInt GetNextId() const { return mNextId; }
+	inline FbxInt GetNextIdAndInc() { return mNextId++; }
 
-inline void IncRef() { mRef++; }
-inline void DecRef() { mRef--;  if( mRef == 0 ) FbxDelete(this); }
+	inline void IncRef() { mRef++; }
+	inline void DecRef() { mRef--; if( mRef == 0 ) FbxDelete(this); }
 
 private:
-int mRef;
-FbxInt mNextId;
+	FbxInt mRef, mNextId;
 };
 
-/***********************************************
-FbxPropertyPage
-************************************************/
 class FBXSDK_DLL FbxPropertyPage
 {
 
@@ -1413,7 +1245,7 @@ public:
 				if (lParentEntry) {
 					lParentEntry->Set( lEntry->Get(FBX_TYPE(FbxPropertyInfo))  );
 					lParentEntry->Set( lEntry->Get(FBX_TYPE(FbxPropertyValue)) );
-					lParentEntry->Set( lEntry->Get(FBX_TYPE(FbxPropertyFlagsExt)) );
+					lParentEntry->Set( lEntry->Get(FBX_TYPE(FbxPropertyFlags)) );
 				}
 
 				/*
@@ -1434,7 +1266,7 @@ public:
 				// -----------------------------------------
 				ChangePropertyItemState(FBX_TYPE(FbxPropertyInfo),  i,FbxPropertyAttr::eInherit);
 				ChangePropertyItemState(FBX_TYPE(FbxPropertyValue), i,FbxPropertyAttr::eInherit);
-				ChangePropertyItemState(FBX_TYPE(FbxPropertyFlagsExt), i,FbxPropertyAttr::eInherit);
+				ChangePropertyItemState(FBX_TYPE(FbxPropertyFlags), i,FbxPropertyAttr::eInherit);
 			}
 		}
 	}
@@ -1451,7 +1283,7 @@ public:
 	FbxPropertyAttr::EFlags GetFlags(FbxInt pId=FBXSDK_PROPERTY_ID_ROOT) const
 	{
 		FbxPropertyPage* lFoundIn = NULL;
-		FbxPropertyFlagsExt*  lPropertyFlags = GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId, &lFoundIn );
+		FbxPropertyFlags*  lPropertyFlags = GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId, &lFoundIn );
 		FbxPropertyAttr::EFlags lFlags = FbxPropertyAttr::eNone;
 
 		if( lPropertyFlags )
@@ -1472,7 +1304,7 @@ public:
 		if( pCheckFlagEquality )
 		{
 			FbxPropertyPage* lFoundIn = NULL;
-			FbxPropertyFlagsExt* lFlag = GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId, &lFoundIn );
+			FbxPropertyFlags* lFlag = GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId, &lFoundIn );
 
 			if( lFlag )
 			{
@@ -1482,13 +1314,13 @@ public:
 					lFlag->ModifyFlags( pFlags, pValue );
 
 					 // we override this entry, check if we need to revert
-					FbxPropertyFlagsExt* lInheritedFlags = mInstanceOf ? mInstanceOf->GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId ) : NULL;
+					FbxPropertyFlags* lInheritedFlags = mInstanceOf ? mInstanceOf->GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId ) : NULL;
 					if( lInheritedFlags && lInheritedFlags->Equal( *lFlag, pFlags ) )
 					{
 						lFlag->UnsetMask( pFlags );
 
 						if( lFlag->GetMask() == 0 )
-							ChangePropertyItemState( FBX_TYPE(FbxPropertyFlagsExt), pId, FbxPropertyAttr::eInherit );
+							ChangePropertyItemState( FBX_TYPE(FbxPropertyFlags), pId, FbxPropertyAttr::eInherit );
 
 						return true;
 					}
@@ -1496,21 +1328,21 @@ public:
 				else
 				{
 					// its not us. Just check if we need to set.
-					FbxPropertyFlagsExt lNewValues( pFlags );
+					FbxPropertyFlags lNewValues( pFlags );
 					if( lFlag->Equal( lNewValues, pFlags ) )
 						return true;
 				}
 			}
 		}
 
-		FbxPropertyFlagsExt* lPropertyFlags = ChangePropertyItemState(FBX_TYPE(FbxPropertyFlagsExt), pId, FbxPropertyAttr::eOverride);
+		FbxPropertyFlags* lPropertyFlags = ChangePropertyItemState(FBX_TYPE(FbxPropertyFlags), pId, FbxPropertyAttr::eOverride);
 		return lPropertyFlags ? lPropertyFlags->ModifyFlags( pFlags, pValue ) : false;
 	}
 
 	FbxPropertyAttr::EInheritType GetFlagsInheritType(FbxPropertyAttr::EFlags pFlags, bool pCheckInstanceOf, FbxInt pId=FBXSDK_PROPERTY_ID_ROOT) const
 	{
 		FbxPropertyPage* lFoundIn = NULL;
-		FbxPropertyFlagsExt*  lPropertyFlags = GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId, &lFoundIn );
+		FbxPropertyFlags*  lPropertyFlags = GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId, &lFoundIn );
 
 		if( !pCheckInstanceOf )
 			return lFoundIn != this ? FbxPropertyAttr::eInherit : ( lPropertyFlags ? lPropertyFlags->GetFlagsInheritType(pFlags) : FbxPropertyAttr::eInherit );
@@ -1524,7 +1356,7 @@ public:
 			bool lFoundOverride = false;
 			while( lRefPage )
 			{
-				lPropertyFlags = lRefPage->GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId );
+				lPropertyFlags = lRefPage->GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId );
 
 				if( !lPropertyFlags )
 					break;  // gone too far, break.
@@ -1546,14 +1378,14 @@ public:
 	bool SetFlagsInheritType(FbxPropertyAttr::EInheritType pInheritType, FbxPropertyAttr::EFlags pFlags, FbxInt pId=FBXSDK_PROPERTY_ID_ROOT)
 	{
 		FbxPropertyPage* lFoundIn = NULL;
-		FbxPropertyFlagsExt* lPropertyFlags = NULL;
+		FbxPropertyFlags* lPropertyFlags = NULL;
 
 		if( FbxPropertyAttr::eOverride == pInheritType )
 		{
-			lPropertyFlags = ChangePropertyItemState( FBX_TYPE(FbxPropertyFlagsExt), pId, FbxPropertyAttr::eOverride );
+			lPropertyFlags = ChangePropertyItemState( FBX_TYPE(FbxPropertyFlags), pId, FbxPropertyAttr::eOverride );
 
 			// we should initialize our flag to the inherited value, if any.
-			FbxPropertyFlagsExt* lParentFlags = mInstanceOf ? mInstanceOf->GetPropertyItem( FBX_TYPE(FbxPropertyFlagsExt), pId ) : NULL;
+			FbxPropertyFlags* lParentFlags = mInstanceOf ? mInstanceOf->GetPropertyItem( FBX_TYPE(FbxPropertyFlags), pId ) : NULL;
 			if( lParentFlags && lPropertyFlags )
 			{
 				FbxPropertyAttr::EFlags lParentValues = lParentFlags->GetFlags();
@@ -1565,12 +1397,12 @@ public:
 		}
 		else if( FbxPropertyAttr::eInherit == pInheritType )
 		{
-			lPropertyFlags = GetPropertyItem(FBX_TYPE(FbxPropertyFlagsExt), pId, &lFoundIn);
+			lPropertyFlags = GetPropertyItem(FBX_TYPE(FbxPropertyFlags), pId, &lFoundIn);
 			if( !lPropertyFlags ) return false;
 			if( lFoundIn != this ) return true; // not us
 			lPropertyFlags->UnsetMask( pFlags );
 			if( lPropertyFlags->GetMask() == 0 )    // revert
-				ChangePropertyItemState( FBX_TYPE(FbxPropertyFlagsExt), pId, FbxPropertyAttr::eInherit );
+				ChangePropertyItemState( FBX_TYPE(FbxPropertyFlags), pId, FbxPropertyAttr::eInherit );
 
 			return true;
 		}
@@ -1690,13 +1522,7 @@ protected:
             mInstances[i]->mInstanceOf = NULL;
         }
 
-        // Not a very efficient way of traversing the map
-        EntryMap::Iterator lElement = mEntryMap.Begin();
-        while (lElement != mEntryMap.End())
-        {
-            lElement->GetValue()->Destroy();
-            lElement++;
-        }
+		FbxMapDestroy(mEntryMap);
 
         if (mInstanceOf) {
             int lIndex = mInstanceOf->mInstances.Find(this);
@@ -1857,7 +1683,7 @@ private:
         
         // entries created through Add() are not overrides of another entry.
         // Thus, set all of their flags by default.
-        FbxPropertyFlagsExt* lFlags = lEntry->Get( FBX_TYPE(FbxPropertyFlagsExt) );
+        FbxPropertyFlags* lFlags = lEntry->Get( FBX_TYPE(FbxPropertyFlags) );
         if( lFlags ) lFlags->ModifyFlags( FbxPropertyAttr::eAllFlags, false );
 
         mEntryMap.Insert( lId, lEntry );

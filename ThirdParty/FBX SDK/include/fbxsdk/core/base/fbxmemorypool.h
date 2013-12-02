@@ -26,11 +26,10 @@ public:
 	/** Memory pool constructor.
 	* \param pBlockSize		The size of one memory block.
 	* \param pBlockCount	The count of block that should be pre-allocated.
-	* \param pAlignment		Whether memory alignment should be used.
 	* \param pResizable		Whether memory pool can grow if no block are availalbe upon calling Allocate.
 	* \param pConcurrent	Whether the pool supports concurrent allocation and release operations.
 	* \remark				All memory blocks must be released before the memory pool is destroyed, otherwise a memory leak will occur. */
-	FbxMemoryPool(size_t pBlockSize, FbxInt64 pBlockCount=0, bool pAlignment=false, bool pResizable=true, bool pConcurrent=true);
+	FbxMemoryPool(size_t pBlockSize, FbxInt64 pBlockCount=0, bool pResizable=true, bool pConcurrent=true);
 
 	/** Memory pool destructor. Upon destruction, all memory blocks of the pool will be de-allocated. */
 	~FbxMemoryPool();
@@ -58,7 +57,6 @@ private:
     FbxAtomic	mFreeBlockCount;
     void*		mFreeBlocksStack;
     size_t		mBlockSize;
-    bool		mAlignment;
     bool		mResizable;
     bool		mSupportConcurrentAccess;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
