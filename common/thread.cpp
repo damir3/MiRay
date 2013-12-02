@@ -6,40 +6,38 @@
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
+#if __cplusplus < 201103L
+
 #include "thread.h"
 
 using namespace mr;
 
 #ifdef _WIN32
 
-Thread::Thread() : m_thread(NULL)
+Thread::Thread(ThreadFunction func, void * pObj) : m_thread(NULL), m_func(func), m_pObj(pObj)
 {
+	MutexLockGuard lock(m_mutex);
+	DWORD dwThreadId;
+	m_thread = ::CreateThread(NULL, 0, &Thread::StaticThreadProc, this, 0, &dwThreadId);
 }
 
 Thread::~Thread()
 {
+	MutexLockGuard lock(m_mutex);
 	if (m_thread)
 		::CloseHandle(m_thread);
 }
 
 DWORD WINAPI Thread::StaticThreadProc(void *pData)
 {
-	reinterpret_cast<Thread *>(pData)->ThreadProc();
+	Thread * pThis = reinterpret_cast<Thread *>(pData);
+	pThis->m_func(pThis->m_pObj);
 	return 0;
 }
 
-bool Thread::Start()
+void Thread::join()
 {
-	if (m_thread != NULL)
-		return false;
-
-	DWORD dwThreadId;
-	m_thread = ::CreateThread(NULL, 0, &Thread::StaticThreadProc, this, 0, &dwThreadId);
-	return m_thread != NULL;
-}
-
-void Thread::Join()
-{
+	MutexLockGuard lock(m_mutex);
 	if (m_thread != NULL)
 	{
 		::WaitForSingleObject(m_thread, INFINITE);
@@ -47,39 +45,29 @@ void Thread::Join()
 	}
 }
 
-//void Thread::Sleep(int ms)
-//{
-//	::Sleep(ms);
-//}
-
 #else
 
-Thread::Thread() : m_thread(NULL)
+Thread::Thread(ThreadFunction func, void * pObj) : m_thread(NULL), m_func(func), m_pObj(pObj)
 {
+	MutexLockGuard lock(m_mutex);
+	::pthread_create(&m_thread, NULL, &StaticThreadProc, this);
 }
 
 Thread::~Thread()
 {
+	join();
 }
 
 void *Thread::StaticThreadProc(void *pData)
 {
-	reinterpret_cast<Thread *>(pData)->ThreadProc();
+	Thread * pThis = reinterpret_cast<Thread *>(pData);
+	pThis->m_func(pThis->m_pObj);
 	return NULL;
 }
 
-bool Thread::Start()
+void Thread::join()
 {
-	Mutex::Locker locker(m_mutexStartJoin);
-	if (m_thread != NULL)
-		return false;
-
-	return ::pthread_create(&m_thread, NULL, &Thread::StaticThreadProc, this) == 0;
-}
-
-void Thread::Join()
-{
-	Mutex::Locker locker(m_mutexStartJoin);
+	MutexLockGuard lock(m_mutex);
 	if (m_thread != NULL)
 	{
 		::pthread_join(m_thread, NULL);
@@ -87,9 +75,6 @@ void Thread::Join()
 	}
 }
 
-//void Thread::Sleep(int ms)
-//{
-//	::usleep(static_cast<useconds_t>(ms) * 1000);
-//}
+#endif
 
 #endif

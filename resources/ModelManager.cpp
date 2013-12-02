@@ -47,21 +47,33 @@ ModelManager::~ModelManager()
 
 // ------------------------------------------------------------------------ //
 
-Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
+void ModelManager::Release(const std::string & name)
 {
-	Model * pModel = static_cast<Model *>(Find(strFilename));
-	if (pModel)
+	auto it = m_resources.find(name);
+	if (it != m_resources.end())
+		m_resources.erase(it);
+}
+
+ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
+{
+	auto it = m_resources.find(strFilename);
+	if (it != m_resources.end())
 	{
-		pModel->AddRef();
-		return pModel;
+		ModelPtr spModel = it->second.lock();
+		if (spModel)
+			return spModel;
 	}
+	
+	printf("Loading image '%s'...\n", strFilename);
 
 	if (!m_pSdkManager || !m_pImporter)
-		return NULL;
+		return nullptr;
 
 	FbxScene * m_pScene = FbxScene::Create(m_pSdkManager, "");
 	if (!m_pScene)
-		return NULL;
+		return nullptr;
+
+	ModelPtr spModel;
 
 	if (m_pImporter->Initialize(strFilename, -1, m_pSdkManager->GetIOSettings()))
 	{
@@ -80,14 +92,14 @@ Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 				FbxSystemUnit(1.0).ConvertScene(m_pScene);
 
 			FbxTime time;
-			pModel = new Model(*this, strFilename);
+			spModel.reset(new Model(*this, strFilename));
 
 			if (!node.empty())
-				pModel->MaterialManagerPtr()->LoadMaterials(node);
+				spModel->MaterialManagerPtr()->LoadMaterials(node);
 
-			CollectMeshes(*pModel, m_pScene->GetRootNode(), (FbxAnimLayer *)NULL, time);
+			CollectMeshes(*spModel.get(), m_pScene->GetRootNode(), (FbxAnimLayer *)NULL, time);
 
-			pModel->MaterialManagerPtr()->CleanupMaterials();
+			spModel->MaterialManagerPtr()->CleanupMaterials();
 
 			{// load textures
 				std::string	strLocalPath = strFilename;
@@ -104,14 +116,14 @@ Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 				if (!strLocalPath.empty())
 					chdir(strLocalPath.c_str());
 
-				pModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
+				spModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
 			}
 		}
 	}
 
 	m_pScene->Destroy();
 
-	return pModel;
+	return spModel;
 }
 
 
@@ -385,7 +397,6 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 //						}
 					}
 				}
-				geom.m_pMaterial->AddRef();
 			}
 		}
 	}

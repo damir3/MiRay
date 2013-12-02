@@ -25,7 +25,7 @@
 - (void)awakeFromNib
 {
 	self.modelFileTypes = [NSArray arrayWithObjects: @"mrs", @"fbx", @"dae", @"dxf", @"obj", @"3ds", nil];
-	self.imageFileTypes = [NSArray arrayWithObjects: @"jpg", @"jpeg", @"png", @"tga", @"hdr", @"exr", @"tif", @"tiff", @"psd", @"dds", @"bmp", @"raw", @"gif", @"ico", @"pcx", @"pict", @"crw", @"cr2", @"nef", @"raf", @"dng", @"mos", @"kdc", @"dcr", nil];
+	self.imageFileTypes = [NSArray arrayWithObjects: @"png", @"jpg", @"jpeg", @"tga", @"hdr", @"exr", @"tif", @"tiff", @"psd", @"dds", @"bmp", @"raw", @"gif", @"ico", @"pcx", @"pict", @"crw", @"cr2", @"nef", @"raf", @"dng", @"mos", @"kdc", @"dcr", nil];
 
 	NSOpenGLPixelFormatAttribute attrs[] =
 	{
@@ -220,8 +220,7 @@
 - (void)drawRect:(NSRect)dirtyRect
 {
 	pSceneView->Draw();
-	
-	glFlush();
+
 	[self.openGLContext flushBuffer];
 }
 
@@ -269,8 +268,6 @@
 
 - (IBAction)onFileOpen:(id)sender
 {
-	pSceneView->StopRenderThread();
-
 	NSOpenPanel* panel = [NSOpenPanel openPanel];
 	[panel setTitle:@"Open"];
 	[panel setCanChooseFiles:YES];
@@ -304,8 +301,6 @@
 
 - (IBAction)onSaveAs:(id)sender
 {
-	pSceneView->StopRenderThread();
-
 	NSSavePanel* panel = [NSSavePanel savePanel];
 	[panel setTitle:@"Save As..."];
 	[panel setNameFieldStringValue:@"untitled"];
@@ -316,14 +311,10 @@
 		self.filename = [[panel URL] path];
 		self.pSceneView->SaveScene([self.filename UTF8String]);
 	}
-
-	pSceneView->ResumeRenderThread();
 }
 
 - (IBAction)onEnvironmentImage:(id)sender
 {
-	pSceneView->StopRenderThread();
-
 	NSOpenPanel* panel = [NSOpenPanel openPanel];
 	[panel setTitle:@"Environment Image"];
 	[panel setCanChooseFiles:YES];
@@ -343,8 +334,6 @@
 
 - (IBAction)onSaveImage:(id)sender
 {
-	pSceneView->StopRenderThread();
-	
 	NSSavePanel* panel = [NSSavePanel savePanel];
 	[panel setTitle:@"Save Image"];
 	[panel setNameFieldStringValue:@"untitled.png"];
@@ -352,8 +341,6 @@
 	
 	if ([panel runModal] == NSOKButton)
 		self.pSceneView->SaveImage([[[panel URL] path] UTF8String]);
-
-	pSceneView->ResumeRenderThread();
 }
 
 - (IBAction)onResetCamera:(id)sender

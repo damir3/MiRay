@@ -31,7 +31,7 @@ SceneModel::~SceneModel()
 		m_meshes.pop_back();
 	}
 
-	SAFE_RELEASE(m_pModel);
+	m_pModel.reset();
 }
 
 // ------------------------------------------------------------------------ //
@@ -77,7 +77,7 @@ bool SceneModel::Init(const char *pFilename, const Matrix &mat, ModelManager *pM
 			for (const uint32 *pInd = &geom.m_indices[0], *pIndEnd = pInd + geom.m_indices.size(); pInd < pIndEnd; pInd += 3)
 			{
 				CollisionTriangle t(geom.m_vertices[pInd[0]], geom.m_vertices[pInd[1]], geom.m_vertices[pInd[2]],
-									geom.m_pMaterial);
+									geom.m_pMaterial.get());
 				m_pVolume->AddTriangle(t);
 			}
 		}
@@ -123,7 +123,7 @@ bool SceneModel::Load(pugi::xml_node node, ModelManager *pModelManager)
 void SceneModel::Save(pugi::xml_node node) const
 {
 	node = node.append_child("model");
-	node.append_child("filename").text().set(m_pModel->Name());
+	node.append_child("filename").text().set(m_pModel->Name().c_str());
 	pugi::xml_node transformation = node.append_child("transformation");
 	const Matrix & mat = m_pVolume->Transformation();
 	SaveVec3(mat.Pos(), "position", transformation);

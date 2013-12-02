@@ -52,6 +52,8 @@ void RenderThread::SetOpenCLRenderer(OpenCLRenderer * pRenderer)
 	m_pOpenCLRenderer = pRenderer;
 }
 
+static void StaticThreadFunc(void * pRenderThread) { reinterpret_cast<RenderThread *>(pRenderThread)->ThreadFunc(); }
+
 void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 						 const ColorF &bgColor, const Image *pEnvironmentMap,
 						 const Matrix &matCamera, const Matrix &matViewProj)
@@ -73,12 +75,12 @@ void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 #else
 	int numCPU = static_cast<int>(::sysconf(_SC_NPROCESSORS_ONLN));
 #endif
-	m_numCPU = numCPU;
+	m_numCPU = std::max(numCPU - 1, 1);
 
 	if (m_pRenderer && m_pRenderMap && m_pBuffer)
 	{
 		m_bStop = false;
-		Thread::Start();
+		m_thread.reset(new Thread(&StaticThreadFunc, this));
 	}
 }
 
@@ -86,17 +88,18 @@ void RenderThread::Stop()
 {
 	m_bStop = true;
 	if (m_pRenderer && m_nFrameCount > 0)
-	{
-		m_bInterrupted = true;
 		m_pRenderer->Interrupt();
+
+	if (m_thread)
+	{
+		m_thread->join();
+		m_thread.reset();
 	}
-	Thread::Join();
 }
 
-void RenderThread::ThreadProc()
+void RenderThread::ThreadFunc()
 {
 	m_nFrameCount = 0;
-	m_bInterrupted = false;
 	while (!m_bStop)
 	{
 		int nScale = m_nFrameCount < 2 ? (2 << (1 - m_nFrameCount)) : 1;
@@ -109,7 +112,7 @@ void RenderThread::ThreadProc()
 								m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
 			m_pRenderer->Join();
 		}
-		else if (m_mode == 1)
+		else if (m_mode == 1 && m_pOpenCLRenderer)
 		{
 			m_pOpenCLRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj,
 									  m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
@@ -118,14 +121,14 @@ void RenderThread::ThreadProc()
 		double tm2 = Timer::GetSeconds();
 
 		if (m_mode == 0)
-			printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), m_numCPU, (tm2 - tm1) * 1000.0,
-				   m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
+			printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(),
+				   m_numCPU, (tm2 - tm1) * 1000.0, m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
 		else
 			printf("%d: %dx%d %f ms\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
 
-		if (!m_bInterrupted)
+		if (!m_bStop)
 		{// update render map
-			Mutex::Locker locker(m_mutex);
+			MutexLockGuard lock(m_mutex);
 			memcpy(m_pRenderMap->Data(), m_pBuffer->Data(), rcViewport.Height() * m_pRenderMap->Width() * m_pRenderMap->PixelSize());
 			m_rcRenderMap = rcViewport;
 			m_bIsRenderMapUpdated = true;
@@ -140,12 +143,12 @@ void RenderThread::ThreadProc()
 
 RectI RenderThread::LockRenderMap()
 {
-	m_mutex.Lock();
+	m_mutex.lock();
 	m_bIsRenderMapUpdated = false;
 	return m_rcRenderMap;
 }
 
 void RenderThread::UnlockRenderMap()
 {
-	m_mutex.Unlock();
+	m_mutex.unlock();
 }

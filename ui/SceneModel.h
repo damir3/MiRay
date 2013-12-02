@@ -16,9 +16,9 @@ class Model;
 
 class SceneModel : public ITransformable
 {
-	BVH				&m_bvh;
-	Model			*m_pModel;
-	CollisionVolume *m_pVolume;
+	BVH						&m_bvh;
+	std::shared_ptr<Model>	m_pModel;
+	CollisionVolume			*m_pVolume;
 
 	struct RenderGeometry
 	{

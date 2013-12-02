@@ -16,7 +16,7 @@ namespace mr
 class SoftwareRenderer;
 class OpenCLRenderer;
 
-class RenderThread : public Thread
+class RenderThread
 {
 	SoftwareRenderer *	m_pRenderer;
 	OpenCLRenderer *	m_pOpenCLRenderer;
@@ -32,8 +32,8 @@ class RenderThread : public Thread
 	volatile bool	m_bStop;
 	volatile bool	m_bIsRenderMapUpdated;
 	volatile int	m_nFrameCount;
-	volatile bool	m_bInterrupted;
 	Mutex	m_mutex;
+	std::unique_ptr<Thread>	m_thread;
 
 public:
 	RenderThread();
@@ -47,7 +47,7 @@ public:
 			   const Matrix & matCamera, const Matrix & matViewProj);
 	void Stop();
 
-	void ThreadProc();
+	void ThreadFunc();
 
 	bool IsRenderMapUpdated() const { return m_bIsRenderMapUpdated; }
 	RectI LockRenderMap();

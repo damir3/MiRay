@@ -15,21 +15,20 @@ class MaterialTexture
 {
 	MaterialParameter	&m_param;
 	std::string			m_filename;
-	Image				*m_pTexture;
+	ImagePtr			m_pTexture;
 
 public:
-	MaterialTexture(MaterialParameter & param) : m_param(param), m_pTexture(nullptr)
+	MaterialTexture(MaterialParameter & param) : m_param(param)
 	{
 	}
 
 	~MaterialTexture()
 	{
-		SAFE_RELEASE(m_pTexture);
 	}
 
 	MaterialParameter & Parameter() { return m_param; }
 	std::string & Filename() { return m_filename; }
-	Image * & Texture() { return m_pTexture; }
+	ImagePtr & Texture() { return m_pTexture; }
 };
 
 class MaterialLayerImpl : public MaterialLayer
@@ -57,7 +56,7 @@ public:
 	MaterialTexture	m_refractionExitColorTexture;
 	
 	std::string		m_bumpMapName;
-	Image			*m_pNormalmap;
+	ImagePtr		m_pNormalmap;
 
 	MaterialTexture	m_bumpLevelTexture;
 
@@ -84,14 +83,12 @@ MaterialLayerImpl::MaterialLayerImpl()
 	, m_refractionTintTexture(m_refractionTint)
 	, m_refractionRoughnessTexture(m_refractionRoughness)
 	, m_refractionExitColorTexture(m_refractionExitColor)
-	, m_pNormalmap(nullptr)
 	, m_bumpLevelTexture(m_bumpLevel)
 {
 }
 
 MaterialLayerImpl::~MaterialLayerImpl()
 {
-	SAFE_RELEASE(m_pNormalmap);
 }
 
 // ------------------------------------------------------------------------ //
@@ -273,7 +270,7 @@ void LoadTexture(MaterialTexture & texture, ImageManager * pImageManager)
 	if (texture.Filename().empty())
 		return;
 
-	Image * pTexture = pImageManager->Load(texture.Filename().c_str());
+	ImagePtr pTexture = pImageManager->Load(texture.Filename().c_str());
 	if (!pTexture)
 		return;
 
@@ -304,8 +301,7 @@ void MaterialLayerImpl::LoadTextures(ImageManager * pImageManager)
 
 // ------------------------------------------------------------------------ //
 
-MaterialResource::MaterialResource(MaterialManager & owner, const char * strName)
-	: IResource(owner, strName)
+MaterialResource::MaterialResource(MaterialManager & owner, const char * name) : m_owner(owner), m_name(name)
 {
 }
 
@@ -316,6 +312,8 @@ MaterialResource::~MaterialResource()
 		delete m_layers.back();
 		m_layers.pop_back();
 	}
+
+	m_owner.Release(m_name);
 }
 
 void MaterialResource::Create()

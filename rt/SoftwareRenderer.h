@@ -18,17 +18,6 @@ class ILight;
 
 class SoftwareRenderer
 {
-	class RenderThread : public Thread
-	{
-		SoftwareRenderer &	m_renderer;
-		volatile bool	m_bStop;
-
-	public:
-		RenderThread(SoftwareRenderer &	renderer) : m_renderer(renderer) {}
-
-		void ThreadProc();
-	};
-	
 	BVH &	m_scene;
 	std::vector<ILight *>	m_lights;
 
@@ -41,8 +30,10 @@ class SoftwareRenderer
 	Vec2	m_dp;
 	const Image * m_pEnvironmentMap;
 
+	int		m_nAreaCounter;
+	int		m_numAreasX;
+	int		m_numAreas;
 	typedef TVec2<int>	Vec2I;
-	Vec2I	m_pos;
 	Vec2I	m_delta;
 	Vec2	m_random;
 	Matrix	m_matRandom;
@@ -54,7 +45,7 @@ class SoftwareRenderer
 
 	volatile uint32 m_nRayCounter;
 
-	std::vector<RenderThread *> m_renderThreads;
+	std::vector<Thread *> m_renderThreads;
 
 	bool GetNextArea(RectI & rc);
 	void RenderArea(const RectI & rc) const;
@@ -72,6 +63,8 @@ class SoftwareRenderer
 	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const;
 	ColorF RenderPixel(const Vec2 & p) const;
 	ColorF LookUpTexture(const Vec2 & p, const Vec2 & dp, const CollisionTriangle * pTriangle) const;
+
+	static void ThreadFunc(void * pRenderer);
 
 public:
 

@@ -7,14 +7,12 @@
 //
 #pragma once
 
-#include "IResource.h"
-
 namespace mr
 {
 
 class ImageManager;
 
-class Image : public IResource
+class Image
 {
 public:
 	enum eType
@@ -47,22 +45,29 @@ public:
 	}
 
 protected:
+	friend ImageManager;
+	ImageManager & m_owner;
+
+	const std::string m_name;
+
 	int		m_width;
 	int		m_height;
 	eType	m_type;
 	byte *	m_pData;
 
-	friend ImageManager;
-	Image(ImageManager & owner, const char * strName);
-	~Image();
+	Image(ImageManager & owner, const char * name);
 
 public:
+	virtual ~Image();
+
 	bool Create(int w, int h, eType type);
 	void Destroy();
 
 	void SetPixel(int x, int y, const ColorF & c);
 	ColorF GetPixel(int x, int y) const;
 	ColorF GetPixel(float u, float v) const;
+
+	const std::string & Name() const { return m_name; }
 
 	int Width() const { return m_width; }
 	int Height() const { return m_height; }

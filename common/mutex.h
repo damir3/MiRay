@@ -7,6 +7,8 @@
 //
 #pragma once
 
+#if __cplusplus < 201103L
+
 #ifndef _WIN32
 #include <pthread.h>
 #endif
@@ -14,36 +16,48 @@
 namespace mr
 {
 
-class Mutex
-{
+	class Mutex
+	{
 #ifdef _WIN32
-	CRITICAL_SECTION m_mutex;
+		CRITICAL_SECTION m_mutex;
 #else
-	pthread_mutex_t m_mutex;
+		pthread_mutex_t m_mutex;
 #endif
+		
+	public:
+		Mutex();
+		~Mutex();
+		
+		void lock();
+		bool try_lock();
+		void unlock();
+	};
 
-public:
-	Mutex();
-	~Mutex();
-
-	void Lock();
-	void Unlock();
-
-	class Locker
+	class MutexLockGuard
 	{
 		Mutex	&m_mutex;
-
+		
 	public:
-		Locker(Mutex &mutex) : m_mutex(mutex)
+		MutexLockGuard(Mutex &mutex) : m_mutex(mutex)
 		{
-			m_mutex.Lock();
+			m_mutex.lock();
 		}
-
-		~Locker()
+		
+		~MutexLockGuard()
 		{
-			m_mutex.Unlock();
+			m_mutex.unlock();
 		}
 	};
-};
-
 }
+
+#else
+
+#include <mutex>
+
+namespace mr
+{
+	typedef std::mutex						Mutex;
+	typedef std::lock_guard<std::mutex>		MutexLockGuard;
+}
+
+#endif

@@ -13,8 +13,19 @@ using namespace mr;
 
 // ------------------------------------------------------------------------ //
 
-Image::Image(ImageManager & owner, const char * strName)
-	: IResource(owner, strName)
+inline std::string UniqueImageName(const char * name, void * p)
+{
+	if (name)
+		return name;
+
+	std::ostringstream stringStream;
+	stringStream << "Image(" << p << ")";
+	return stringStream.str();
+}
+
+Image::Image(ImageManager & owner, const char * name)
+	: m_owner(owner)
+	, m_name(UniqueImageName(name, this))
 	, m_width(0)
 	, m_height(0)
 	, m_type(TYPE_NONE)
@@ -25,6 +36,7 @@ Image::Image(ImageManager & owner, const char * strName)
 Image::~Image()
 {
 	Destroy();
+	m_owner.Release(m_name);
 }
 
 // ------------------------------------------------------------------------ //

@@ -82,4 +82,3 @@ inline T sqr(T value)
 #include "bbox.h"
 #include "frustum.h"
 #include "math3d.h"
-#include "baserc.h"

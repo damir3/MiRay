@@ -52,7 +52,7 @@ private:
 	BBox		m_bbox;
 	Vec3		m_center;
 	Vec3		m_extents;
-	byte		m_axis;
+	int			m_axis;
 	float		m_dist;
 
 	CollisionNode *	m_pChilds[2];

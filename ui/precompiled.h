@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <set>
 #include <map>
 
 #define FBXSDK_NEW_API

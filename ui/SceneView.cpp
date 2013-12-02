@@ -58,7 +58,7 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_iAxis(-1)
 	, m_bTransformation(false)
 {
-	m_pModelManager = new ModelManager(m_pImageManager);
+	m_pModelManager.reset(new ModelManager(m_pImageManager.get()));
 	m_pRenderThread->SetRenderer(new SoftwareRenderer(*m_pBVH));
 
 	ResetCamera();
@@ -66,15 +66,15 @@ SceneView::SceneView(const char * pResourcesPath)
 
 SceneView::~SceneView()
 {
-	SAFE_DELETE(m_pRenderThread);
+	m_pRenderThread.reset();
 	RemoveAllModels();
 	RemoveAllLights();
-	SAFE_RELEASE(m_pBuffer);
-	SAFE_RELEASE(m_pRenderMap);
-	SAFE_RELEASE(m_pEnvironmentMap);
-	delete m_pModelManager;
-	delete m_pImageManager;
-	delete m_pBVH;
+	m_pBuffer.reset();
+	m_pRenderMap.reset();
+	m_pEnvironmentMap.reset();
+	m_pModelManager.reset();
+	m_pImageManager.reset();
+	m_pBVH.reset();
 }
 
 bool SceneView::Init()
@@ -100,10 +100,8 @@ void SceneView::Resize(float w, float h, float rw, float rh)
 	int width = (int)m_fRWidth;
 	int height = (int)m_fRHeight;
 	
-	SAFE_RELEASE(m_pRenderMap);
 	m_pRenderMap = m_pImageManager->Create(width, height, Image::TYPE_4F);
 	
-	SAFE_RELEASE(m_pBuffer);
 	m_pBuffer = m_pImageManager->Create(width, height, Image::TYPE_4F);
 	if (m_pBuffer)
 		std::fill(m_pBuffer->DataF(), m_pBuffer->DataF() + m_pBuffer->Width() * m_pBuffer->Height() * m_pBuffer->NumChannels(), 0.f);
@@ -168,7 +166,7 @@ bool SceneView::LoadScene(const char * pFilename)
 		if (!strcmp(object.name(), "model"))
 		{
 			SceneModel *pSceneModel = new SceneModel(*m_pBVH);
-			if (pSceneModel->Load(object, m_pModelManager))
+			if (pSceneModel->Load(object, m_pModelManager.get()))
 				m_models.push_back(pSceneModel);
 			else
 				SAFE_DELETE(pSceneModel);
@@ -197,10 +195,7 @@ bool SceneView::LoadScene(const char * pFilename)
 
 			pugi::xml_node filename = object.child("map");
 			if (!filename.empty())
-			{
-				SAFE_RELEASE(m_pEnvironmentMap);
 				m_pEnvironmentMap = m_pImageManager->Load(filename.text().get());
-			}
 		}
 	}
 
@@ -229,7 +224,7 @@ bool SceneView::SaveScene(const char * pFilename) const
 
 	{// save environment map
 		pugi::xml_node node = scene.append_child("environment");
-		node.append_child("map").text().set(m_pEnvironmentMap->Name());
+		node.append_child("map").text().set(m_pEnvironmentMap->Name().c_str());
 		SaveVec3((Vec3 &)m_bgColor, "color", node);
 	}
 
@@ -257,7 +252,7 @@ void SceneView::AppendModel(const char * pFilename)
 	RemoveAllModels();
 
 	SceneModel *pSceneModel = new SceneModel(*m_pBVH);
-	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager, pugi::xml_node()))
+	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager.get(), pugi::xml_node()))
 	{
 		m_models.push_back(pSceneModel);
 
@@ -346,7 +341,6 @@ void SceneView::RemoveAllLights()
 bool SceneView::SetEnvironmentImage(const char * pFilename)
 {
 	StopRenderThread();
-	SAFE_RELEASE(m_pEnvironmentMap);
 	m_pEnvironmentMap = m_pImageManager->Load(pFilename);
 	ResumeRenderThread();
 	return m_pEnvironmentMap != NULL;
@@ -812,6 +806,6 @@ void SceneView::ResumeRenderThread()
 	if (m_renderMode != RM_OPENGL)
 	{
 		m_pRenderThread->Start(m_renderMode == RM_SOFTWARE ? 0 : 1,
-							   *m_pRenderMap, *m_pBuffer, m_bgColor, m_pEnvironmentMap, m_matCamera, m_matViewProj);
+							   *m_pRenderMap.get(), *m_pBuffer.get(), m_bgColor, m_pEnvironmentMap.get(), m_matCamera, m_matViewProj);
 	}
 }

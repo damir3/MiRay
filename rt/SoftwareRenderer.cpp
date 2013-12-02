@@ -25,12 +25,7 @@ SoftwareRenderer::SoftwareRenderer(BVH & scene)
 SoftwareRenderer::~SoftwareRenderer()
 {
 	Interrupt();
-
-	while (!m_renderThreads.empty())
-	{
-		delete m_renderThreads.back();
-		m_renderThreads.pop_back();
-	}
+	Join();
 }
 
 // ------------------------------------------------------------------------ //
@@ -77,19 +72,16 @@ void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 	m_vCamDelta[2] += m_vCamDelta[0] * (vPixelOffset.y * m_dp.x);
 	m_vCamDelta[2] += m_vCamDelta[1] * -(vPixelOffset.y * m_dp.y);
 
-	m_pos = Vec2I(0, 0);
 	m_delta = Vec2I(16, 16);
+	m_nAreaCounter = 0;
+	m_numAreasX = (m_rcRenderArea.Width() + m_delta.x - 1) / m_delta.x;
+	int numAreasY = (m_rcRenderArea.Height() + m_delta.y - 1) / m_delta.y;
+	m_numAreas = m_numAreasX * numAreasY;
 	m_random = Vec2(frand(), frand());
 	m_matRandom.RotationAxis(Vec3::Normalize(Vec3Rand()), acosf(frand()));
 
-	for (size_t i = numThreads; i < m_renderThreads.size(); i++)
-		delete m_renderThreads[i];
-
-	while (m_renderThreads.size() < (size_t)numThreads)
-		m_renderThreads.push_back(new RenderThread(*this));
-
-	for (size_t i = 0; i < m_renderThreads.size(); i++)
-		m_renderThreads[i]->Start();
+	for (int i = 0; i < numThreads; i++)
+		m_renderThreads.push_back(new Thread(&ThreadFunc, this));
 
 //	printf("x1\n");
 
@@ -114,38 +106,36 @@ void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
 void SoftwareRenderer::Join()
 {
 	for (size_t i = 0; i < m_renderThreads.size(); i++)
-		m_renderThreads[i]->Join();
+	{
+		m_renderThreads[i]->join();
+		delete m_renderThreads[i];
+	}
+
+	m_renderThreads.clear();
 }
 
 void SoftwareRenderer::Interrupt()
 {
-	m_mutex.Lock();
-	m_pos = Vec2((float)m_rcRenderArea.right, (float)m_rcRenderArea.bottom);
-	m_mutex.Unlock();
-
-	Join();
+	m_mutex.lock();
+	m_nAreaCounter = m_numAreas;
+	m_mutex.unlock();
 }
 
 // ------------------------------------------------------------------------ //
 
 bool SoftwareRenderer::GetNextArea(RectI & rc)
 {
-	Mutex::Locker locker(m_mutex);
-	if (m_pos.y >= m_rcRenderArea.bottom)
+	m_mutex.lock();
+	int pos = m_nAreaCounter++;
+	m_mutex.unlock();
+
+	if (pos >= m_numAreas)
 		return false;
 
-	rc = RectI(m_pos.x, m_pos.y, m_pos.x + m_delta.x, m_pos.y + m_delta.y);
-	rc.bottom = std::min<int>(rc.bottom, m_rcRenderArea.bottom);
-	if (rc.right >= m_rcRenderArea.right)
-	{
-		rc.right = m_rcRenderArea.right;
-
-		m_pos.x = m_rcRenderArea.left;
-		m_pos.y = rc.bottom;
-	}
-	else
-		m_pos.x = rc.right;
-
+	rc.left = m_rcRenderArea.left + m_delta.x * (pos % m_numAreasX);
+	rc.top = m_rcRenderArea.top + m_delta.y * (pos / m_numAreasX);
+	rc.right = std::min(rc.left + m_delta.x, m_rcRenderArea.right);
+	rc.bottom = std::min(rc.top + m_delta.y, m_rcRenderArea.bottom);
 	return true;
 }
 
@@ -178,15 +168,16 @@ void SoftwareRenderer::RenderArea(const RectI & rc) const
 	}
 }
 
-void SoftwareRenderer::RenderThread::ThreadProc()
+void SoftwareRenderer::ThreadFunc(void * pRenderer)
 {
 //	printf("start %p\n", this);
+	SoftwareRenderer * pThis = reinterpret_cast<SoftwareRenderer *>(pRenderer);
 
 	RectI rc;
-	while (m_renderer.GetNextArea(rc))
+	while (pThis->GetNextArea(rc))
 	{
 //		printf("%p: (%d, %d)\n", this, rc.left, rc.top);
-		m_renderer.RenderArea(rc);
+		pThis->RenderArea(rc);
 	}
 
 //	printf("end %p\n", this);

@@ -23,49 +23,57 @@ ImageManager::~ImageManager()
 
 // ------------------------------------------------------------------------ //
 
-Image * ImageManager::Create(int w, int h, Image::eType t)
+void ImageManager::Release(const std::string & name)
 {
-	Image * pImage = new Image(*this, "");
-	if (!pImage)
-		return NULL;
-
-	pImage->Create(w, h, t);
-
-	return pImage;
+	auto it = m_resources.find(name);
+	if (it != m_resources.end())
+		m_resources.erase(it);
 }
 
-Image * ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t)
+ImagePtr ImageManager::Create(int w, int h, Image::eType t)
+{
+	ImagePtr spImage(new Image(*this, nullptr));
+	if (!spImage)
+		return nullptr;
+
+	m_resources[spImage->Name()] = spImage;
+
+	spImage->Create(w, h, t);
+
+	return std::move(spImage);
+}
+
+ImagePtr ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t)
 {
 	if (!pSrcImage)
-		return NULL;
+		return nullptr;
 
-	Image * pImage = new Image(*this, "");
-	if (!pImage)
-		return NULL;
+	ImagePtr spImage(new Image(*this, nullptr));
+	if (!spImage)
+		return nullptr;
+
+	m_resources[spImage->Name()] = spImage;
 
 	const int w = pSrcImage->Width();
 	const int h = pSrcImage->Height();
-	pImage->Create(w, h, t);
-	if (!pImage->Data())
-	{
-		SAFE_RELEASE(pImage);
-		return NULL;
-	}
+	spImage->Create(w, h, t);
+	if (!spImage->Data())
+		return nullptr;
 
-	if (pSrcImage->Type() == pImage->Type())
+	if (pSrcImage->Type() == spImage->Type())
 	{
-		memcpy(pImage->Data(), pSrcImage->Data(), w * h * pImage->PixelSize());
+		memcpy(spImage->Data(), pSrcImage->Data(), w * h * spImage->PixelSize());
 	}
 	else
 	{
 		for (int y = 0; y < h; y++)
 		{
 			for (int x = 0; x < w; x++)
-				pImage->SetPixel(x, y, pSrcImage->GetPixel(x, y));
+				spImage->SetPixel(x, y, pSrcImage->GetPixel(x, y));
 		}
 	}
 	
-	return pImage;
+	return std::move(spImage);
 }
 
 // ------------------------------------------------------------------------ //
@@ -103,18 +111,19 @@ Image * ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t)
 
 // ------------------------------------------------------------------------ //
 
-Image * ImageManager::Load(const char * strFilename)
+ImagePtr ImageManager::Load(const char * strFilename)
 {
 	if (!strFilename || !*strFilename)
-		return NULL;
+		return nullptr;
 
-	Image * pImage = static_cast<Image *>(Find(strFilename));
-	if (pImage)
+	auto it = m_resources.find(strFilename);
+	if (it != m_resources.end())
 	{
-		pImage->AddRef();
-		return pImage;
+		ImagePtr spImage = it->second.lock();
+		if (spImage)
+			return spImage;
 	}
-	
+
 	printf("Loading image '%s'...\n", strFilename);
 	
 	//check the file signature and deduce its format
@@ -123,24 +132,26 @@ Image * ImageManager::Load(const char * strFilename)
 		fif = FreeImage_GetFIFFromFilename(strFilename);
 
 	if (fif == FIF_UNKNOWN)
-		return NULL; // if still unkown, return failure
+		return nullptr; // if still unkown, return failure
 
 	//check that the plugin has reading capabilities and load the file
-	FIBITMAP * dib = NULL;
+	FIBITMAP * dib = nullptr;
 	if (FreeImage_FIFSupportsReading(fif))
 		dib = FreeImage_Load(fif, strFilename);
 
 	if (!dib)
-		return NULL; // if the image failed to load, return failure
+		return nullptr; // if the image failed to load, return failure
 
 	uint32 width = FreeImage_GetWidth(dib);
 	uint32 height = FreeImage_GetHeight(dib);
 	uint32 bpp = FreeImage_GetBPP(dib);
-	if ((FreeImage_GetBits(dib) == NULL) || (width == 0) || (height == 0) || (bpp == 0))
+	if ((FreeImage_GetBits(dib) == nullptr) || (width == 0) || (height == 0) || (bpp == 0))
 	{// if this somehow one of these failed (they shouldn't), return failure
 		FreeImage_Unload(dib);
-		return NULL;
+		return nullptr;
 	}
+
+	ImagePtr spImage;
 
 //	unsigned dpmX = FreeImage_GetDotsPerMeterX(dib);
 //	unsigned dpmY = FreeImage_GetDotsPerMeterY(dib);
@@ -173,23 +184,26 @@ Image * ImageManager::Load(const char * strFilename)
 		}
 
 		byte * bits = FreeImage_GetBits(dib);
-		if (bits != NULL)
+		if (bits != nullptr)
 		{
-			pImage = new Image(*this, strFilename);
-			if (pImage->Create(width, height, it))
+			spImage.reset(new Image(*this, strFilename));
+			
+			m_resources[spImage->Name()] = spImage;
+
+			if (spImage->Create(width, height, it))
 			{
 				uint32 srcPitch = FreeImage_GetPitch(dib);
-				uint32 destPixelSize = pImage->PixelSize();
-				uint32 destPitch = static_cast<uint32>(pImage->Width() * destPixelSize);
+				uint32 destPixelSize = spImage->PixelSize();
+				uint32 destPitch = static_cast<uint32>(spImage->Width() * destPixelSize);
 				uint32 pitch = std::min(srcPitch, destPitch);
 				for (uint32 y = 0 ; y < height; y++)
-					memcpy(pImage->Data() + y * destPitch, bits + (height - y - 1) * srcPitch, pitch);
+					memcpy(spImage->Data() + y * destPitch, bits + (height - y - 1) * srcPitch, pitch);
 
 				if ((FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR) && (bpp == 24 || bpp == 32))
 				{
 					for (uint32 y = 0 ; y < height; y++)
 					{
-						byte * pDest = pImage->Data() + y * destPitch;
+						byte * pDest = spImage->Data() + y * destPitch;
 						for (uint32 x = 0; x < width; x++)
 						{
 							std::swap(pDest[0], pDest[2]);
@@ -206,7 +220,7 @@ Image * ImageManager::Load(const char * strFilename)
 
 	FreeImage_Unload(dib);
 
-	return pImage;
+	return std::move(spImage);
 }
 
 // ------------------------------------------------------------------------ //
@@ -244,7 +258,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 		case Image::TYPE_4F: type = FIT_RGBAF; break;
 	}
 
-	Image * pTmpImage = NULL;
+	ImagePtr pTmpImage;
 	if (!FreeImage_FIFSupportsExportBPP(fif, bpp * 8) ||
 		!FreeImage_FIFSupportsExportType(fif, type))
 	{
@@ -269,10 +283,10 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 	bool res = false;
 
 	FIBITMAP * dib = FreeImage_AllocateT(type, width, height, bpp * 8);
-	if (dib != NULL)
+	if (dib != nullptr)
 	{
 		byte * bits = FreeImage_GetBits(dib);
-		if (bits != NULL)
+		if (bits != nullptr)
 		{
 			uint32 destPitch = FreeImage_GetPitch(dib);
 			uint32 srcPitch = static_cast<uint32>(width * bpp);
@@ -299,54 +313,53 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 		FreeImage_Unload(dib);
 	}
 
-	if (pTmpImage)
-		pTmpImage->Release();
-
 	return res;
 }
 
-Image * ImageManager::LoadNormalmap(const char * strFilename)
+ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
 {
 	if (!strFilename || !*strFilename)
-		return NULL;
+		return nullptr;
 
 	std::string strNormalmapName = std::string("normalmap@") + strFilename;
-	Image * pNormalmapImage = static_cast<Image *>(Find(strNormalmapName.c_str()));
-	if (pNormalmapImage)
+
+	auto it = m_resources.find(strNormalmapName);
+	if (it != m_resources.end())
 	{
-		pNormalmapImage->AddRef();
-		return pNormalmapImage;
+		ImagePtr res = it->second.lock();
+		if (res)
+			return res;
 	}
 
-	Image * pImage = Load(strFilename);
+	ImagePtr pImage = Load(strFilename);
 	if (!pImage)
-		return NULL;
+		return nullptr;
 
-	pNormalmapImage = new Image(*this, strNormalmapName.c_str());
-	if (pNormalmapImage)
+	ImagePtr spNormalmapImage(new Image(*this, strNormalmapName.c_str()));
+	if (!spNormalmapImage)
+		return nullptr;
+
+	m_resources[spNormalmapImage->Name()] = spNormalmapImage;
+
+	const int w = pImage->Width();
+	const int h = pImage->Height();
+	spNormalmapImage->Create(w, h, Image::TYPE_4F);
+
+	for (int y = 0; y < h; y++)
 	{
-		const int w = pImage->Width();
-		const int h = pImage->Height();
-		pNormalmapImage->Create(w, h, Image::TYPE_4F);
-
-		for (int y = 0; y < h; y++)
+		for (int x = 0; x < w; x++)
 		{
-			for (int x = 0; x < w; x++)
-			{
-				Vec3 normal;
-				normal.x  = pImage->GetPixel(x > 0 ? x - 1 : w - 1, y).r;
-				normal.x -= pImage->GetPixel(x + 1 < w ? x + 1 : 0, y).r;
-				normal.y  = pImage->GetPixel(x, y > 0 ? y - 1 : h - 1).r;
-				normal.y -= pImage->GetPixel(x, y + 1 < h ? y + 1 : 0).r;
-				normal.z = 0.25f;
-				normal.Normalize();
-				normal = normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
-				pNormalmapImage->SetPixel(x, y, ColorF(normal.x, normal.y, normal.z, pImage->GetPixel(x, y).r));
-			}
+			Vec3 normal;
+			normal.x  = pImage->GetPixel(x > 0 ? x - 1 : w - 1, y).r;
+			normal.x -= pImage->GetPixel(x + 1 < w ? x + 1 : 0, y).r;
+			normal.y  = pImage->GetPixel(x, y > 0 ? y - 1 : h - 1).r;
+			normal.y -= pImage->GetPixel(x, y + 1 < h ? y + 1 : 0).r;
+			normal.z = 0.25f;
+			normal.Normalize();
+			normal = normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
+			spNormalmapImage->SetPixel(x, y, ColorF(normal.x, normal.y, normal.z, pImage->GetPixel(x, y).r));
 		}
 	}
 
-	pImage->Release();
-
-	return pNormalmapImage;
+	return std::move(spNormalmapImage);
 }

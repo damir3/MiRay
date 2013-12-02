@@ -12,14 +12,23 @@
 namespace mr
 {
 
-class MaterialManager : public IResourceManager
+typedef std::shared_ptr<MaterialResource> MaterialPtr;
+
+class MaterialManager
 {
+	std::map<std::string, std::weak_ptr<MaterialResource>> m_resources;
+	std::vector<MaterialPtr> m_vTmpMaterials;
+
+	friend MaterialResource;
+	void Release(const std::string & name);
+
 public:
 	MaterialManager();
 	~MaterialManager();
 
-	MaterialResource * Get(const char * strName);
-	MaterialResource * Create(const char * strName);
+	MaterialPtr Get(const char * strName);
+	MaterialPtr Create(const char * strName);
+
 	void CleanupMaterials();
 	void LoadTextures(ImageManager * pImageManager);
 
