@@ -50,8 +50,13 @@ private:
 	CollisionNode * const m_pParent;
 
 	BBox		m_bbox;
+#ifdef USE_SSE
+	__m128		m_center;
+	__m128		m_extents;
+#else
 	Vec3		m_center;
 	Vec3		m_extents;
+#endif
 	int			m_axis;
 	float		m_dist;
 
@@ -68,8 +73,13 @@ public:
 	~CollisionNode();
 
 	const BBox & BoundingBox() const { return m_bbox; }
+#ifdef USE_SSE
+	const __m128 & Center() const { return m_center; }
+	const __m128 & Extents() const { return m_extents; }
+#else
 	const Vec3 & Center() const { return m_center; }
 	const Vec3 & Extents() const { return m_extents; }
+#endif
 	byte Axis() const { return m_axis; }
 	float Dist() const { return m_dist; }
 	CollisionNode * Child(int i) const { return m_pChilds[i]; }

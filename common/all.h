@@ -36,6 +36,18 @@ typedef unsigned long long	uint64;
 //#define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
 //#endif
 
+#ifdef __SSE__
+#include <xmmintrin.h>
+
+#define USE_SSE
+
+inline __m128 _mm_abs_ps(const __m128 & val)
+{
+	static const __m128 SIGN_MASK = _mm_set1_ps(-0.f);
+	return _mm_andnot_ps(SIGN_MASK, val);
+}
+#endif
+
 namespace mr
 {
 

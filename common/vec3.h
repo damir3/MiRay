@@ -24,6 +24,9 @@ struct TVec3
 	operator T* () { return &x; }
 	operator const T* () const { return &x; }
 	operator TVec2<T> () const { return TVec2<T>(x, y); }
+#ifdef USE_SSE
+	operator __m128 () const { return _mm_setr_ps(x, y, z, 0.f); }
+#endif
 
 	//operator TVec3<double> () const {return TVec3<double>(x, y, z);}
 	//operator TVec3<float> () const {return TVec3<float>((float)x, (float)y, (float)z);}

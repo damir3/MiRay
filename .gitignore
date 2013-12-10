@@ -6,6 +6,7 @@ out
 *.user
 .DS_Store
 xcuserdata/
+*.xccheckout
 *.sdf
 *.opensdf
 *.aps
