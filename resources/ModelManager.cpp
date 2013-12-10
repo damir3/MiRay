@@ -6,7 +6,11 @@
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <direct.h>
+#endif
 
 #include "ModelManager.h"
 

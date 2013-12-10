@@ -124,7 +124,7 @@ public:
 		__m128 v2 = _mm_add_ps(_mm_mul_ps(boxExtents, m_halfSizeShuffled),
 							   _mm_mul_ps(m_halfSize, _mm_shuffle_ps(boxExtents, boxExtents, _MM_SHUFFLE(3, 0, 2, 1))));
 
-		return _mm_movemask_epi8(_mm_cmple_ps(_mm_abs_ps(v1), v2)) == 0xFFFF;
+		return _mm_movemask_epi8(_mm_castps_si128(_mm_cmple_ps(_mm_abs_ps(v1), v2))) == 0xFFFF;
 	}
 #else
 	inline bool TestIntersection(const Vec3 & vBoxCenter, const Vec3 & vBoxExtents) const

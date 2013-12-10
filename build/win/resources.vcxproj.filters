@@ -24,9 +24,6 @@
     <ClCompile Include="..\..\resources\ImageManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\resources\IResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\resources\MaterialManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resources\ImageManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\resources\IResource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\resources\MaterialManager.h">

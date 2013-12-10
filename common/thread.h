@@ -16,16 +16,15 @@ namespace mr
 	class Thread
 	{
 #ifdef _WIN32
-		typedef DWORD WINAPI  (*ThreadFunction)(void *);
-		//	static DWORD WINAPI StaticThreadProc(void *);
-		
+		static DWORD WINAPI StaticThreadProc(void *);		
+
 		HANDLE m_thread;
 #else
-		typedef void (*ThreadFunction)(void *);
 		static void * StaticThreadProc(void *);
-		
+
 		pthread_t m_thread;
 #endif
+		typedef void (*ThreadFunction)(void *);
 		ThreadFunction	m_func;
 		void * const 	m_pObj;
 		Mutex			m_mutex;

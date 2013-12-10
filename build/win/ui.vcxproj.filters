@@ -36,11 +36,20 @@
     <ClInclude Include="..\..\ThirdParty\glew\include\GL\wglew.h">
       <Filter>glew</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\ui\OmniLight.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ui\SceneInterfaces.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ui\SceneModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ui\SceneUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ui\RenderModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\ui\RenderThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +58,15 @@
     </ClCompile>
     <ClCompile Include="..\..\ui\precompiled.h">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ui\OmniLight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ui\SceneModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ui\SceneUtils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

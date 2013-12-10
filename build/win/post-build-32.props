@@ -10,7 +10,7 @@ copy $(TargetDir)"..\..\ThirdParty\FreeImage\lib\vs2010\x86\*.dll" $(TargetDir)
 copy $(TargetDir)"..\..\rt\*.cl" $(TargetDir)
 copy $(TargetDir)"..\..\MiRay Studio\mac\*.hdr" $(TargetDir)
 copy $(TargetDir)"..\..\MiRay Studio\mac\*.fbx" $(TargetDir)
-copy $(TargetDir)"..\..\MiRay Studio\mac\*.MiRay.xml" $(TargetDir)</Command>
+copy $(TargetDir)"..\..\MiRay Studio\mac\*.mrs" $(TargetDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup />

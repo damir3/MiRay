@@ -317,8 +317,9 @@ BBox CollisionNode::CalculateBBox(const sPolygonArray & polygons)
 void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 {
 	m_bbox = CalculateBBox(polygons);
-	m_center = m_bbox.Center();
-	m_extents = m_center - m_bbox.vMins;
+	Vec3 boxCenter = m_bbox.Center();
+	m_center = boxCenter;
+	m_extents = boxCenter - m_bbox.vMins;
 
 	if (level == 0 || polygons.size() <= MAX_NODE_TRIANGLES || !FindSplitPlane(polygons))
 	{

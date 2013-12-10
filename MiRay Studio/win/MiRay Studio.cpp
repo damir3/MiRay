@@ -35,9 +35,11 @@ HDC				g_hDC = NULL;
 HGLRC			g_hRC = NULL;
 mr::SceneView *	g_pSceneView = NULL;
 POINT			g_ptPrevMouse;
-bool				g_bLeftMouseDown = false;
-bool				g_bRightMouseDown = false;
-bool				g_bControlDown = false;
+std::string		g_fileName;
+bool			g_bLeftMouseDown = false;
+bool			g_bRightMouseDown = false;
+bool			g_bControlDown = false;
+bool			g_bShiftDown = false;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -176,8 +178,7 @@ bool InitOpenGL(HWND hWnd)
 	if (!g_pSceneView->Init())
 		return false;
 
-	g_pSceneView->SetEnvironmentImage((path + std::string("studio.hdr")).c_str());
-	g_pSceneView->LoadScene((path + std::string("cup.fbx")).c_str());
+	g_pSceneView->LoadScene((path + std::string("cup.mrs")).c_str());
 
 	return true;
 }
@@ -207,16 +208,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
+void OnFileNew(HWND hWnd)
+{
+	g_fileName.clear();
+	g_pSceneView->ResetScene();
+}
+
 void OnFileOpen(HWND hWnd)
 {
-	g_pSceneView->StopRenderThread();
-
 	OPENFILENAMEA ofn;
 	char fileName[MAX_PATH] = "";
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = hWnd;
-	ofn.lpstrFilter = "3D Model Files\0*.fbx;*.dae;*.dxf;*.obj;*.3ds\0All files\0*.*\0\0";
+	ofn.lpstrFilter = "MiRay Scene Files\0*.mrs\0003D Model Files\0*.mrs;*.fbx;*.dae;*.dxf;*.obj;*.3ds\0All Files\0*.*\0\0";
 	ofn.lpstrFile = fileName;
 	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
@@ -224,9 +229,39 @@ void OnFileOpen(HWND hWnd)
 	if (GetOpenFileNameA(&ofn))
 	{
 		wglMakeCurrent(g_hDC, g_hRC);
-		g_pSceneView->LoadScene(fileName);
+		g_fileName = fileName;
+		g_pSceneView->LoadScene(g_fileName.c_str());
 		wglMakeCurrent(NULL, NULL);
 	}
+}
+
+void OnFileSaveAs(HWND hWnd)
+{
+	OPENFILENAMEA ofn;
+	char fileName[MAX_PATH];
+	strcpy_s(fileName, _countof(fileName), g_fileName.empty() ? "untitled.mrs" : g_fileName.c_str());
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lpstrTitle = "Save Scene";
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hWnd;
+	ofn.lpstrFilter = "MiRay Scene Files\0*.mrs\0\0";
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_EXPLORER | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+	ofn.lpstrDefExt = "";
+	if (GetSaveFileNameA(&ofn))
+	{
+		g_fileName = fileName;
+		g_pSceneView->SaveScene(g_fileName.c_str());
+	}
+}
+
+void OnFileSave(HWND hWnd)
+{
+	if (g_fileName.empty())
+		OnFileSaveAs(hWnd);
+	else
+		g_pSceneView->SaveScene(g_fileName.c_str());
 }
 
 static const char * strImageFilter = "Image Files\0*.jpg;*.;*.jpeg;*.png;*.tga;*.hdr;*.exr;*.tif;*.tiff;*.psd;*.dds;"\
@@ -234,8 +269,6 @@ static const char * strImageFilter = "Image Files\0*.jpg;*.;*.jpeg;*.png;*.tga;*
 
 void OnEnvironmentImage(HWND hWnd)
 {
-	g_pSceneView->StopRenderThread();
-
 	OPENFILENAMEA ofn;
 	char fileName[MAX_PATH] = "";
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -253,8 +286,6 @@ void OnEnvironmentImage(HWND hWnd)
 
 void OnSaveImage(HWND hWnd)
 {
-	g_pSceneView->StopRenderThread();
-
 	OPENFILENAMEA ofn;
 	char fileName[MAX_PATH] = "untitled.png";
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -268,8 +299,6 @@ void OnSaveImage(HWND hWnd)
 	ofn.lpstrDefExt = "";
 	if (GetSaveFileNameA(&ofn))
 		g_pSceneView->SaveImage(fileName);
-
-	g_pSceneView->ResumeRenderThread();
 }
 
 bool CheckModelExtension(const char * extension)
@@ -334,19 +363,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmEvent = HIWORD(wParam);
 		switch (wmId)
 		{// Parse the menu selections:
-		case IDM_ABOUT:						DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About); break;
-		case IDM_FILE_OPEN:					OnFileOpen(hWnd); break;
-		case IDM_FILE_ENVIRONMENT_IMAGE:		OnEnvironmentImage(hWnd); break;
-		case IDM_FILE_SAVE_IMAGE:			OnSaveImage(hWnd); break;
-		case IDM_VIEW_RESET_CAMERA:			g_pSceneView->ResetCamera(); 	break;
-		case IDM_VIEW_SHOW_GRID:				g_pSceneView->SetShowGrid(!g_pSceneView->ShowGrid()); break;
-		case IDM_VIEW_SHOW_WIREFRAME:		g_pSceneView->SetShowWireframe(!g_pSceneView->ShowWireframe()); break;
-		case IDM_VIEW_SHOW_NORMALS:			g_pSceneView->SetShowNormals(!g_pSceneView->ShowNormals()); break;
-		case IDM_VIEW_SHOW_BHV:				g_pSceneView->SetShowBVH(!g_pSceneView->ShowBVH()); break;
-		case IDM_MODE_OPENGL:				g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL); break;
-		case IDM_MODE_SOFTWARE:				g_pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE); break;
-		case IDM_MODE_OPENCL:				g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL); break;
-		case IDM_EXIT:						DestroyWindow(hWnd); break;
+		case ID_ABOUT:						DialogBox(g_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About); break;
+		case ID_FILE_NEW:					OnFileNew(hWnd); break;
+		case ID_FILE_OPEN:					OnFileOpen(hWnd); break;
+		case ID_FILE_SAVE:					OnFileSave(hWnd); break;
+		case ID_FILE_SAVE_AS:				OnFileSaveAs(hWnd); break;
+		case ID_FILE_ENVIRONMENT_IMAGE:		OnEnvironmentImage(hWnd); break;
+		case ID_FILE_SAVE_IMAGE:			OnSaveImage(hWnd); break;
+		case ID_EXIT:						DestroyWindow(hWnd); break;
+		case ID_VIEW_RESET_CAMERA:			g_pSceneView->ResetCamera(); 	break;
+		case ID_VIEW_SHOW_GRID:				g_pSceneView->SetShowGrid(!g_pSceneView->ShowGrid()); break;
+		case ID_VIEW_SHOW_WIREFRAME:		g_pSceneView->SetShowWireframe(!g_pSceneView->ShowWireframe()); break;
+		case ID_VIEW_SHOW_NORMALS:			g_pSceneView->SetShowNormals(!g_pSceneView->ShowNormals()); break;
+		case ID_VIEW_SHOW_BHV:				g_pSceneView->SetShowBVH(!g_pSceneView->ShowBVH()); break;
+		case ID_MODE_OPENGL:				g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL); break;
+		case ID_MODE_SOFTWARE:				g_pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE); break;
+		case ID_MODE_OPENCL:				g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL); break;
 		default:	
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -362,7 +394,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetCapture(hWnd);
 			g_ptPrevMouse.x = GET_X_LPARAM(lParam);
 			g_ptPrevMouse.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->BeginGesture((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y);
+			g_pSceneView->OnMouseDown((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, mr::MOUSE_LEFT);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
@@ -371,7 +403,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (!g_bRightMouseDown)
 		{
 			ReleaseCapture();
-			g_pSceneView->EndGesture();
+			g_pSceneView->OnMouseUp(mr::MOUSE_LEFT);
 		}
 		break;
 	case WM_RBUTTONDOWN:
@@ -381,7 +413,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SetCapture(hWnd);
 			g_ptPrevMouse.x = GET_X_LPARAM(lParam);
 			g_ptPrevMouse.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->BeginGesture((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y);
+			g_pSceneView->OnMouseDown((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, mr::MOUSE_RIGHT);
 			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
@@ -390,7 +422,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (!g_bLeftMouseDown)
 		{
 			ReleaseCapture();
-			g_pSceneView->EndGesture();
+			g_pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
 		}
 		break;
 	case WM_MOUSEMOVE:
@@ -398,16 +430,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 			float dx = (float)(pt.x - g_ptPrevMouse.x);
 			float dy = (float)(pt.y - g_ptPrevMouse.y);
-			if (g_bLeftMouseDown)
-			{
-				g_pSceneView->Rotate(dx, dy);
-				InvalidateRect(hWnd, NULL, FALSE);
-			}
-			else if (g_bRightMouseDown)
-			{
-				g_pSceneView->Pan(dx, dy);
-				InvalidateRect(hWnd, NULL, FALSE);
-			}
+			mr::eMouseButton button = g_bLeftMouseDown ? mr::MOUSE_LEFT : (g_bRightMouseDown ? mr::MOUSE_RIGHT : mr::MOUSE_NONE);
+			g_pSceneView->OnMouseMove((float)pt.x, (float)pt.y, dx, dy, button);
 			g_ptPrevMouse = pt;
 		}
 		break;
@@ -415,6 +439,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_pSceneView->Zoom((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, (float)GET_WHEEL_DELTA_WPARAM(wParam)/(float)WHEEL_DELTA);
 		break;
 	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_CONTROL: g_bControlDown = true; break;
+		case VK_SHIFT: g_bShiftDown = true; break;
+		}
 		if (wParam == VK_CONTROL)
 			g_bControlDown = true;
 		break;
@@ -424,9 +453,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			switch (wParam)
 			{
 			case VK_CONTROL: g_bControlDown = false; break;
+			case 'N': OnFileNew(hWnd); break;
 			case 'O': OnFileOpen(hWnd); break;
+			case 'S': if (g_bShiftDown) { g_bShiftDown = false; OnFileSaveAs(hWnd); } else OnFileSave(hWnd); break;
 			case 'E': OnEnvironmentImage(hWnd); break;
-			case 'S': OnSaveImage(hWnd); break;
+			case 'I': OnSaveImage(hWnd); break;
 			case '1': g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL); break;
 			case '2': g_pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE); break;
 			case '3': g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL); break;
@@ -436,6 +467,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			switch (wParam)
 			{
+			case VK_SHIFT: g_bShiftDown = false; break;
 			case 'R': g_pSceneView->ResetCamera(); break;
 			case 'G': g_pSceneView->SetShowGrid(!g_pSceneView->ShowGrid()); break;
 			case 'W': g_pSceneView->SetShowWireframe(!g_pSceneView->ShowWireframe()); break;

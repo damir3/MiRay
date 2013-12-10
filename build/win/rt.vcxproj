@@ -22,7 +22,6 @@
     <ClCompile Include="..\..\rt\BVH.cpp" />
     <ClCompile Include="..\..\rt\CollisionNode.cpp" />
     <ClCompile Include="..\..\rt\CollisionVolume.cpp" />
-    <ClCompile Include="..\..\rt\Light.cpp" />
     <ClCompile Include="..\..\rt\Material.cpp" />
     <ClCompile Include="..\..\rt\OpenCLRenderer.cpp" />
     <ClCompile Include="..\..\rt\SoftwareRenderer.cpp" />

@@ -7,6 +7,8 @@
 //
 #ifndef _WIN32
 #include <unistd.h>
+#else
+#include <direct.h>
 #endif
 
 #include "SceneView.h"
@@ -123,8 +125,6 @@ void SceneView::ResetScene()
 	RemoveAllModels();
 	RemoveAllLights();
 	ResetCamera();
-
-	ResumeRenderThread();
 }
 
 bool SceneView::LoadScene(const char * pFilename)
@@ -329,7 +329,7 @@ void SceneView::RemoveAllModels()
 void SceneView::RemoveAllLights()
 {
 	m_pGizmoObject = NULL;
-	if (m_pRenderThread->Renderer())
+	if (m_pRenderThread && m_pRenderThread->Renderer())
 		m_pRenderThread->Renderer()->SetLights(0, NULL);
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
