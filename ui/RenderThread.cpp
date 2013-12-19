@@ -117,27 +117,29 @@ void RenderThread::ThreadFunc()
 			m_pOpenCLRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj,
 									  m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
 		}
-		m_nFrameCount++;
 		double tm2 = Timer::GetSeconds();
 
-		if (m_mode == 0)
-			printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(),
-				   m_numCPU, (tm2 - tm1) * 1000.0, m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
-		else
-			printf("%d: %dx%d %f ms\n", m_nFrameCount - 1, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
-
-		if (!m_bStop)
+		if (!m_bStop || !m_nFrameCount)
 		{// update render map
-			MutexLockGuard lock(m_mutex);
+			if (m_mode == 0)
+				printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(),
+					   m_numCPU, (tm2 - tm1) * 1000.0, m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
+			else
+				printf("%d: %dx%d %f ms\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
+
+			m_mutex.lock();
 			memcpy(m_pRenderMap->Data(), m_pBuffer->Data(), rcViewport.Height() * m_pRenderMap->Width() * m_pRenderMap->PixelSize());
 			m_rcRenderMap = rcViewport;
 			m_bIsRenderMapUpdated = true;
+			m_mutex.unlock();
 
 //			m_pRenderMap->SetPixel(0, 0, ColorF(1.f, 0.f, 0.f, 1.f));
 //			m_pRenderMap->SetPixel(rcViewport.Width() - 1, 0, ColorF(1.f, 0.f, 0.f, 1.f));
 //			m_pRenderMap->SetPixel(0, rcViewport.Height() - 1, ColorF(1.f, 0.f, 0.f, 1.f));
 //			m_pRenderMap->SetPixel(rcViewport.Width() - 1, rcViewport.Height() - 1, ColorF(1.f, 0.f, 0.f, 1.f));
 		}
+
+		m_nFrameCount++;
 	}
 }
 

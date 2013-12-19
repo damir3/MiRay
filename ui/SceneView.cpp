@@ -59,6 +59,7 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_vGizmoStartDelta(0.f)
 	, m_iAxis(-1)
 	, m_bTransformation(false)
+	, m_bShouldRedraw(false)
 {
 	m_pModelManager.reset(new ModelManager(m_pImageManager.get()));
 	m_pRenderThread->SetRenderer(new SoftwareRenderer(*m_pBVH));
@@ -496,6 +497,7 @@ void SceneView::OnMouseUp(eMouseButton button)
 {
 	m_iMouseDown &= ~button;
 	m_vTargetPos = Vec3::Null;
+	m_bShouldRedraw = true;
 }
 
 void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton button)
@@ -637,8 +639,17 @@ void SceneView::DrawGizmo(const Matrix & mat, const BBox & bbox) const
 		DrawArrow(mat.Pos(), mat.Axis(i), m_iAxis == i ? Color(255, 255, 0) : axisColor[i], 300.f);
 }
 
+bool SceneView::ShouldRedraw() const
+{
+	if (m_renderMode != RM_OPENGL)
+		return m_pRenderMap && m_pRenderThread->IsRenderMapUpdated();
+
+	return m_bShouldRedraw;
+}
+
 void SceneView::Draw()
 {
+	m_bShouldRedraw = false;
     glViewport(0, 0, (int)m_fWidth, (int)m_fHeight);
 	glClearColor(m_bgColor.r, m_bgColor.g, m_bgColor.b, m_bgColor.a);
 	glClearDepth(1.f);
@@ -803,6 +814,7 @@ void SceneView::StopRenderThread()
 
 void SceneView::ResumeRenderThread()
 {
+	m_bShouldRedraw = true;
 	if (m_renderMode != RM_OPENGL)
 	{
 		m_pRenderThread->Start(m_renderMode == RM_SOFTWARE ? 0 : 1,

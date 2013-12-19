@@ -142,7 +142,7 @@ bool SoftwareRenderer::GetNextArea(RectI & rc)
 ColorF SoftwareRenderer::RenderPixel(const Vec2 &p) const
 {
 	sResult res = TraceRay(m_vEyePos, m_vCamDelta[2] + m_vCamDelta[0] * p.x - m_vCamDelta[1] * p.y, 0, NULL);
-	return ColorF(res.color.x, res.color.y, res.color.z, res.opacity.x);
+	return ColorF(res.color.x, res.color.y, res.color.z, 1.f);
 }
 
 void SoftwareRenderer::RenderArea(const RectI & rc) const
@@ -270,13 +270,19 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	Vec3 I = Vec3::Normalize(v2 - v1);
 	
 	Vec3 ior = pMaterial->IndexOfRefraction().Color(tc);
-	float eta = tr.backface ? ior.x : 1.f / ior.x;
-	if (pMaterial->FresnelReflection() && !tr.backface)
-	{
-		float fresnel = tr.backface ? FresnelReflection(I, N, ior.x, 1.f) : FresnelReflection(I, N, 1.f, ior.x);
-		kR.x = std::min<float>(kR.x + fresnel, 1.f);
-		kR.y = std::min<float>(kR.y + fresnel, 1.f);
-		kR.z = std::min<float>(kR.z + fresnel, 1.f);
+	if (pMaterial->FresnelReflection()/* && !tr.backface*/)
+	{// update reflectivity
+		float ior1 = 0.f, ior2 = 1.f;
+		float fresnel = 0.f;
+		for (int i = 0; i < 3; i++)
+		{
+			if (ior1 != ior[i])
+			{
+				ior1 = ior[i];
+				fresnel = tr.backface ? FresnelReflection(I, N, ior1, ior2) : FresnelReflection(I, N, ior2, ior1);
+			}
+			kR[i] = std::min<float>(kR[i] + fresnel, 1.f);
+		}
 	}
 
 	bool bReflection = (kR.x > 0.f || kR.y > 0.f || kR.z > 0.f);
@@ -316,8 +322,9 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 		float refractionRoughness = pMaterial->RefractionRoughness().Value(tc);
 		Vec3 RN = refractionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (refractionRoughness * 0.25f)) : N;
+		float eta = tr.backface ? ior.x : 1.f / ior.x;
 		Vec3 T = Vec3::Refract(I, RN, eta);
-		if (T.LengthSquared() == 0.f)
+		if (T.Normalize() == 0.f)
 			return sResult(pMaterial->RefractionExitColor().Color(tc), Vec3(0.f));
 
 		Vec3 v1T = tr.pos - N * m_fDistEpsilon;

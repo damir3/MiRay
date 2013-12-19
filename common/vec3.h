@@ -257,7 +257,7 @@ struct TVec3
 	{
 		T IdotN = TVec3::Dot(i, n);
 		T cost2 = (T)1.0 - eta * eta * ((T)1.0 - IdotN * IdotN);
-		return cost2 > (T)0.0 ? (i * eta - n * (eta * IdotN + (T)sqrt(cost2))) : TVec3::Null;
+		return cost2 >= (T)0.0 ? (i * eta - n * (eta * IdotN + (T)sqrt(cost2))) : TVec3::Null;
 	}
 };
 

@@ -36,7 +36,8 @@ typedef unsigned long long	uint64;
 //#define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
 //#endif
 
-#if defined(__SSE__) || defined(WIN32)
+
+#if defined(__SSE__) || defined(_WIN64)
 #include <xmmintrin.h>
 
 #define USE_SSE

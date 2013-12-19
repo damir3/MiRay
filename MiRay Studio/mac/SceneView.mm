@@ -80,8 +80,8 @@
 
 - (void)idle:(NSTimer *)timer
 {
-    if(![[NSApplication sharedApplication] isHidden])
-        [self setNeedsDisplay:YES];
+    if (![[NSApplication sharedApplication] isHidden] && self.pSceneView->ShouldRedraw())
+		[self setNeedsDisplay:YES];
 }
 
 - (void)reshape
@@ -123,14 +123,12 @@
 	//		float tm = self.pSceneView->RenderScene();
 	//		NSLog(@"%f", tm);
 	//	}
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
 	self.ptPrevMouse = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(self.ptPrevMouse.x, self.bounds.size.height - self.ptPrevMouse.y, mr::MOUSE_LEFT);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseUp:(NSEvent *)theEvent
@@ -141,33 +139,28 @@
 		NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_LEFT);
 	}
-	[self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseDown:(NSEvent *)theEvent
 {
 	self.ptPrevMouse = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(self.ptPrevMouse.x, self.bounds.size.height - self.ptPrevMouse.y, mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseUp:(NSEvent *)theEvent
 {
 	self.pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)otherMouseDown:(NSEvent *)theEvent
 {
 	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)otherMouseUp:(NSEvent *)theEvent
 {
 	self.pSceneView->OnMouseUp(mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseMoved:(NSEvent *)theEvent
@@ -177,7 +170,6 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_NONE);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent
@@ -187,7 +179,8 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_LEFT);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseDragged:(NSEvent *)theEvent
@@ -197,7 +190,8 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)otherMouseDragged:(NSEvent *)theEvent
@@ -207,14 +201,16 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
 {
 	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->Zoom(pt.x, self.bounds.size.height - pt.y, theEvent.deltaY);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)drawRect:(NSRect)dirtyRect
@@ -285,7 +281,6 @@
 			}
 			else
 				self.pSceneView->AppendModel([[url path] UTF8String]);
-			[self setNeedsDisplay:YES];
 			break;
 		}
 	}
@@ -326,7 +321,6 @@
 		for (NSURL* url in [panel URLs])
 		{
 			self.pSceneView->SetEnvironmentImage([[url path] UTF8String]);
-			[self setNeedsDisplay:YES];
 			break;
 		}
 	}
@@ -346,49 +340,41 @@
 - (IBAction)onResetCamera:(id)sender
 {
 	self.pSceneView->ResetCamera();
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onShowGrid:(id)sender
 {
 	self.pSceneView->SetShowGrid(!self.pSceneView->ShowGrid());
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onShowWireframe:(id)sender
 {
 	self.pSceneView->SetShowWireframe(!self.pSceneView->ShowWireframe());
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onShowNormals:(id)sender
 {
 	self.pSceneView->SetShowNormals(!self.pSceneView->ShowNormals());
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onShowBVH:(id)sender
 {
 	self.pSceneView->SetShowBVH(!self.pSceneView->ShowBVH());
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onOpenGLMode:(id)sender
 {
 	self.pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL);
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onSoftwareMode:(id)sender
 {
 	self.pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE);
-	[self setNeedsDisplay:YES];
 }
 
 - (IBAction)onOpenCLMode:(id)sender
 {
 	self.pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL);
-	[self setNeedsDisplay:YES];
 }
 
 - (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)item

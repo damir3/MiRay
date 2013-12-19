@@ -58,6 +58,7 @@ private:
 	bool	m_bShowWireframe;
 	bool	m_bShowNormals;
 	bool	m_bShowBVH;
+	bool	m_bShouldRedraw;
 	GLint	m_width, m_height;
 	GLuint	m_texture;
 	int		m_nFrameCount;
@@ -120,18 +121,18 @@ public:
 	void SetRenderMode(eRenderMode rm);
 
 	bool ShowGrid() const { return m_bShowGrid; }
-	void SetShowGrid(bool b) { m_bShowGrid = b; }
+	void SetShowGrid(bool b) { m_bShowGrid = b; m_bShouldRedraw = true; }
 
 	bool ShowWireframe() const { return m_bShowWireframe; }
-	void SetShowWireframe(bool b) { m_bShowWireframe = b; }
+	void SetShowWireframe(bool b) { m_bShowWireframe = b; m_bShouldRedraw = true; }
 
 	bool ShowNormals() const { return m_bShowNormals; }
-	void SetShowNormals(bool b) { m_bShowNormals = b; }
+	void SetShowNormals(bool b) { m_bShowNormals = b; m_bShouldRedraw = true; }
 
 	bool ShowBVH() const { return m_bShowBVH; }
-	void SetShowBVH(bool b) { m_bShowBVH = b; }
+	void SetShowBVH(bool b) { m_bShowBVH = b; m_bShouldRedraw = true; }
 
-	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; }
+	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; m_bShouldRedraw = true; }
 
 	bool Init();
 	void Done();
@@ -159,6 +160,7 @@ public:
 
 //	void RenderScene(int width, int height, int samples);
 
+	bool ShouldRedraw() const;
 	void Draw();
 
 	void StopRenderThread();

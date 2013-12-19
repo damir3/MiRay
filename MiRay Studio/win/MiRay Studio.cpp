@@ -34,12 +34,11 @@ TCHAR			g_szWindowClass[MAX_LOADSTRING];			// the main window class name
 HDC				g_hDC = NULL;
 HGLRC			g_hRC = NULL;
 mr::SceneView *	g_pSceneView = NULL;
-POINT			g_ptPrevMouse;
 std::string		g_fileName;
+POINT			g_ptMousePos;
 bool			g_bLeftMouseDown = false;
 bool			g_bRightMouseDown = false;
-bool			g_bControlDown = false;
-bool			g_bShiftDown = false;
+bool			m_bMouseMoved = false;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -392,10 +391,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (!g_bRightMouseDown)
 		{
 			SetCapture(hWnd);
-			g_ptPrevMouse.x = GET_X_LPARAM(lParam);
-			g_ptPrevMouse.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->OnMouseDown((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, mr::MOUSE_LEFT);
-			InvalidateRect(hWnd, NULL, FALSE);
+			m_bMouseMoved = false;
+			g_ptMousePos.x = GET_X_LPARAM(lParam);
+			g_ptMousePos.y = GET_Y_LPARAM(lParam);
+			g_pSceneView->OnMouseDown((float)g_ptMousePos.x, (float)g_ptMousePos.y, mr::MOUSE_LEFT);
 		}
 		break;
 	case WM_LBUTTONUP:
@@ -404,6 +403,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ReleaseCapture();
 			g_pSceneView->OnMouseUp(mr::MOUSE_LEFT);
+			if (!m_bMouseMoved)
+				g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), mr::MOUSE_LEFT);
 		}
 		break;
 	case WM_RBUTTONDOWN:
@@ -411,10 +412,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (!g_bLeftMouseDown)
 		{
 			SetCapture(hWnd);
-			g_ptPrevMouse.x = GET_X_LPARAM(lParam);
-			g_ptPrevMouse.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->OnMouseDown((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, mr::MOUSE_RIGHT);
-			InvalidateRect(hWnd, NULL, FALSE);
+			m_bMouseMoved = false;
+			g_ptMousePos.x = GET_X_LPARAM(lParam);
+			g_ptMousePos.y = GET_Y_LPARAM(lParam);
+			g_pSceneView->OnMouseDown((float)g_ptMousePos.x, (float)g_ptMousePos.y, mr::MOUSE_RIGHT);
 		}
 		break;
 	case WM_RBUTTONUP:
@@ -423,39 +424,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ReleaseCapture();
 			g_pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
+			if (!m_bMouseMoved)
+				g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), mr::MOUSE_RIGHT);
 		}
 		break;
 	case WM_MOUSEMOVE:
 		{
 			POINT pt = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-			float dx = (float)(pt.x - g_ptPrevMouse.x);
-			float dy = (float)(pt.y - g_ptPrevMouse.y);
+			float dx = (float)(pt.x - g_ptMousePos.x);
+			float dy = (float)(pt.y - g_ptMousePos.y);
+			g_ptMousePos = pt;
+			m_bMouseMoved = true;
 			mr::eMouseButton button = g_bLeftMouseDown ? mr::MOUSE_LEFT : (g_bRightMouseDown ? mr::MOUSE_RIGHT : mr::MOUSE_NONE);
 			g_pSceneView->OnMouseMove((float)pt.x, (float)pt.y, dx, dy, button);
-			g_ptPrevMouse = pt;
+			if (g_pSceneView->ShouldRedraw())
+				InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
 	case WM_MOUSEWHEEL:
-		g_pSceneView->Zoom((float)g_ptPrevMouse.x, (float)g_ptPrevMouse.y, (float)GET_WHEEL_DELTA_WPARAM(wParam)/(float)WHEEL_DELTA);
-		break;
-	case WM_KEYDOWN:
-		switch (wParam)
-		{
-		case VK_CONTROL: g_bControlDown = true; break;
-		case VK_SHIFT: g_bShiftDown = true; break;
-		}
-		if (wParam == VK_CONTROL)
-			g_bControlDown = true;
+		g_pSceneView->Zoom((float)g_ptMousePos.x, (float)g_ptMousePos.y, (float)GET_WHEEL_DELTA_WPARAM(wParam)/(float)WHEEL_DELTA);
+		if (g_pSceneView->ShouldRedraw())
+			InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	case WM_KEYUP:
-		if (g_bControlDown)
+		if (GetKeyState(VK_CONTROL) & 0x80)
 		{
 			switch (wParam)
 			{
-			case VK_CONTROL: g_bControlDown = false; break;
 			case 'N': OnFileNew(hWnd); break;
 			case 'O': OnFileOpen(hWnd); break;
-			case 'S': if (g_bShiftDown) { g_bShiftDown = false; OnFileSaveAs(hWnd); } else OnFileSave(hWnd); break;
+			case 'S': if (GetKeyState(VK_SHIFT) & 0x80) OnFileSaveAs(hWnd); else OnFileSave(hWnd); break;
 			case 'E': OnEnvironmentImage(hWnd); break;
 			case 'I': OnSaveImage(hWnd); break;
 			case '1': g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL); break;
@@ -467,7 +465,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			switch (wParam)
 			{
-			case VK_SHIFT: g_bShiftDown = false; break;
 			case 'R': g_pSceneView->ResetCamera(); break;
 			case 'G': g_pSceneView->SetShowGrid(!g_pSceneView->ShowGrid()); break;
 			case 'W': g_pSceneView->SetShowWireframe(!g_pSceneView->ShowWireframe()); break;
@@ -475,13 +472,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case 'B': g_pSceneView->SetShowBVH(!g_pSceneView->ShowBVH()); break;
 			}
 		}
-		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	case WM_DROPFILES:
 		OnDropFiles(hWnd, (HDROP)wParam);
 		break;
 	case WM_TIMER:
-		InvalidateRect(hWnd, NULL, FALSE);
+		if (g_pSceneView->ShouldRedraw())
+			InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	case WM_ERASEBKGND:
 		return 1;
