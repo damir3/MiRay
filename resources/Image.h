@@ -7,12 +7,14 @@
 //
 #pragma once
 
+#include "../rt/Image.h"
+
 namespace mr
 {
 
 class ImageManager;
 
-class Image
+class Image : public IImage
 {
 public:
 	enum eType
@@ -90,8 +92,11 @@ public:
 		}
 	}
 
-	const byte * Data() const { return m_pData; }
-	byte * Data() { return m_pData; }
+	const void * Data() const { return m_pData; }
+	void * Data() { return m_pData; }
+
+	const byte * DataB() const { return m_pData; }
+	byte * DataB() { return m_pData; }
 
 	const uint16 * DataW() const { return reinterpret_cast<uint16 *>(m_pData); }
 	uint16 * DataW() { return reinterpret_cast<uint16 *>(m_pData); }

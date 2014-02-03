@@ -16,7 +16,7 @@
 namespace mr
 {
 	
-class Image;
+class IImage;
 
 class OpenCLRenderer
 {	
@@ -54,9 +54,9 @@ public:
 	OpenCLRenderer(BVH & scene, const char * pKernelFilename, const char * pKernelMethodName);
 	~OpenCLRenderer();
 	
-	void Render(Image & image, const RectI * pViewportRect,
+	void Render(IImage & image, const RectI * pViewportRect,
 				const Matrix & matCamera, const Matrix & matViewProj,
-				const ColorF & bgColor, const Image * pEnvironmentMap,
+				const ColorF & bgColor, const IImage * pEnvironmentMap,
 				int numThreads, int nFrameNumber);
 	
 	void Join();

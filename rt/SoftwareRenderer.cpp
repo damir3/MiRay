@@ -9,6 +9,7 @@
 #include "SoftwareRenderer.h"
 #include "Material.h"
 #include "Light.h"
+#include "Image.h"
 
 using namespace mr;
 
@@ -39,9 +40,9 @@ void SoftwareRenderer::SetLights(size_t num, ILight ** ppLights)
 
 // ------------------------------------------------------------------------ //
 
-void SoftwareRenderer::Render(Image & image, const RectI * pViewportRect,
+void SoftwareRenderer::Render(IImage & image, const RectI * pViewportRect,
 							  const Matrix & matCamera, const Matrix & matViewProj,
-							  const ColorF & bgColor, const Image * pEnvironmentMap,
+							  const ColorF & bgColor, const IImage * pEnvironmentMap,
 							  int numThreads, int nFrameNumber)
 {
 	m_pImage = &image;

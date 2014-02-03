@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		260016ED189F5CDE00EE188D /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 260016EC189F5CDE00EE188D /* Image.h */; };
 		2657B06B17B37BCA00324810 /* CollisionVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2657B06917B37BCA00324810 /* CollisionVolume.cpp */; };
 		2657B06C17B37BCA00324810 /* CollisionVolume.h in Headers */ = {isa = PBXBuildFile; fileRef = 2657B06A17B37BCA00324810 /* CollisionVolume.h */; };
 		267A9E6517B73CB200771E1C /* Light.h in Headers */ = {isa = PBXBuildFile; fileRef = 267A9E6317B73CB200771E1C /* Light.h */; };
@@ -26,6 +27,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		260016EC189F5CDE00EE188D /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Image.h; path = ../../rt/Image.h; sourceTree = "<group>"; };
 		2657B06917B37BCA00324810 /* CollisionVolume.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = CollisionVolume.cpp; path = ../../rt/CollisionVolume.cpp; sourceTree = "<group>"; };
 		2657B06A17B37BCA00324810 /* CollisionVolume.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CollisionVolume.h; path = ../../rt/CollisionVolume.h; sourceTree = "<group>"; };
 		267566AB1709252D00130D1B /* librt.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librt.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -59,6 +61,7 @@
 		267566A21709252D00130D1B = {
 			isa = PBXGroup;
 			children = (
+				260016EC189F5CDE00EE188D /* Image.h */,
 				26873319176F0EA0004B4144 /* BVH.cpp */,
 				2687331A176F0EA0004B4144 /* BVH.h */,
 				2657B06917B37BCA00324810 /* CollisionVolume.cpp */,
@@ -98,6 +101,7 @@
 				26873328176F0EA0004B4144 /* CollisionNode.h in Headers */,
 				26873329176F0EA0004B4144 /* CollisionRay.h in Headers */,
 				2687332A176F0EA0004B4144 /* CollisionTriangle.h in Headers */,
+				260016ED189F5CDE00EE188D /* Image.h in Headers */,
 				2687332C176F0EA0004B4144 /* OpenCLRenderer.h in Headers */,
 				2687332D176F0EA0004B4144 /* precompiled.h in Headers */,
 				2687332F176F0EA0004B4144 /* SoftwareRenderer.h in Headers */,

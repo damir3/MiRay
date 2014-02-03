@@ -13,7 +13,7 @@
 namespace mr
 {
 
-class Image;
+class IImage;
 class ILight;
 
 class SoftwareRenderer
@@ -21,14 +21,14 @@ class SoftwareRenderer
 	BVH &	m_scene;
 	std::vector<ILight *>	m_lights;
 
-	Image *	m_pImage;
+	IImage *m_pImage;
 	RectI	m_rcRenderArea;
 	Vec3	m_vEyePos;
 	ColorF	m_bgColor;
 	float	m_fFrameBlend;
 	Vec3	m_vCamDelta[3];
 	Vec2	m_dp;
-	const Image * m_pEnvironmentMap;
+	const IImage *m_pEnvironmentMap;
 
 	int		m_nAreaCounter;
 	int		m_numAreasX;
@@ -76,9 +76,9 @@ public:
 
 	void SetLights(size_t num, ILight ** ppLights);
 
-	void Render(Image & image, const RectI * pViewportRect,
+	void Render(IImage & image, const RectI * pViewportRect,
 				const Matrix & matCamera, const Matrix & matViewProj,
-				const ColorF & bgColor, const Image * pEnvironmentMap,
+				const ColorF & bgColor, const IImage * pEnvironmentMap,
 				int numThreads, int nFrameNumber);
 
 	void Join();

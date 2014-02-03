@@ -62,7 +62,7 @@ ImagePtr ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t)
 
 	if (pSrcImage->Type() == spImage->Type())
 	{
-		memcpy(spImage->Data(), pSrcImage->Data(), w * h * spImage->PixelSize());
+		memcpy(spImage->DataB(), pSrcImage->DataB(), w * h * spImage->PixelSize());
 	}
 	else
 	{
@@ -197,13 +197,13 @@ ImagePtr ImageManager::Load(const char * strFilename)
 				uint32 destPitch = static_cast<uint32>(spImage->Width() * destPixelSize);
 				uint32 pitch = std::min(srcPitch, destPitch);
 				for (uint32 y = 0 ; y < height; y++)
-					memcpy(spImage->Data() + y * destPitch, bits + (height - y - 1) * srcPitch, pitch);
+					memcpy(spImage->DataB() + y * destPitch, bits + (height - y - 1) * srcPitch, pitch);
 
 				if ((FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR) && (bpp == 24 || bpp == 32))
 				{
 					for (uint32 y = 0 ; y < height; y++)
 					{
-						byte * pDest = spImage->Data() + y * destPitch;
+						byte * pDest = spImage->DataB() + y * destPitch;
 						for (uint32 x = 0; x < width; x++)
 						{
 							std::swap(pDest[0], pDest[2]);
@@ -242,7 +242,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 	int width = image.Width();
 	int height = image.Height();
 	int bpp = image.PixelSize();
-	const byte * pSrcData = image.Data();
+	const byte * pSrcData = image.DataB();
 
 	FREE_IMAGE_TYPE type;
 	switch (image.Type())
@@ -277,7 +277,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 		if (!pTmpImage)
 			return false;
 
-		pSrcData = pTmpImage->Data();
+		pSrcData = pTmpImage->DataB();
 	}
 
 	bool res = false;

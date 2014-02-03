@@ -8,6 +8,7 @@
 #pragma once
 
 #include "CollisionTriangle.h"
+#include "CollisionNode.h"
 
 namespace mr
 {

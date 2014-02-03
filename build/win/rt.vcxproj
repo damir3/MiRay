@@ -43,6 +43,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClInclude Include="..\..\rt\CollisionVolume.h" />
+    <ClInclude Include="..\..\rt\Image.h" />
     <ClInclude Include="..\..\rt\Light.h" />
     <ClInclude Include="..\..\rt\Material.h" />
     <ClInclude Include="..\..\rt\OpenCLRenderer.h" />

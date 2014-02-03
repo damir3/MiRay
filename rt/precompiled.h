@@ -23,7 +23,6 @@
 #include <algorithm>
 
 #include "../common/all.h"
-#include "../resources/Image.h"
 
 #include "BVH.h"
 
