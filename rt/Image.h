@@ -5,6 +5,7 @@
 //  Created by Damir Sagidullin on 03.02.14.
 //  Copyright (c) 2014 Damir Sagidullin. All rights reserved.
 //
+#pragma once
 
 namespace mr
 {

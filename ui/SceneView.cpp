@@ -212,6 +212,8 @@ bool SceneView::LoadScene(const char * pFilename)
 	if (m_pRenderThread->Renderer())
 		m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
 
+	m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
+
 	ResumeRenderThread();
 
 	return true;
@@ -250,33 +252,35 @@ void SceneView::AppendModel(const char * pFilename)
 {
 	StopRenderThread();
 
-	RemoveAllModels();
-
 	SceneModel *pSceneModel = new SceneModel(*m_pBVH);
 	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager.get(), pugi::xml_node()))
 	{
+		RemoveAllModels();
+		RemoveAllLights();
+
 		m_models.push_back(pSceneModel);
 
 		m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
 		
-		if (m_pRenderThread->Renderer())
-		{// update lights
-			BBox bbox = m_pBVH->BoundingBox();
-			OmniLight * pLight = new OmniLight();
-			pLight->SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
-			pLight->SetRadius(bbox.Size().Length() * 0.04f);
-			pLight->SetIntensity(Vec3(0.3f) * bbox.Size().LengthSquared());
-			RemoveAllLights();
-			m_lights.push_back(pLight);
-			m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-		}
+		//if (m_pRenderThread->Renderer())
+		//{// update lights
+		//	BBox bbox = m_pBVH->BoundingBox();
+		//	OmniLight * pLight = new OmniLight();
+		//	pLight->SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
+		//	pLight->SetRadius(bbox.Size().Length() * 0.04f);
+		//	pLight->SetIntensity(Vec3(0.3f) * bbox.Size().LengthSquared());
+		//	m_lights.push_back(pLight);
+		//	m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
+		//}
 		
 		ResetCamera();
 	}
 	else
+	{
 		SAFE_DELETE(pSceneModel);
 
-	ResumeRenderThread();
+		ResumeRenderThread();
+	}
 }
 
 void SceneView::DeleteSelection()

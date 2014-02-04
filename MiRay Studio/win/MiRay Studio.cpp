@@ -207,6 +207,33 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
+bool CheckSceneExtension(const char * extension)
+{
+	return !_stricmp("mrs", extension);
+}
+
+bool CheckModelExtension(const char * extension)
+{
+	static const char * modelFileTypes[] = {"fbx", "dae", "dxf", "obj", "3ds"};
+	for (size_t i = 0; i < _countof(modelFileTypes); i++)
+	{
+		if (!_stricmp(modelFileTypes[i], extension))
+			return true;
+	}
+	return false;
+}
+
+bool CheckImageExtension(const char * extension)
+{
+	static const char * imageFileTypes[] = {"jpg", "jpeg", "png", "tga", "hdr", "exr", "tif", "tiff", "psd", "dds", "bmp", "raw", "gif", "ico", "pcx", "pict", "crw", "cr2", "nef", "raf", "dng", "mos", "kdc", "dcr"};
+	for (size_t i = 0; i < _countof(imageFileTypes); i++)
+	{
+		if (!_stricmp(imageFileTypes[i], extension))
+			return true;
+	}
+	return false;
+}
+
 void OnFileNew(HWND hWnd)
 {
 	g_fileName.clear();
@@ -228,8 +255,15 @@ void OnFileOpen(HWND hWnd)
 	if (GetOpenFileNameA(&ofn))
 	{
 		wglMakeCurrent(g_hDC, g_hRC);
-		g_fileName = fileName;
-		g_pSceneView->LoadScene(g_fileName.c_str());
+		const char * p = strrchr(fileName, '.');
+		const char * extension = p ? ++p : fileName;
+		if (CheckSceneExtension(extension))
+		{
+			g_fileName = fileName;
+			g_pSceneView->LoadScene(g_fileName.c_str());
+		}
+		else if (CheckModelExtension(extension))
+			g_pSceneView->AppendModel(fileName);
 		wglMakeCurrent(NULL, NULL);
 	}
 }
@@ -300,28 +334,6 @@ void OnSaveImage(HWND hWnd)
 		g_pSceneView->SaveImage(fileName);
 }
 
-bool CheckModelExtension(const char * extension)
-{
-	static const char * modelFileTypes[] = {"fbx", "dae", "dxf", "obj", "3ds"};
-	for (size_t i = 0; i < _countof(modelFileTypes); i++)
-	{
-		if (!_stricmp(modelFileTypes[i], extension))
-			return true;
-	}
-	return false;
-}
-
-bool CheckImageExtension(const char * extension)
-{
-	static const char * imageFileTypes[] = {"jpg", "jpeg", "png", "tga", "hdr", "exr", "tif", "tiff", "psd", "dds", "bmp", "raw", "gif", "ico", "pcx", "pict", "crw", "cr2", "nef", "raf", "dng", "mos", "kdc", "dcr"};
-	for (size_t i = 0; i < _countof(imageFileTypes); i++)
-	{
-		if (!_stricmp(imageFileTypes[i], extension))
-			return true;
-	}
-	return false;
-}
-
 void OnDropFiles(HWND hWnd, HDROP hDrop)
 {
 	UINT uFile = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, NULL);
@@ -330,20 +342,19 @@ void OnDropFiles(HWND hWnd, HDROP hDrop)
 		char lpszFile[MAX_PATH] = {0};
 		if (DragQueryFileA(hDrop, 0, lpszFile, MAX_PATH))
 		{
-			const char * p = strrchr(lpszFile, '.');	
+			wglMakeCurrent(g_hDC, g_hRC);
+			const char * p = strrchr(lpszFile, '.');
 			const char * extension = p ? ++p : lpszFile;
-			if (CheckModelExtension(extension))
+			if (CheckSceneExtension(extension))
 			{
-				wglMakeCurrent(g_hDC, g_hRC);
-				g_pSceneView->LoadScene(lpszFile);
-				wglMakeCurrent(NULL, NULL);
-				break;
+				g_fileName = lpszFile;
+				g_pSceneView->LoadScene(g_fileName.c_str());
 			}
-			if (CheckImageExtension(extension))
-			{
+			else if (CheckModelExtension(extension))
+				g_pSceneView->AppendModel(lpszFile);
+			else if (CheckImageExtension(extension))
 				g_pSceneView->SetEnvironmentImage(lpszFile);
-				break;
-			}
+			wglMakeCurrent(NULL, NULL);
 		}
 	}
 	DragFinish(hDrop);
