@@ -7,8 +7,8 @@
 //
 #pragma once
 
-#include "../common/mutex.h"
 #include "../common/thread.h"
+#include <atomic>
 
 namespace mr
 {
@@ -19,18 +19,21 @@ class ILight;
 class SoftwareRenderer
 {
 	BVH &	m_scene;
+	ColorF	m_bgColor;
+	ColorF	m_envColor;
+	const IImage *m_pEnvironmentMap;
+	float	m_ambientOcclusion;
+	size_t	m_numAmbientOcclusionSamples;
 	std::vector<ILight *>	m_lights;
 
 	IImage *m_pImage;
 	RectI	m_rcRenderArea;
 	Vec3	m_vEyePos;
-	ColorF	m_bgColor;
 	float	m_fFrameBlend;
 	Vec3	m_vCamDelta[3];
 	Vec2	m_dp;
-	const IImage *m_pEnvironmentMap;
 
-	int		m_nAreaCounter;
+	std::atomic<int>	m_nAreaCounter;
 	int		m_numAreasX;
 	int		m_numAreas;
 	typedef TVec2<int>	Vec2I;
@@ -41,9 +44,8 @@ class SoftwareRenderer
 	float	m_fDistEpsilon;
 	float	m_fRayLength;
 	int		m_nMaxDepth;
-	Mutex	m_mutex;
 
-	volatile uint32 m_nRayCounter;
+	std::atomic<size_t>	m_nRayCounter;
 
 	std::vector<Thread *> m_renderThreads;
 
@@ -71,14 +73,17 @@ public:
 	SoftwareRenderer(BVH & scene);
 	~SoftwareRenderer();
 	
-	uint32 RaysCounter() const { return m_nRayCounter; }
+	size_t RaysCounter() const { return m_nRayCounter; }
 	void ResetRayCounter() { m_nRayCounter = 0; }
 
+	void SetBackgroundColor(const ColorF & bgColor);
+	void SetEnvironmentColor(const ColorF & envColor);
+	void SetEnvironmentMap(const IImage * pEnvironmentMap);
+	void SetAmbientOcclusion(float f, size_t numSamples);
 	void SetLights(size_t num, ILight ** ppLights);
 
 	void Render(IImage & image, const RectI * pViewportRect,
-				const Matrix & matCamera, const Matrix & matViewProj,
-				const ColorF & bgColor, const IImage * pEnvironmentMap,
+				const Matrix & matCamera, const Matrix & matViewProj, const Vec2 & vPixelOffset,
 				int numThreads, int nFrameNumber);
 
 	void Join();

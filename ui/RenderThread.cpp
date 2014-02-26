@@ -79,6 +79,8 @@ void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 
 	if (m_pRenderer && m_pRenderMap && m_pBuffer)
 	{
+		m_pRenderer->SetBackgroundColor(m_bgColor);
+		m_pRenderer->SetEnvironmentMap(m_pEnvironmentMap);
 		m_bStop = false;
 		m_thread.reset(new Thread(&StaticThreadFunc, this));
 	}
@@ -109,7 +111,8 @@ void RenderThread::ThreadFunc()
 		{
 			m_pRenderer->ResetRayCounter();
 			m_pRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj,
-								m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
+								m_nFrameCount > 2 ? Vec2(frand(), frand()) : Vec2(0.5f, 0.5f),
+								m_numCPU, std::max(m_nFrameCount - 2, 0));
 			m_pRenderer->Join();
 		}
 		else if (m_mode == 1 && m_pOpenCLRenderer)
@@ -134,9 +137,9 @@ void RenderThread::ThreadFunc()
 			m_mutex.unlock();
 
 //			m_pRenderMap->SetPixel(0, 0, ColorF(1.f, 0.f, 0.f, 1.f));
-//			m_pRenderMap->SetPixel(rcViewport.Width() - 1, 0, ColorF(1.f, 0.f, 0.f, 1.f));
-//			m_pRenderMap->SetPixel(0, rcViewport.Height() - 1, ColorF(1.f, 0.f, 0.f, 1.f));
-//			m_pRenderMap->SetPixel(rcViewport.Width() - 1, rcViewport.Height() - 1, ColorF(1.f, 0.f, 0.f, 1.f));
+//			m_pRenderMap->SetPixel(rcViewport.WidthØ() - 1, 0, ColorF(1.f, 1.f, 0.f, 1.f));
+//			m_pRenderMap->SetPixel(0, rcViewport.Height() - 1, ColorF(0.f, 1.f, 0.f, 1.f));
+//			m_pRenderMap->SetPixel(rcViewport.Width() - 1, rcViewport.Height() - 1, ColorF(0.f, 0.f, 1.f, 1.f));
 		}
 
 		m_nFrameCount++;

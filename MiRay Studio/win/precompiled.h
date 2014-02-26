@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <memory>
 
 #include <gl/glew.h>
 

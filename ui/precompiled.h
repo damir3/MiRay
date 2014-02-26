@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 
 #define FBXSDK_NEW_API
 #define FBXSDK_SHARED

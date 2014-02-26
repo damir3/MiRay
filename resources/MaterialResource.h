@@ -38,7 +38,7 @@ public:
 	const std::string & Name() const { return m_name; }
 
 	size_t NumLayers() const;
-	const class MaterialLayer * Layer(size_t i) const;
+	const IMaterialLayer * Layer(size_t i) const;
 };
 
 }

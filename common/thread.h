@@ -7,7 +7,7 @@
 //
 #pragma once
 
-#if __cplusplus < 201103L
+#if __cplusplus < 201103L && !(defined(_MSC_VER) && _MSC_VER >= 1700)
 
 #include "mutex.h"
 
@@ -16,6 +16,7 @@ namespace mr
 	class Thread
 	{
 #ifdef _WIN32
+
 		static DWORD WINAPI StaticThreadProc(void *);		
 
 		HANDLE m_thread;

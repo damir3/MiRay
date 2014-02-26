@@ -6,7 +6,7 @@
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
-#if __cplusplus < 201103L
+#if __cplusplus < 201103L && !(defined(_MSC_VER) && _MSC_VER >= 1700)
 
 #include "mutex.h"
 
