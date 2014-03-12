@@ -189,6 +189,14 @@ bool SceneView::LoadScene(const char * pFilename)
 			ReadFloat(pitch, "pitch", object);
 			ReadFloat(m_fFOV, "fov", object);
 			CalculateCameraMatrix(m_matCamera, position, 0.f, yaw, pitch);
+			if (m_pRenderThread->Renderer())
+			{
+				float dof, dist;
+				ReadFloat(dist, "focal-distance", object);
+				ReadFloat(dof, "depth-of-field", object);
+				m_pRenderThread->Renderer()->SetFocalDistance(dist);
+				m_pRenderThread->Renderer()->SetDepthOfField(dof);
+			}
 		}
 		else if (!strcmp(object.name(), "environment"))
 		{
@@ -426,8 +434,12 @@ void SceneView::ResetCamera(int i)
 	m_fNearZ = l * 0.001f;
 	m_fFarZ = l * 10.f;
 
+	float dist = l / powf(2.f, (float)i);
+	if (m_pRenderThread->Renderer())
+		m_pRenderThread->Renderer()->SetFocalDistance(dist);
+
 	m_nFrameCount = 0;
-	CalculateCameraMatrix(m_matCamera, vCenter, l / powf(2.f, (float)i), -90.f, 10.f);
+	CalculateCameraMatrix(m_matCamera, vCenter, dist, -90.f, 10.f);
 	
 	UpdateMatrices();
 }
@@ -559,12 +571,21 @@ void SceneView::OnMouseClick(float x, float y, eMouseButton button)
 	tr.pos = GetFrustumPosition(x, y, 1.f);
 	if (m_pBVH->TraceRay(m_matCamera.Pos(), tr.pos, tr))
 	{
-		for (auto it = m_models.begin(); it != m_models.end(); ++it)
+		if (button == MOUSE_MIDDLE && m_pRenderThread->Renderer())
 		{
-			if ((*it)->GetVolume() == tr.pVolume)
+			m_pRenderThread->Renderer()->SetFocalDistance(-tr.pos.TransformedCoord(m_matView).z);
+			StopRenderThread();
+			ResumeRenderThread();
+		}
+		else
+		{
+			for (auto it = m_models.begin(); it != m_models.end(); ++it)
 			{
-				m_pGizmoObject = (*it);
-				break;
+				if ((*it)->GetVolume() == tr.pVolume)
+				{
+					m_pGizmoObject = (*it);
+					break;
+				}
 			}
 		}
 	}

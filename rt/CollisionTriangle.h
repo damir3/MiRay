@@ -28,26 +28,25 @@ class IMaterial;
 
 class CollisionTriangle
 {
-	Vertex		m_vertices[3];
+	Vec3		m_normal;
+	int			m_axis_u, m_axis_v;
+	float		m_e1u, m_e1v;
+	float		m_e2u, m_e2v;
 	const IMaterial * m_pMaterial;
+
+	Vertex		m_vertices[3];
 	BBox		m_bbox;
 	Vec3		m_edgeU;
 	Vec3		m_edgeV;
-//	Vec3		m_normal;
+
 //	float		m_dist;
 //	float		m_uu;
 //	float		m_uv;
 //	float		m_vv;
 //	uint32		m_nLastTraceCount;
 
-	Vec3		m_n;
-	int			m_axis_u, m_axis_v;
-	float		m_e1u, m_e1v;
-	float		m_e2u, m_e2v;
-
 public:
 	CollisionTriangle(const Vertex & v0, const Vertex & v1, const Vertex & v2, const IMaterial * pMaterial)
-//		: m_nLastTraceCount(0)
 	{
 		m_vertices[0] = v0;
 		m_vertices[1] = v1;
@@ -63,16 +62,16 @@ public:
 
 		//////////////////////////////////////////////////////////////////////////
 
-		m_n = Vec3::Cross(m_edgeV, m_edgeU);
-//		m_n.Normalize();
+		m_normal = Vec3::Cross(m_edgeV, m_edgeU);
+		m_normal.Normalize();
 
 		int normAxis;
-		if (fabs(m_n.x) > fabs(m_n.y))
-			normAxis = fabs(m_n.x) > fabs(m_n.z) ? 0 : 2;
+		if (fabs(m_normal.x) > fabs(m_normal.y))
+			normAxis = fabs(m_normal.x) > fabs(m_normal.z) ? 0 : 2;
 		else
-			normAxis = fabs(m_n.y) > fabs(m_n.z) ? 1 : 2;
-		m_axis_u = (normAxis + 1) % 3;
-		m_axis_v = (normAxis + 2) % 3;
+			normAxis = fabs(m_normal.y) > fabs(m_normal.z) ? 1 : 2;
+		m_axis_u = normAxis < 2 ? normAxis + 1 : 0;
+		m_axis_v = m_axis_u < 2 ? m_axis_u + 1 : 0;
 
 		m_e1u = m_edgeU[m_axis_u];
 		m_e1v = m_edgeU[m_axis_v];
@@ -113,10 +112,7 @@ public:
 	const Vertex & Vertex(int i) const { return m_vertices[i]; }
 	const IMaterial * Material() const { return m_pMaterial; }
 	const BBox & BoundingBox() const { return m_bbox; }
-	const Vec3 & Edge1() const { return m_edgeU; }
-	const Vec3 & Edge2() const { return m_edgeV; }
-//	const Vec3 & Normal() const { return m_normal; }
-//	float Dist() const { return m_dist; }
+	const Vec3 & Normal() const { return m_normal; }
 
 //	bool IsDegenerate() const { return (m_normal.Length2() == 0.f) || ((m_uv * m_uv - m_uu * m_vv) == 0.f); }
 	bool IsDegenerate() const { return Vec3::Cross(m_edgeU, m_edgeV).LengthSquared() == 0.f; }
@@ -185,6 +181,18 @@ public:
 //	
 //		m_nLastTraceCount = nTraceCount;
 //		return true;
+//	}
+
+//	inline static __m128 cross(const __m128 &a, const __m128 &b)
+//	{
+//		__m128 result = _mm_sub_ps(_mm_mul_ps(b, _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1))),
+//								   _mm_mul_ps(a, _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1))));
+//		return _mm_shuffle_ps(result, result, _MM_SHUFFLE(3, 0, 2, 1 ));
+//	}
+//
+//	inline static float dot(const __m128 &a, const __m128 &b)
+//	{
+//		return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 //	}
 
 	bool TraceRay(CollisionRay & ray, TraceResult & tr) const
@@ -295,12 +303,34 @@ public:
 
 		//////////////////////////////////////////////////////////////////////////
 
+//		__m128 h = cross(ray.Direction(), m_vertices[2].pos);
+//		float det1 = dot(m_vertices[1].pos, h);
+//		if (det1 > 0.f)
+//		{// back facing triangle
+//			__m128 s = _mm_sub_ps(ray.Origin(), m_vertices[0].pos);
+//			float u = dot(s, h);
+//			if (u >= 0.0f && u <= det1)
+//			{
+//				__m128 q = cross(s, m_vertices[1].pos);
+//				float v = dot(ray.Direction(), q);
+//				if (v >= 0.0f && u + v <= det1)
+//				{
+//					float t = dot(m_vertices[2].pos, q); // ray intersection
+//					if (det1 > t && t >= 0.0f)
+//					{
+//						*res = (float3)(u, v, t) / det;
+//						return true;
+//					}
+//				}
+//			}
+//		}
+
 		float u, v, t;
-		float det = Vec3::Dot(m_n, ray.Direction());
+		float det = Vec3::Dot(m_normal, ray.Direction());
 		if (det < 0.f)
 		{// front face
 			Vec3 delta = m_vertices[0].pos - ray.Origin();
-			t = Vec3::Dot(m_n, delta);
+			t = Vec3::Dot(m_normal, delta);
 			if (t > 0.f || t <= det) return false;
 
 			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
@@ -316,7 +346,7 @@ public:
 		else if (det > 0.f)
 		{// back face
 			Vec3 delta = m_vertices[0].pos - ray.Origin();
-			t = Vec3::Dot(m_n, delta);
+			t = Vec3::Dot(m_normal, delta);
 			if (t < 0.f || t >= det) return false;
 
 			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
@@ -336,6 +366,7 @@ public:
 		t *= invDet;
 		u *= invDet;
 		v *= invDet;
+		t += tr.backface ? 1e-6f : -1e-6f;
 
 		//////////////////////////////////////////////////////////////////////////
 

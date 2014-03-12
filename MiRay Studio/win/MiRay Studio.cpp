@@ -35,10 +35,10 @@ HDC				g_hDC = NULL;
 HGLRC			g_hRC = NULL;
 mr::SceneView *	g_pSceneView = NULL;
 std::string		g_fileName;
-POINT			g_ptMousePos;
-bool			g_bLeftMouseDown = false;
-bool			g_bRightMouseDown = false;
-bool			m_bMouseMoved = false;
+
+POINT			g_ptMousePos = {0, 0};
+byte			g_nMouseState = mr::MOUSE_NONE;
+bool			g_bMouseMoved = false;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -360,6 +360,31 @@ void OnDropFiles(HWND hWnd, HDROP hDrop)
 	DragFinish(hDrop);
 }
 
+void OnMouseButtonDown(mr::eMouseButton button, HWND hWnd, LPARAM lParam)
+{
+	g_nMouseState |= button;
+	if ((g_nMouseState & (~button)) == 0)
+	{
+		SetCapture(hWnd);
+		g_bMouseMoved = false;
+		g_ptMousePos.x = GET_X_LPARAM(lParam);
+		g_ptMousePos.y = GET_Y_LPARAM(lParam);
+		g_pSceneView->OnMouseDown((float)g_ptMousePos.x, (float)g_ptMousePos.y, button);
+	}
+}
+
+void OnMouseButtonUp(mr::eMouseButton button, HWND hWnd, LPARAM lParam)
+{
+	g_nMouseState &= ~button;
+	if (!g_nMouseState)
+	{
+		ReleaseCapture();
+		g_pSceneView->OnMouseUp(button);
+		if (!g_bMouseMoved)
+			g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), button);
+	}
+}
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
@@ -398,46 +423,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			static_cast<float>(LOWORD(lParam)), static_cast<float>(HIWORD(lParam)));
 		break;
 	case WM_LBUTTONDOWN:
-		g_bLeftMouseDown = true;
-		if (!g_bRightMouseDown)
-		{
-			SetCapture(hWnd);
-			m_bMouseMoved = false;
-			g_ptMousePos.x = GET_X_LPARAM(lParam);
-			g_ptMousePos.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->OnMouseDown((float)g_ptMousePos.x, (float)g_ptMousePos.y, mr::MOUSE_LEFT);
-		}
+		OnMouseButtonDown(mr::MOUSE_LEFT, hWnd, lParam);
 		break;
 	case WM_LBUTTONUP:
-		g_bLeftMouseDown = false;
-		if (!g_bRightMouseDown)
-		{
-			ReleaseCapture();
-			g_pSceneView->OnMouseUp(mr::MOUSE_LEFT);
-			if (!m_bMouseMoved)
-				g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), mr::MOUSE_LEFT);
-		}
+		OnMouseButtonUp(mr::MOUSE_LEFT, hWnd, lParam);
 		break;
 	case WM_RBUTTONDOWN:
-		g_bRightMouseDown = true;
-		if (!g_bLeftMouseDown)
-		{
-			SetCapture(hWnd);
-			m_bMouseMoved = false;
-			g_ptMousePos.x = GET_X_LPARAM(lParam);
-			g_ptMousePos.y = GET_Y_LPARAM(lParam);
-			g_pSceneView->OnMouseDown((float)g_ptMousePos.x, (float)g_ptMousePos.y, mr::MOUSE_RIGHT);
-		}
+		OnMouseButtonDown(mr::MOUSE_RIGHT, hWnd, lParam);
 		break;
 	case WM_RBUTTONUP:
-		g_bRightMouseDown = false;
-		if (!g_bLeftMouseDown)
-		{
-			ReleaseCapture();
-			g_pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
-			if (!m_bMouseMoved)
-				g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), mr::MOUSE_RIGHT);
-		}
+		OnMouseButtonUp(mr::MOUSE_RIGHT, hWnd, lParam);
+		break;
+	case WM_MBUTTONDOWN:
+		OnMouseButtonDown(mr::MOUSE_MIDDLE, hWnd, lParam);
+		break;
+	case WM_MBUTTONUP:
+		OnMouseButtonUp(mr::MOUSE_MIDDLE, hWnd, lParam);
 		break;
 	case WM_MOUSEMOVE:
 		{
@@ -445,9 +446,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			float dx = (float)(pt.x - g_ptMousePos.x);
 			float dy = (float)(pt.y - g_ptMousePos.y);
 			g_ptMousePos = pt;
-			m_bMouseMoved = true;
-			mr::eMouseButton button = g_bLeftMouseDown ? mr::MOUSE_LEFT : (g_bRightMouseDown ? mr::MOUSE_RIGHT : mr::MOUSE_NONE);
-			g_pSceneView->OnMouseMove((float)pt.x, (float)pt.y, dx, dy, button);
+			g_bMouseMoved = true;
+			g_pSceneView->OnMouseMove((float)pt.x, (float)pt.y, dx, dy, (mr::eMouseButton)g_nMouseState);
 			if (g_pSceneView->ShouldRedraw())
 				InvalidateRect(hWnd, NULL, FALSE);
 		}

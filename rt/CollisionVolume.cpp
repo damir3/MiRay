@@ -102,9 +102,11 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 		}
 		else
 		{
-			for (std::vector<CollisionTriangle *>::const_iterator it = pNode->Triangles().begin(), itEnd = pNode->Triangles().end(); it != itEnd; ++it)
+//			for (std::vector<CollisionTriangle *>::const_iterator it = pNode->Triangles().begin(), itEnd = pNode->Triangles().end(); it != itEnd; ++it)
+//			{
+//				CollisionTriangle * pTriangle = *it;
+			for (CollisionTriangle * pTriangle : pNode->Triangles())
 			{
-				CollisionTriangle * pTriangle = *it;
 //				if (pTriangle->CheckTraceCount(m_nTraceCount) && pTriangle->TraceRay(ray, tr))
 				if (tr.pTriangle != pTriangle && pTriangle->TraceRay(ray, tr))
 				{

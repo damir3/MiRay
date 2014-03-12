@@ -89,7 +89,7 @@ public:
 	
 	Vec3 Reflection(const sMaterialContext & mc) const { return m_reflection.Color(mc.tc); }
 	Vec3 ReflectionTint(const sMaterialContext & mc) const { return m_reflectionTint.Color(mc.tc); }
-	float ReflectionRoughness(const sMaterialContext & mc) const { return m_reflectionTint.Value(mc.tc); }
+	float ReflectionRoughness(const sMaterialContext & mc) const { return m_reflectionRoughness.Value(mc.tc); }
 	Vec3 ReflectionExitColor(const sMaterialContext & mc) const { return m_reflectionExitColor.Color(mc.tc); }
 	bool HasReflectionMap() const { return false; }
 	Vec3 ReflectionMap(const sMaterialContext & mc) const { return Vec3::Null; }

@@ -150,6 +150,11 @@
 - (void)rightMouseUp:(NSEvent *)theEvent
 {
 	self.pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
+	if (theEvent.clickCount == 1)
+	{
+		NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_RIGHT);
+	}
 }
 
 - (void)otherMouseDown:(NSEvent *)theEvent
@@ -161,6 +166,11 @@
 - (void)otherMouseUp:(NSEvent *)theEvent
 {
 	self.pSceneView->OnMouseUp(mr::MOUSE_MIDDLE);
+	if (theEvent.clickCount == 1)
+	{
+		NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_MIDDLE);
+	}
 }
 
 - (void)mouseMoved:(NSEvent *)theEvent

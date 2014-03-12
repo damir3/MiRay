@@ -23,6 +23,8 @@ class SoftwareRenderer
 	ColorF	m_envColor;
 	const IImage *m_pEnvironmentMap;
 	float	m_ambientOcclusion;
+	float	m_focalDistance;
+	float	m_dofBlur;
 	size_t	m_numAmbientOcclusionSamples;
 	std::vector<ILight *>	m_lights;
 
@@ -32,6 +34,8 @@ class SoftwareRenderer
 	float	m_fFrameBlend;
 	Vec3	m_vCamDelta[3];
 	Vec2	m_dp;
+	Vec2	m_dofLC;
+	Vec2	m_dofDP;
 
 	std::atomic<int>	m_nAreaCounter;
 	int		m_numAreasX;
@@ -80,6 +84,8 @@ public:
 	void SetEnvironmentColor(const ColorF & envColor);
 	void SetEnvironmentMap(const IImage * pEnvironmentMap);
 	void SetAmbientOcclusion(float f, size_t numSamples);
+	void SetDepthOfField(float blur);
+	void SetFocalDistance(float dist);
 	void SetLights(size_t num, ILight ** ppLights);
 
 	void Render(IImage & image, const RectI * pViewportRect,
