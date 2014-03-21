@@ -42,7 +42,9 @@ public:
 	virtual Vec3 RefractionTint(const sMaterialContext & mc) const = 0;
 	virtual float RefractionRoughness(const sMaterialContext & mc) const = 0;
 	virtual Vec3 RefractionExitColor(const sMaterialContext & mc) const = 0;
-	
+
+	virtual Vec3 AbsorbtionCoefficient() const = 0;
+
 	virtual bool HasNormalMap() const = 0;
 	virtual Vec3 NormalMap(const sMaterialContext & mc) const = 0;
 };

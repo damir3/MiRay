@@ -265,7 +265,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	tr.pTriangle = pPrevTriangle;
 	++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
 	if (!m_scene.TraceRay(v1, v2, tr))
-		return EnvironmentColor(v2 - v1);
+		return sResult(EnvironmentColor(v2 - v1), v2);
 
 	const IMaterialLayer * pMaterial = tr.pTriangle->Material()->Layer(0);
 	sMaterialContext mc;
@@ -316,14 +316,14 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 	bool bReflection = (kR.x > 0.f || kR.y > 0.f || kR.z > 0.f);
 	Vec3 R; // reflection direction
-	sResult cR(Vec3::Null, Vec3::Null);
+	sResult cR(Vec3::Null, Vec3::Null, tr.pos);
 
 	nTraceDepth++;
 //	if (frand() < kR.x)
 	if (bReflection)
 	{// reflection
 		if (nTraceDepth >= m_nMaxDepth)
-			return sResult(pMaterial->RefractionExitColor(mc), Vec3(0.f));
+			return sResult(pMaterial->ReflectionExitColor(mc), Vec3(1.f), tr.pos);
 		
 		float reflectionRoughness = pMaterial->ReflectionRoughness(mc);
 		Vec3 RN = reflectionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (reflectionRoughness * 0.25f)) : N;
@@ -334,6 +334,15 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		cR = TraceRay(v1R, v1R + R * m_fRayLength, nTraceDepth, tr.pTriangle);
 		cR.color.Scale(pMaterial->ReflectionTint(mc));
 
+		if (tr.backface)
+		{
+			// absorption (Beer–Lambert law)
+			Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cR.pos - v1R).Length();
+			cR.color.x *= expf(absorbtionExp.x);
+			cR.color.y *= expf(absorbtionExp.y);
+			cR.color.z *= expf(absorbtionExp.z);
+		}
+
 		if ((kR.x >= 1.f && kR.y >= 1.f && kR.z >= 1.f))
 		{
 			cR.color += pMaterial->Emissive(mc);
@@ -343,13 +352,13 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 	Vec3 opacity = pMaterial->Opacity(mc);
 	bool bTransmission = (opacity.x < 1.f || opacity.y < 1.f || opacity.z < 1.f);
-	sResult cT(Vec3::Null, Vec3::Null);
+	sResult cT(Vec3::Null, Vec3::Null, tr.pos);
 
 //	if (frand() > opacity.x)
 	if (bTransmission)
 	{// transmission
 		if (nTraceDepth >= m_nMaxDepth)
-			return sResult(pMaterial->RefractionExitColor(mc), Vec3(0.f));
+			return sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos);
 
 		float refractionRoughness = pMaterial->RefractionRoughness(mc);
 		Vec3 RN = refractionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (refractionRoughness * 0.25f)) : N;
@@ -358,18 +367,26 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		float dp = Vec3::Dot(T, TN);
 		if (dp > 0.f) T -= TN * dp;
 		if (T.Normalize() == 0.f)
-			return sResult(pMaterial->RefractionExitColor(mc), Vec3(0.f));
+			return sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos);
 
 		Vec3 v1T = tr.pos - TN * m_fDistEpsilon;
 		cT = TraceRay(v1T, v1T + T * m_fRayLength, nTraceDepth, tr.pTriangle);
 		if (!tr.backface)
+		{
+			// absorption (Beer–Lambert law)
+			Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cT.pos - v1T).Length();
+			cT.color.x *= expf(absorbtionExp.x);
+			cT.color.y *= expf(absorbtionExp.y);
+			cT.color.z *= expf(absorbtionExp.z);
+
 			cT.color.Scale(pMaterial->RefractionTint(mc));
+		}
 
 //		return cT;
 	}
 
 	Vec3 P = tr.pos + tr.pTriangle->Normal() * m_fDistEpsilon;
-	sResult res(Vec3::Null, opacity);
+	sResult res(Vec3::Null, opacity, tr.pos);
 
 	if (opacity.x > 0.f || opacity.y > 0.f || opacity.z > 0.f)
 	{

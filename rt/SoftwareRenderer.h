@@ -60,8 +60,9 @@ class SoftwareRenderer
 	{
 		Vec3 color;
 		Vec3 opacity;
-		sResult(const Vec3 & c, const Vec3 & o) : color(c), opacity(o) {}
-		sResult(const ColorF & c) : color(c.r, c.g, c.b), opacity(c.a) {}
+		Vec3 pos;
+		sResult(const Vec3 & c, const Vec3 & o, const Vec3 & p) : color(c), opacity(o), pos(p) {}
+		sResult(const ColorF & c, const Vec3 & p) : color(c.r, c.g, c.b), opacity(c.a), pos(p) {}
 	};
 
 	Vec3 RandomDirection(const Vec3 & normal) const;

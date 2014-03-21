@@ -67,6 +67,10 @@ class MaterialLayerImpl : public IMaterialLayer
 	MaterialParameter	m_refractionTint;
 	MaterialParameter	m_refractionRoughness;
 	MaterialParameter	m_refractionExitColor;
+
+	Vec3				m_absorption;
+	float				m_absorptionDepth;
+	Vec3				m_absorbtionCoefficient;
 	
 	MaterialParameter	m_bumpLevel;
 	MaterialParameter	m_normalmap;
@@ -97,7 +101,9 @@ public:
 	Vec3 RefractionTint(const sMaterialContext & mc) const { return m_refractionTint.Color(mc.tc); }
 	float RefractionRoughness(const sMaterialContext & mc) const { return m_refractionRoughness.Value(mc.tc); }
 	Vec3 RefractionExitColor(const sMaterialContext & mc) const { return m_refractionExitColor.Color(mc.tc); }
-	
+
+	Vec3 AbsorbtionCoefficient() const { return m_absorbtionCoefficient; }
+
 	bool HasNormalMap() const { return m_normalmap.HasTexture(); }
 	Vec3 NormalMap(const sMaterialContext & mc) const
 	{
@@ -131,6 +137,9 @@ MaterialLayerImpl::MaterialLayerImpl()
 	, m_refractionTint(1.f)
 	, m_refractionRoughness(0.f)
 	, m_refractionExitColor(0.f)
+	, m_absorption(1.f)
+	, m_absorptionDepth(10.f)
+	, m_absorbtionCoefficient(0.f)
 	, m_bumpLevel(1.f)
 	, m_normalmap(1.f)
 {
@@ -164,13 +173,13 @@ static float FloatFromString(const char * str, float def = 0.f)
 	return out;
 }
 
-static void BoolFromString(bool & out, const char * str, bool def = false)
+static bool BoolFromString(const char * str, bool def = false)
 {
 	int i = 0;
 	if (!str || !*str || sscanf(str, "%d", &i) != 1)
-		out = def;
+		return def;
 	
-	out = (i != 0);
+	return (i != 0);
 }
 
 bool ReadMaterialParam(MaterialParameter & param, pugi::xml_node node, const char * name)
@@ -242,7 +251,14 @@ void MaterialLayerImpl::Load(pugi::xml_node node)
 	ReadMaterialParam(m_refractionTint, node, "refraction-tint");
 	ReadMaterialParam(m_refractionRoughness, node, "refraction-roughness");
 	
-	BoolFromString(m_fresnelReflection, node.child("fresnel-reflection").text().get(), m_fresnelReflection);
+	m_fresnelReflection = BoolFromString(node.child("fresnel-reflection").text().get(), m_fresnelReflection);
+
+	m_absorption = ColorFromString(node.child("absorption").text().get(), m_absorption);
+	m_absorptionDepth = FloatFromString(node.child("absorption-depth").text().get(), m_absorptionDepth);
+	m_absorbtionCoefficient.x = -logf(1.f / m_absorption.x);
+	m_absorbtionCoefficient.y = -logf(1.f / m_absorption.y);
+	m_absorbtionCoefficient.z = -logf(1.f / m_absorption.z);
+	m_absorbtionCoefficient /= m_absorptionDepth;
 
 	pugi::xml_node bump = node.child("bump-map");
 	if (!bump.empty())
