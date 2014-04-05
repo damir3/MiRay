@@ -30,6 +30,8 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_fRWidth(0.f)
 	, m_fRHeight(0.f)
 	, m_fFOV(60.f)
+	, m_fFocalDistance(10.f)
+	, m_fDepthOfField(0.f)
 	, m_fNearZ(0.1f)
 	, m_fFarZ(1000.f)
 	, m_matCamera(Matrix::Identity)
@@ -138,30 +140,12 @@ bool SceneView::LoadScene(const char * pFilename)
 	if (node.empty())
 		return false;
 
-	{// set current directory
-		std::string	strLocalPath = pFilename;
-		size_t p1 = strLocalPath.find_last_of('/');
-#ifdef _WIN32
-		size_t p2 = strLocalPath.find_last_of('\\');
-		if (p2 != std::string::npos)
-			p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
-#endif
-
-		if (p1 != std::string::npos)
-			strLocalPath.resize(p1 + 1);
-		
-		if (!strLocalPath.empty())
-		{
-			chdir(strLocalPath.c_str());
-			strLocalPath.clear();
-		}
-	}
-
 	StopRenderThread();
 
 	RemoveAllModels();
 	RemoveAllLights();
 
+	std::string strPrevDirectory =  PushDirectory(pFilename);
 	for (pugi::xml_node object = node.first_child(); object; object = object.next_sibling())
 	{
 		if (!strcmp(object.name(), "model"))
@@ -191,11 +175,10 @@ bool SceneView::LoadScene(const char * pFilename)
 			CalculateCameraMatrix(m_matCamera, position, 0.f, yaw, pitch);
 			if (m_pRenderThread->Renderer())
 			{
-				float dof, dist;
-				ReadFloat(dist, "focal-distance", object);
-				ReadFloat(dof, "depth-of-field", object);
-				m_pRenderThread->Renderer()->SetFocalDistance(dist);
-				m_pRenderThread->Renderer()->SetDepthOfField(dof);
+				ReadFloat(m_fFocalDistance, "focal-distance", object);
+				ReadFloat(m_fDepthOfField, "depth-of-field", object);
+				m_pRenderThread->Renderer()->SetFocalDistance(m_fFocalDistance);
+				m_pRenderThread->Renderer()->SetDepthOfField(m_fDepthOfField);
 			}
 		}
 		else if (!strcmp(object.name(), "environment"))
@@ -207,6 +190,7 @@ bool SceneView::LoadScene(const char * pFilename)
 				m_pEnvironmentMap = m_pImageManager->Load(filename.text().get());
 		}
 	}
+	PopDirectory(strPrevDirectory.c_str());
 
 	BBox bbox = m_pBVH->BoundingBox();
 	float l = 30.f;
@@ -245,6 +229,8 @@ bool SceneView::SaveScene(const char * pFilename) const
 		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", camera);
 		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", camera);
 		SaveFloat(m_fFOV, "fov", camera);
+		SaveFloat(m_fFocalDistance, "focal-distance", camera);
+		SaveFloat(m_fDepthOfField, "depth-of-field", camera);
 	}
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)

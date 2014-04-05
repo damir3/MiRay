@@ -46,7 +46,13 @@ public:
 	ModelManager(ImageManager * pImageManager);
 	~ModelManager();
 
-	ModelPtr LoadModel(const char * strFilename, pugi::xml_node node);
+	ModelPtr LoadModel(const char * pFilename, pugi::xml_node node);
 };
+
+std::string GetFullPath(const char * pLocalPath);
+std::string GetLocalPath(const char * pFullPath);
+
+std::string PushDirectory(const char * pFilename);
+void PopDirectory(const char * pPrevDirectory);
 
 }

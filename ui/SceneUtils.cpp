@@ -8,6 +8,10 @@
 
 #include "SceneUtils.h"
 #include "../rt/CollisionNode.h"
+#ifdef _WIN32
+#define	sscanf		sscanf_s
+#endif // _WIN32
+
 
 namespace mr
 {

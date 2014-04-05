@@ -10,11 +10,96 @@
 #include <unistd.h>
 #else
 #include <direct.h>
+//#include <Shlwapi.h>
+//#pragma comment(lib, "Shlwapi.lib")
+#define getcwd	_getcwd
+#define chdir	_chdir
 #endif
 
 #include "ModelManager.h"
 
 using namespace mr;
+
+// ------------------------------------------------------------------------ //
+
+std::string mr::GetFullPath(const char * pLocalPath)
+{
+#ifndef _WIN32
+	char * pActualPath = realpath(pLocalPath, NULL);
+	if (pActualPath == NULL)
+		return pLocalPath;
+	
+	std::string strFullPath = pActualPath;
+	free(pActualPath);
+	return strFullPath;
+#else
+	char cFullPathName[MAX_PATH];
+	if (0 == GetFullPathNameA(pLocalPath, sizeof(cFullPathName), cFullPathName, NULL))
+		return pLocalPath;
+
+	return cFullPathName;
+#endif
+}
+
+//std::string mr::GetLocalPath(const char * pFullPath)
+//{
+//	char cCurrentPath[FILENAME_MAX];
+//	if (!getcwd(cCurrentPath, sizeof(cCurrentPath)))
+//		return pFullPath;
+//
+//#ifndef _WIN32
+//	const char *pDirPath = cCurrentPath;
+//	while (*pFullPath == *pDirPath)
+//	{
+//		pFullPath++;
+//		pDirPath++;
+//	}
+//
+//	std::string strRelativePath = *pDirPath ? "../" : "";
+//	while (*pDirPath)
+//	{
+//		if (*pDirPath++ == '/')
+//			strRelativePath += "../";
+//	}
+//	strRelativePath += pFullPath;
+//	return strRelativePath;
+//#else
+//    char cRelativePath[MAX_PATH] = "";	
+//    if (!PathRelativePathToA(cRelativePath, cCurrentPath, FILE_ATTRIBUTE_DIRECTORY, pFullPath, FILE_ATTRIBUTE_NORMAL))
+//		return pFullPath;
+//
+//	return cRelativePath;
+//#endif
+//}
+
+std::string mr::PushDirectory(const char * pFilename)
+{
+	std::string strPrevDirectory;
+	char cCurrentPath[FILENAME_MAX];
+	if (getcwd(cCurrentPath, sizeof(cCurrentPath)))
+		strPrevDirectory = cCurrentPath;
+
+	std::string	strLocalPath = pFilename;
+	size_t p1 = strLocalPath.find_last_of('/');
+#ifdef _WIN32
+	size_t p2 = strLocalPath.find_last_of('\\');
+	if (p2 != std::string::npos)
+		p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
+#endif
+	
+	if (p1 != std::string::npos)
+		strLocalPath.resize(p1 + 1);
+	
+	if (!strLocalPath.empty())
+		chdir(strLocalPath.c_str());
+
+	return strPrevDirectory;
+}
+
+void mr::PopDirectory(const char * pPrevDirectory)
+{
+	chdir(pPrevDirectory);
+}
 
 // ------------------------------------------------------------------------ //
 
@@ -60,6 +145,8 @@ void ModelManager::Release(const std::string & name)
 
 ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 {
+	std::string strFullPath = GetFullPath(strFilename);
+
 	auto it = m_resources.find(strFilename);
 	if (it != m_resources.end())
 	{
@@ -68,7 +155,7 @@ ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 			return spModel;
 	}
 	
-	printf("Loading image '%s'...\n", strFilename);
+	printf("Loading model '%s'...\n", strFullPath.c_str());
 
 	if (!m_pSdkManager || !m_pImporter)
 		return nullptr;
@@ -79,7 +166,7 @@ ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 
 	ModelPtr spModel;
 
-	if (m_pImporter->Initialize(strFilename, -1, m_pSdkManager->GetIOSettings()))
+	if (m_pImporter->Initialize(strFullPath.c_str(), -1, m_pSdkManager->GetIOSettings()))
 	{
 		int lFileMajor, lFileMinor, lFileRevision;
 		m_pImporter->GetFileVersion(lFileMajor, lFileMinor, lFileRevision);
@@ -96,7 +183,7 @@ ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 				FbxSystemUnit(1.0).ConvertScene(m_pScene);
 
 			FbxTime time;
-			spModel.reset(new Model(*this, strFilename));
+			spModel.reset(new Model(*this, strFullPath.c_str()));
 
 			if (!node.empty())
 				spModel->MaterialManagerPtr()->LoadMaterials(node);
@@ -106,21 +193,9 @@ ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 			spModel->MaterialManagerPtr()->CleanupMaterials();
 
 			{// load textures
-				std::string	strLocalPath = strFilename;
-				size_t p1 = strLocalPath.find_last_of('/');
-#ifdef _WIN32
-				size_t p2 = strLocalPath.find_last_of('\\');
-				if (p2 != std::string::npos)
-					p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
-#endif
-
-				if (p1 != std::string::npos)
-					strLocalPath.resize(p1 + 1);
-
-				if (!strLocalPath.empty())
-					chdir(strLocalPath.c_str());
-
+				std::string strPrevDirectory = PushDirectory(strFullPath.c_str());
 				spModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
+				PopDirectory(strPrevDirectory.c_str());
 			}
 		}
 	}

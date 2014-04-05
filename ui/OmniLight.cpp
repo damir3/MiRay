@@ -102,12 +102,12 @@ Matrix OmniLight::Transformation() const
 void OmniLight::SetTransformation(const Matrix & mat)
 {
 	m_origin = mat.Pos();
-	m_radius *= std::max<float>(std::max<float>(mat.AxisX().Length(), mat.AxisY().Length()), mat.AxisZ().Length());
+	m_radius *= fmaxf(fmaxf(mat.AxisX().Length(), mat.AxisY().Length()), mat.AxisZ().Length());
 }
 
 void OmniLight::Draw()
 {
-	float mi = std::max<float>(std::max<float>(m_intensity.x, m_intensity.y), m_intensity.z);
+	float mi = fmaxf(fmaxf(m_intensity.x, m_intensity.y), m_intensity.z);
 	ColorF c = m_intensity / mi;
 	DrawGeosphere(m_origin, m_radius, c, 2);
 }

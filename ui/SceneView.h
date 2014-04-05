@@ -49,6 +49,8 @@ private:
 	float	m_fWidth, m_fHeight;
 	float	m_fRWidth, m_fRHeight;
 	float	m_fFOV, m_fNearZ, m_fFarZ;
+	float	m_fFocalDistance;
+	float	m_fDepthOfField;
 	Matrix	m_matCamera;
 	Matrix	m_matView;
 	Matrix	m_matProj;

@@ -331,7 +331,7 @@ void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 	{
 		const BBox & bbox = it->pTriangle->BoundingBox();
-		fMinSize = std::min<float>(fMinSize, bbox.vMaxs[m_axis] - bbox.vMins[m_axis]);
+		fMinSize = fminf(fMinSize, bbox.vMaxs[m_axis] - bbox.vMins[m_axis]);
 	}
 
 	if ((m_bbox.vMaxs[m_axis] - m_bbox.vMins[m_axis]) < (fMinSize * 2.f))

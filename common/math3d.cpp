@@ -302,7 +302,7 @@ float mr::FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2)
 //	const float	e = 1.f / eta;
 //	const float	c = -Vec3::Dot(I, N);
 //	const float	t = e * e + c * c - 1.f;
-//	const float	g = sqrtf(std::max<float>(t, 0.f));
+//	const float	g = sqrtf(fmaxf(t, 0.f));
 //	const float	a = (g - c) / (g + c);
 //	const float	b = (c * (g + c) - 1.f) / (c * (g - c) + 1.f);
 //

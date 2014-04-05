@@ -310,7 +310,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 				ior1 = ior[i];
 				fresnel = tr.backface ? FresnelReflection(I, N, ior1, ior2) : FresnelReflection(I, N, ior2, ior1);
 			}
-			kR[i] = std::min<float>(kR[i] + fresnel, 1.f);
+			kR[i] = fminf(kR[i] + fresnel, 1.f);
 		}
 	}
 
@@ -396,7 +396,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		if (m_ambientOcclusion > 0.f)
 		{
 			Vec3 ambientOcclusion = Vec3::Null;
-			float maxOpacity = std::max<float>(std::max<float>(opacity.x, opacity.y), opacity.z);
+			float maxOpacity = fmaxf(fmaxf(opacity.x, opacity.y), opacity.z);
 			int numSamples = std::max<int>((int)(maxOpacity * m_ambientOcclusion * m_numAmbientOcclusionSamples), 1);
 			for (int i = 0; i < numSamples; i++)
 			{// ambient occlusion

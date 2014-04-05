@@ -10,17 +10,15 @@
 
 @interface SceneView()
 
-@property () mr::SceneView *pSceneView;
-@property () NSPoint ptPrevMouse;
-@property () NSArray *modelFileTypes;
-@property () NSArray *imageFileTypes;
-@property () NSString *filename;
+@property mr::SceneView *pSceneView;
+@property NSPoint ptPrevMouse;
+@property NSArray *modelFileTypes;
+@property NSArray *imageFileTypes;
+@property NSString *filename;
 
 @end
 
 @implementation SceneView
-
-@synthesize pSceneView, ptPrevMouse, modelFileTypes, imageFileTypes;
 
 - (void)awakeFromNib
 {
@@ -225,7 +223,7 @@
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-	pSceneView->Draw();
+	self.pSceneView->Draw();
 
 	[self.openGLContext flushBuffer];
 }
@@ -253,12 +251,12 @@
 		NSString * extension = [[filename pathExtension] lowercaseString];
 		if ([self.modelFileTypes containsObject:extension])
 		{
-			pSceneView->AppendModel([filename UTF8String]);
+			self.pSceneView->AppendModel([filename UTF8String]);
 			return YES;
 		}
 		if ([self.imageFileTypes containsObject:extension])
 		{
-			pSceneView->SetEnvironmentImage([filename UTF8String]);
+			self.pSceneView->SetEnvironmentImage([filename UTF8String]);
 			return YES;
 		}
 	}
@@ -269,7 +267,7 @@
 - (IBAction)onFileNew:(id)sender
 {
 	self.filename = nil;
-	pSceneView->ResetScene();
+	self.pSceneView->ResetScene();
 }
 
 - (IBAction)onFileOpen:(id)sender
