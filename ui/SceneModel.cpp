@@ -260,7 +260,7 @@ void SceneModel::RenderGeometry::Draw()
 //	glEnableClientState(GL_NORMAL_ARRAY);
 //	glNormalPointer(GL_FLOAT, sizeof(sArrayBufferVertex), (void*)12);
 //	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-//	glTexCoordPointer(2, GL_FLAT, sizeof(sArrayBufferVertex), (void*)48);
+//	glTexCoordPointer(2, GL_FLOAT, sizeof(sArrayBufferVertex), (void*)48);
 	
 	glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, 0);
 	

@@ -35,9 +35,10 @@ HDC				g_hDC = NULL;
 HGLRC			g_hRC = NULL;
 mr::SceneView *	g_pSceneView = NULL;
 POINT			g_ptPrevMouse;
-bool				g_bLeftMouseDown = false;
-bool				g_bRightMouseDown = false;
-bool				g_bControlDown = false;
+bool			g_bLeftMouseDown = false;
+bool			g_bRightMouseDown = false;
+bool			g_bControlDown = false;
+bool			g_bShiftDown = false;
 
 // Forward declarations of functions included in this code module:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -417,6 +418,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 		if (wParam == VK_CONTROL)
 			g_bControlDown = true;
+		else if (wParam == VK_SHIFT)
+			g_bShiftDown = true;
 		break;
 	case WM_KEYUP:
 		if (g_bControlDown)
@@ -426,7 +429,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case VK_CONTROL: g_bControlDown = false; break;
 			case 'O': OnFileOpen(hWnd); break;
 			case 'E': OnEnvironmentImage(hWnd); break;
-			case 'S': OnSaveImage(hWnd); break;
+			case 'S': if (g_bShiftDown) OnFileSaveAs(hWnd); else OnFileSave(hWnd); break;
 			case '1': g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL); break;
 			case '2': g_pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE); break;
 			case '3': g_pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL); break;
@@ -436,6 +439,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			switch (wParam)
 			{
+			case VK_SHIFT: g_bShiftDown = false; break;
 			case 'R': g_pSceneView->ResetCamera(); break;
 			case 'G': g_pSceneView->SetShowGrid(!g_pSceneView->ShowGrid()); break;
 			case 'W': g_pSceneView->SetShowWireframe(!g_pSceneView->ShowWireframe()); break;
