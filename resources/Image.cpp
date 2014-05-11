@@ -212,3 +212,138 @@ ColorF Image::GetPixel(float u, float v) const
 
 	return ColorF::Lerp(c1, c2, dy);
 }
+
+Vec3 Image::GetPixelColor(int x, int y) const
+{
+	assert(x >= 0 && x < m_width);
+	assert(y >= 0 && y < m_height);
+	switch (m_type)
+	{
+		case TYPE_3B:
+		{
+			const byte * pData = m_pData + (y * m_width + x) * 3;
+			return Vec3(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
+		}
+		case TYPE_4B:
+		{
+			const byte * pData = m_pData + (y * m_width + x) * 4;
+			return Vec3(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
+		}
+		case TYPE_3W:
+		{
+			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
+			return Vec3(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]));
+		}
+		case TYPE_4W:
+		{
+			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 4;
+			return Vec3(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]));
+		}
+		case TYPE_3F:
+		{
+			const float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 3;
+			return Vec3(pData[0], pData[1], pData[2]);
+		}
+		case TYPE_4F:
+		{
+			const float * pData = reinterpret_cast<float *>(m_pData) + (y * m_width + x) * 4;
+			return Vec3(pData[0], pData[1], pData[2]);
+		}
+		default:
+			return Vec3::Null;
+	}
+}
+
+Vec3 Image::GetPixelColor(float u, float v) const
+{
+	if (u > 1.f)
+		u = fmodf(u, 1.f);
+	else if (u < 0.f)
+		u = fmodf(u, 1.f) + 1.f;
+	
+	if (v > 1.f)
+		v = fmodf(v, 1.f);
+	else if (v < 0.f)
+		v = fmodf(v, 1.f) + 1.f;
+	
+	float fx = u * m_width - 0.5f;
+	float fy = v * m_height - 0.5f;
+	
+	int ix = static_cast<int>(fx);
+	int iy = static_cast<int>(fy);
+	float dx = fx - ix;
+	float dy = fy - iy;
+	int ix2 = ix + 1;
+	int iy2 = iy + 1;
+	
+	if (ix < 0)				ix += m_width;
+	if (ix2 >= m_width)		ix2 -= m_width;
+	if (iy < 0)				iy += m_height;
+	if (iy2 >= m_height)	iy2 -= m_height;
+
+	Vec3 c11 = GetPixelColor(ix, iy);
+	Vec3 c12 = GetPixelColor(ix2, iy);
+	Vec3 c21 = GetPixelColor(ix, iy2);
+	Vec3 c22 = GetPixelColor(ix2, iy2);
+	Vec3 c1 = Vec3::Lerp(c11, c12, dx);
+	Vec3 c2 = Vec3::Lerp(c21, c22, dx);
+	
+	return Vec3::Lerp(c1, c2, dy);
+}
+
+float Image::GetPixelOpacity(int x, int y) const
+{
+	assert(x >= 0 && x < m_width);
+	assert(y >= 0 && y < m_height);
+	switch (m_type)
+	{
+		case TYPE_4B:
+			return B2F(m_pData[(y * m_width + x) * 4 + 3]);
+
+		case TYPE_4W:
+			return W2F(reinterpret_cast<uint16 *>(m_pData)[(y * m_width + x) * 4 + 3]);
+
+		case TYPE_4F:
+			return reinterpret_cast<float *>(m_pData)[(y * m_width + x) * 4 + 3];
+
+		default:
+			return 1.f;
+	}
+}
+
+float Image::GetPixelOpacity(float u, float v) const
+{
+	if (u > 1.f)
+		u = fmodf(u, 1.f);
+	else if (u < 0.f)
+		u = fmodf(u, 1.f) + 1.f;
+	
+	if (v > 1.f)
+		v = fmodf(v, 1.f);
+	else if (v < 0.f)
+		v = fmodf(v, 1.f) + 1.f;
+	
+	float fx = u * m_width - 0.5f;
+	float fy = v * m_height - 0.5f;
+	
+	int ix = static_cast<int>(fx);
+	int iy = static_cast<int>(fy);
+	float dx = fx - ix;
+	float dy = fy - iy;
+	int ix2 = ix + 1;
+	int iy2 = iy + 1;
+	
+	if (ix < 0)				ix += m_width;
+	if (ix2 >= m_width)		ix2 -= m_width;
+	if (iy < 0)				iy += m_height;
+	if (iy2 >= m_height)	iy2 -= m_height;
+
+	float c11 = GetPixelOpacity(ix, iy);
+	float c12 = GetPixelOpacity(ix2, iy);
+	float c21 = GetPixelOpacity(ix, iy2);
+	float c22 = GetPixelOpacity(ix2, iy2);
+	float c1 = lerp(c11, c12, dx);
+	float c2 = lerp(c21, c22, dx);
+
+	return lerp(c1, c2, dy);
+}

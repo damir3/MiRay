@@ -71,6 +71,15 @@ bool SceneModel::Init(const char *pFilename, const Matrix &mat, ModelManager *pM
 	
 	for (auto itMesh = m_pModel->Meshes().begin(); itMesh != m_pModel->Meshes().end(); ++itMesh)
 	{
+//		size_t numTriangles = 0;
+//		for (auto itGeom = (*itMesh)->m_geometries.begin(); itGeom != (*itMesh)->m_geometries.end(); ++itGeom)
+//			numTriangles += (*itGeom)->m_indices.size() / 3;
+//
+//		printf("%s\n", itMesh->);
+//
+//		m_pVolume = m_bvh.CreateVolume(numTriangles);
+//		m_pVolume->SetTransformation(mat);
+
 		for (auto itGeom = (*itMesh)->m_geometries.begin(); itGeom != (*itMesh)->m_geometries.end(); ++itGeom)
 		{
 			Model::Geometry & geom = *(*itGeom);
@@ -81,6 +90,8 @@ bool SceneModel::Init(const char *pFilename, const Matrix &mat, ModelManager *pM
 				m_pVolume->AddTriangle(t);
 			}
 		}
+
+//		m_pVolume->Build(30);
 	}
 	
 	m_pVolume->Build(30);

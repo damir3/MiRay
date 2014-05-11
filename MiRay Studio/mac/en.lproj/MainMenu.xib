@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="4514" systemVersion="13A603" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5053" systemVersion="13C64" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment defaultVersion="1070" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="4514"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5053"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
@@ -68,13 +68,13 @@
                         <items>
                             <menuItem title="New" keyEquivalent="n" id="601">
                                 <connections>
-                                    <action selector="onFileNew:" target="-1" id="608"/>
+                                    <action selector="onFileNew:" target="mob-8J-rfA" id="xQR-eC-OxR"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="602"/>
                             <menuItem title="Open…" keyEquivalent="o" id="72">
                                 <connections>
-                                    <action selector="onFileOpen:" target="-1" id="577"/>
+                                    <action selector="onFileOpen:" target="mob-8J-rfA" id="orB-nX-kL9"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Open Recent" id="124">
@@ -91,12 +91,12 @@
                             <menuItem isSeparatorItem="YES" id="603"/>
                             <menuItem title="Save" keyEquivalent="s" id="600">
                                 <connections>
-                                    <action selector="onSave:" target="-1" id="605"/>
+                                    <action selector="onFileSave:" target="mob-8J-rfA" id="dmv-Wl-P8c"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Save As..." keyEquivalent="S" id="604">
                                 <connections>
-                                    <action selector="onSaveAs:" target="-1" id="607"/>
+                                    <action selector="onFileSaveAs:" target="mob-8J-rfA" id="sFU-0T-IDy"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="79">
@@ -104,7 +104,7 @@
                             </menuItem>
                             <menuItem title="Environment Image..." keyEquivalent="e" id="593">
                                 <connections>
-                                    <action selector="onEnvironmentImage:" target="-1" id="594"/>
+                                    <action selector="onEnvironmentImage:" target="mob-8J-rfA" id="Gho-au-MhD"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="74">
@@ -112,7 +112,7 @@
                             </menuItem>
                             <menuItem title="Save Image…" keyEquivalent="i" id="75">
                                 <connections>
-                                    <action selector="onSaveImage:" target="-1" id="599"/>
+                                    <action selector="onSaveImage:" target="mob-8J-rfA" id="Q4a-KL-Dbf"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="592"/>
@@ -130,31 +130,31 @@
                             <menuItem title="Reset Camera" keyEquivalent="r" id="572">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="onResetCamera:" target="-1" id="576"/>
+                                    <action selector="onResetCamera:" target="mob-8J-rfA" id="dll-nu-zV3"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Show Grid" keyEquivalent="g" id="573">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="onShowGrid:" target="-1" id="575"/>
+                                    <action selector="onShowGrid:" target="mob-8J-rfA" id="UW1-un-5RD"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Show Wireframe" keyEquivalent="w" id="578">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="onShowWireframe:" target="-1" id="580"/>
+                                    <action selector="onShowWireframe:" target="mob-8J-rfA" id="mgd-aB-zwy"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Show Normals" keyEquivalent="n" id="579">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="onShowNormals:" target="-1" id="581"/>
+                                    <action selector="onShowNormals:" target="mob-8J-rfA" id="kt3-ta-dVc"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Show BVH" keyEquivalent="b" id="582">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="onShowBVH:" target="-1" id="598"/>
+                                    <action selector="onShowBVH:" target="mob-8J-rfA" id="xEx-ce-Cad"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Mode" id="584">
@@ -163,17 +163,17 @@
                                     <items>
                                         <menuItem title="OpenGL" keyEquivalent="1" id="586">
                                             <connections>
-                                                <action selector="onOpenGLMode:" target="-1" id="589"/>
+                                                <action selector="onOpenGLMode:" target="mob-8J-rfA" id="qAi-y6-Ytr"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="Software" keyEquivalent="2" id="587">
                                             <connections>
-                                                <action selector="onSoftwareMode:" target="-1" id="597"/>
+                                                <action selector="onSoftwareMode:" target="mob-8J-rfA" id="I8R-ua-vn0"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="OpenCL" keyEquivalent="3" id="595">
                                             <connections>
-                                                <action selector="onOpenCLMode:" target="-1" id="596"/>
+                                                <action selector="onOpenCLMode:" target="mob-8J-rfA" id="EU6-Xf-Jsp"/>
                                             </connections>
                                         </menuItem>
                                     </items>
@@ -240,21 +240,53 @@
                 <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <openGLView placeholderIntrinsicWidth="800" placeholderIntrinsicHeight="600" useAuxiliaryDepthBufferStencil="NO" allowOffline="YES" translatesAutoresizingMaskIntoConstraints="NO" id="541" customClass="SceneView">
+                    <openGLView useAuxiliaryDepthBufferStencil="NO" allowOffline="YES" translatesAutoresizingMaskIntoConstraints="NO" id="wMc-1b-0fq" customClass="SceneView">
                         <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     </openGLView>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="541" firstAttribute="leading" secondItem="372" secondAttribute="leading" id="556"/>
-                    <constraint firstItem="541" firstAttribute="top" secondItem="372" secondAttribute="top" id="558"/>
-                    <constraint firstItem="541" firstAttribute="trailing" secondItem="372" secondAttribute="trailing" id="564"/>
-                    <constraint firstItem="541" firstAttribute="bottom" secondItem="372" secondAttribute="bottom" id="565"/>
+                    <constraint firstItem="wMc-1b-0fq" firstAttribute="top" secondItem="372" secondAttribute="top" id="XNR-8v-zjP"/>
+                    <constraint firstItem="wMc-1b-0fq" firstAttribute="leading" secondItem="372" secondAttribute="leading" id="ZpJ-Zz-8CK"/>
+                    <constraint firstAttribute="trailing" secondItem="wMc-1b-0fq" secondAttribute="trailing" id="qGE-GP-GIc"/>
+                    <constraint firstAttribute="bottom" secondItem="wMc-1b-0fq" secondAttribute="bottom" id="zCg-1t-5ai"/>
                 </constraints>
             </view>
+            <toolbar key="toolbar" implicitIdentifier="2C8EF9FD-ECFD-417A-8EFE-0F00AA215D59" autosavesConfiguration="NO" displayMode="iconOnly" sizeMode="regular" id="zvj-QN-wAu">
+                <allowedToolbarItems>
+                    <toolbarItem implicitItemIdentifier="CC74D502-49DF-4B1B-A958-E4254A8C2E3A" label="" paletteLabel="" id="Zq2-YY-wSP">
+                        <nil key="toolTip"/>
+                        <size key="minSize" width="300" height="17"/>
+                        <size key="maxSize" width="300" height="17"/>
+                        <textField key="view" horizontalHuggingPriority="251" verticalHuggingPriority="750" id="cGz-3o-VNY">
+                            <rect key="frame" x="0.0" y="14" width="300" height="17"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                            <textFieldCell key="cell" lineBreakMode="truncatingTail" sendsActionOnEndEditing="YES" borderStyle="bezel" id="7Gd-IC-L1T">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                    </toolbarItem>
+                    <toolbarItem implicitItemIdentifier="NSToolbarSpaceItem" id="Myk-K7-DiV"/>
+                    <toolbarItem implicitItemIdentifier="NSToolbarFlexibleSpaceItem" id="vsI-PN-FDN"/>
+                </allowedToolbarItems>
+                <defaultToolbarItems>
+                    <toolbarItem reference="vsI-PN-FDN"/>
+                    <toolbarItem reference="Zq2-YY-wSP"/>
+                    <toolbarItem reference="vsI-PN-FDN"/>
+                </defaultToolbarItems>
+            </toolbar>
         </window>
+        <customObject id="mob-8J-rfA" customClass="AppController">
+            <connections>
+                <outlet property="sceneView" destination="wMc-1b-0fq" id="yKe-eo-FwB"/>
+                <outlet property="toolbarText" destination="cGz-3o-VNY" id="d3F-UX-Gy8"/>
+            </connections>
+        </customObject>
         <customObject id="494" customClass="AppDelegate">
             <connections>
+                <outlet property="appController" destination="mob-8J-rfA" id="S7W-td-Fbp"/>
                 <outlet property="window" destination="371" id="532"/>
             </connections>
         </customObject>

@@ -15,6 +15,8 @@ namespace mr
 
 class IImage;
 class ILight;
+class IMaterialLayer;
+struct sMaterialContext;
 
 class SoftwareRenderer
 {
@@ -49,7 +51,21 @@ class SoftwareRenderer
 	float	m_fRayLength;
 	int		m_nMaxDepth;
 
-	std::atomic<size_t>	m_nRayCounter;
+	struct sMaterialStack : public ITriangleChecker
+	{
+		enum {MAX_STACK_DEPTH = 64};
+		int nCount;
+		const IMaterialLayer *pMaterials[MAX_STACK_DEPTH];
+
+		sMaterialStack() : nCount(0) {}
+		sMaterialStack(const sMaterialStack & mc);
+
+		int FindMaterial(const IMaterialLayer *pMaterial) const;
+		void Add(const IMaterialLayer *pMaterial) { pMaterials[nCount++] = pMaterial; }
+		void Remove(int i);
+
+		bool CheckTriangle(const CollisionTriangle *pTriangle, bool backface) const;
+	};
 
 	std::vector<Thread *> m_renderThreads;
 
@@ -67,9 +83,12 @@ class SoftwareRenderer
 
 	Vec3 RandomDirection(const Vec3 & normal) const;
 	ColorF EnvironmentColor(const Vec3 & v) const;
-	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const;
+	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, sMaterialStack & ms) const;
 	ColorF RenderPixel(const Vec2 & p) const;
-	ColorF LookUpTexture(const Vec2 & p, const Vec2 & dp, const CollisionTriangle * pTriangle) const;
+	inline void AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples) const;
+	inline void AddLighting(Vec3 &color, const Vec3 &P, const Vec3 &N, const TraceResult &tr,
+							const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const;
+
 
 	static void ThreadFunc(void * pRenderer);
 
@@ -77,9 +96,9 @@ public:
 
 	SoftwareRenderer(BVH & scene);
 	~SoftwareRenderer();
-	
-	size_t RaysCounter() const { return m_nRayCounter; }
-	void ResetRayCounter() { m_nRayCounter = 0; }
+
+	size_t RaysCounter() const { return m_scene.RaysCounter(); }
+	void ResetRayCounter() { m_scene.ResetRayCounter(); }
 
 	void SetBackgroundColor(const ColorF & bgColor);
 	void SetEnvironmentColor(const ColorF & envColor);

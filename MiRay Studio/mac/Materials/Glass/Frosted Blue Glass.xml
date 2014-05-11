@@ -1,0 +1,11 @@
+<material name="Frosted Blue Glass">
+	<layer>
+		<opacity>0</opacity>
+		<ior>1.5</ior>
+		<fresnel-reflection>1</fresnel-reflection>
+		<absorption>0.03 0.25 0.5</absorption>
+		<absorption-depth>1.0</absorption-depth>
+		<reflection-roughness>0.4</reflection-roughness>
+		<refraction-roughness>0.4</refraction-roughness>
+	</layer>
+</material>

@@ -20,6 +20,7 @@ class BVH // Bounding Volume Hierarchy
 
 	typedef std::vector<CollisionVolume *>	CollisionVolumeArray;
 	CollisionVolumeArray m_volumes;
+	std::atomic<size_t>	m_nRayCounter;
 
 public:
 //	BVH(size_t nReserveTrangles = 0) : m_root(NULL), m_nTraceCount(0) { m_triangles.reserve(nReserveTrangles); }
@@ -40,6 +41,9 @@ public:
 //
 //	void AddTriangle(const CollisionTriangle & t);
 //	void Build(byte nMaxNodesLevel = 0);
+
+	size_t RaysCounter() const { return m_nRayCounter; }
+	void ResetRayCounter() { m_nRayCounter = 0; }
 
 	bool TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr);
 };

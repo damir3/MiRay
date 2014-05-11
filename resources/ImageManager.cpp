@@ -316,7 +316,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 	return res;
 }
 
-ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
+ImagePtr ImageManager::LoadNormalmap(const char * strFilename, float bumpDepth)
 {
 	if (!strFilename || !*strFilename)
 		return nullptr;
@@ -354,7 +354,7 @@ ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
 			normal.x -= pImage->GetPixel(x + 1 < w ? x + 1 : 0, y).r;
 			normal.y  = pImage->GetPixel(x, y > 0 ? y - 1 : h - 1).r;
 			normal.y -= pImage->GetPixel(x, y + 1 < h ? y + 1 : 0).r;
-			normal.z = 0.25f;
+			normal.z = 2.f / bumpDepth;
 			normal.Normalize();
 			normal = normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
 			spNormalmapImage->SetPixel(x, y, ColorF(normal.x, normal.y, normal.z, pImage->GetPixel(x, y).r));

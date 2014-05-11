@@ -22,6 +22,7 @@ class CollisionTriangle;
 struct TraceResult;
 
 class ITransformable;
+class IMaterial;
 class ISceneLight;
 
 class SceneModel;
@@ -74,6 +75,7 @@ private:
 	std::shared_ptr<Image>			m_pBuffer;
 	std::unique_ptr<RenderThread>	m_pRenderThread;
 	ITransformable	*m_pGizmoObject;
+	IMaterial		*m_pSelectedMaterial;
 	int				m_iMouseDown;
 	Vec3			m_vTargetPos;
 	Vec3			m_vTargetNormal;
@@ -98,9 +100,11 @@ private:
 	std::vector<SceneModel *>	m_models;
 
 	void RemoveAllModels();
-	void RemoveModel(SceneModel * pModel);
+	bool RemoveModel(ITransformable * pObject);
 
 	void RemoveAllLights();
+
+	void DeleteObject(ITransformable *pObject);
 
 	Vec3 GetFrustumPosition(float x, float y, float z) const;
 	bool GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal);
@@ -136,6 +140,9 @@ public:
 
 	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; m_bShouldRedraw = true; }
 
+	int FramesCount() const;
+	double FramesRenderTime() const;
+
 	bool Init();
 	void Done();
 
@@ -151,6 +158,10 @@ public:
 
 	bool SetEnvironmentImage(const char * pFilename);
 	bool SaveImage(const char * pFilename) const;
+
+	bool SetSelection(float x, float y, Vec3 * pPos);
+	Vec3 WorldToView(const Vec3 &pos) const;
+	bool SetSelectionMaterial(const char *material);
 
 	void OnMouseDown(float x, float y, eMouseButton button);
 	void OnMouseUp(eMouseButton button);

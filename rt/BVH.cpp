@@ -12,7 +12,7 @@ using namespace mr;
 
 // ------------------------------------------------------------------------ //
 
-BVH::BVH()
+BVH::BVH() : m_nRayCounter(0)
 {
 }
 
@@ -59,6 +59,8 @@ BBox BVH::BoundingBox() const
 
 bool BVH::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr)
 {
+	++m_nRayCounter;
+
 	tr.pos = vTo;
 	bool res = false;
 	for (CollisionVolumeArray::iterator it = m_volumes.begin(), itEnd = m_volumes.end(); it != itEnd; ++it)

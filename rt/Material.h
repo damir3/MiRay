@@ -12,9 +12,11 @@ namespace mr
 
 struct sMaterialContext
 {
+	Vec2 tc;
 	Vec3 dir;
 	Vec3 normal;
-	Vec2 tc;
+	Vec3 tangent;
+	Vec3 binormal;
 };
 
 class IMaterialLayer
@@ -27,7 +29,7 @@ public:
 	virtual Vec3 Emissive(const sMaterialContext & mc) const = 0;
 	virtual Vec3 Diffuse(const sMaterialContext & mc) const = 0;
 	virtual Vec3 Opacity(const sMaterialContext & mc) const = 0;
-	virtual Vec3 IndexOfRefraction(const sMaterialContext & mc) const = 0;
+	virtual Vec3 IndexOfRefraction() const = 0;
 	
 	virtual bool FresnelReflection() const = 0;
 	virtual bool RaytracedReflection() const = 0;
@@ -35,18 +37,22 @@ public:
 	virtual Vec3 Reflection(const sMaterialContext & mc) const = 0;
 	virtual Vec3 ReflectionTint(const sMaterialContext & mc) const = 0;
 	virtual float ReflectionRoughness(const sMaterialContext & mc) const = 0;
+	virtual bool HasReflectionExitColor() const = 0;
 	virtual Vec3 ReflectionExitColor(const sMaterialContext & mc) const = 0;
 	virtual bool HasReflectionMap() const = 0;
 	virtual Vec3 ReflectionMap(const sMaterialContext & mc) const = 0;
 	
 	virtual Vec3 RefractionTint(const sMaterialContext & mc) const = 0;
 	virtual float RefractionRoughness(const sMaterialContext & mc) const = 0;
+	virtual bool HasRefractionExitColor() const = 0;
 	virtual Vec3 RefractionExitColor(const sMaterialContext & mc) const = 0;
 
 	virtual Vec3 AbsorbtionCoefficient() const = 0;
 
-	virtual bool HasNormalMap() const = 0;
-	virtual Vec3 NormalMap(const sMaterialContext & mc) const = 0;
+	virtual bool HasBumpMap() const = 0;
+	virtual float BumpDepth() const = 0;
+	virtual float BumpMap(const Vec2 &tc) const = 0;
+	virtual Vec3 NormalMapNormal(const sMaterialContext & mc) const = 0;
 };
 
 class IMaterial

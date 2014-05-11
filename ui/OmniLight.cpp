@@ -109,5 +109,6 @@ void OmniLight::Draw()
 {
 	float mi = fmaxf(fmaxf(m_intensity.x, m_intensity.y), m_intensity.z);
 	ColorF c = m_intensity / mi;
+	c.a = 0.5f;
 	DrawGeosphere(m_origin, m_radius, c, 2);
 }

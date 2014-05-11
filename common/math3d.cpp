@@ -288,7 +288,7 @@ Color mr::VertexColor(const Color & c, const Vec3 & vNormal)
 float mr::FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2)
 {
 	const float	n = n1 / n2;
-	const float cosI = -Vec3::Dot(N, I);
+	const float cosI = fabsf(Vec3::Dot(N, I));
 	const float sinT2 = n * n * (1.f - cosI * cosI);
 	if (sinT2 > 1.f) return 1.f;
 	const float cosT = sqrtf(1.f - sinT2);

@@ -1,0 +1,7 @@
+<material name="Matte Gold">
+	<layer>
+		<reflection>1</reflection>
+		<reflection-tint>0.8 0.6 0.1</reflection-tint>
+		<reflection-roughness>0.2</reflection-roughness>
+	</layer>
+</material>

@@ -11,20 +11,32 @@
 
 namespace mr
 {
-	
+
+class CollisionTriangle;
+class CollisionVolume;
+class IMaterial;
+
+class ITriangleChecker
+{
+public:
+	virtual bool CheckTriangle(const CollisionTriangle *pTriangle, bool backface) const = 0;
+};
+
 struct TraceResult
 {
-	const class CollisionTriangle * pTriangle;
-	class CollisionVolume * pVolume;
+	const CollisionTriangle * pTriangle;
+	CollisionVolume * pVolume;
 	float	fraction;
 	bool	backface;
 	Vec3	pos;
 	Vec2	pc;
+	Vec3	localPos;
+	Vec3	localDir;
 
-	TraceResult() : pTriangle(NULL), pVolume(NULL), fraction(1.f) {}
+	ITriangleChecker *pTC;
+
+	TraceResult() : pTriangle(NULL), pVolume(NULL), fraction(1.f), pTC(NULL) {}
 };
-
-class IMaterial;
 
 class CollisionTriangle
 {
@@ -38,6 +50,14 @@ class CollisionTriangle
 	BBox		m_bbox;
 	Vec3		m_edgeU;
 	Vec3		m_edgeV;
+
+//#ifdef USE_SSE
+//	__m128		m_center;
+//	__m128		m_extents;
+//#else
+//	Vec3		m_center;
+//	Vec3		m_extents;
+//#endif
 
 //	float		m_dist;
 //	float		m_uu;
@@ -56,6 +76,10 @@ public:
 		m_bbox.vMins = m_bbox.vMaxs = v0.pos;
 		m_bbox.AddToBounds(v1.pos);
 		m_bbox.AddToBounds(v2.pos);
+
+//		Vec3 boxCenter = m_bbox.Center();
+//		m_center = boxCenter;
+//		m_extents = boxCenter - m_bbox.vMins;
 
 		m_edgeU = v1.pos - v0.pos;
 		m_edgeV = v2.pos - v0.pos;
@@ -197,8 +221,7 @@ public:
 
 	bool TraceRay(CollisionRay & ray, TraceResult & tr) const
 	{
-
-//		if (!ray.IsIntersect(m_bbox))
+//		if (!ray.TestIntersection(m_center, m_extents))
 //			return false;
 //
 //		float d1 = Vec3::Dot(ray.Origin(), m_normal) - m_dist;
@@ -325,58 +348,82 @@ public:
 //			}
 //		}
 
-		float u, v, t;
 		float det = Vec3::Dot(m_normal, ray.Direction());
-		if (det < 0.f)
+		if (det == 0.f)
+			return false;
+
+		bool backface = (det > 0.f);
+//		if (tr.pTC && !tr.pTC->CheckTriangle(this, backface))
+//			return false;
+
+		Vec3 delta = m_vertices[0].pos - ray.Origin();
+		float t = Vec3::Dot(m_normal, delta);
+		float u, v;
+
+		if (!backface)
 		{// front face
-			Vec3 delta = m_vertices[0].pos - ray.Origin();
-			t = Vec3::Dot(m_normal, delta);
-			if (t > 0.f || t <= det) return false;
+			if (t > 0.f || t <= det)
+				return false;
 
 			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
 			float dv = ray.Direction()[m_axis_v] * t - delta[m_axis_v] * det;
 
 			u = m_e2u * dv - m_e2v * du;
-			if (u > 0.f || u < det) return false;
+			if (u > 0.f || u < det)
+				return false;
+
 			v = m_e1v * du - m_e1u * dv;
-			if (v > 0.f || u + v < det) return false;
+			if (v > 0.f || u + v < det)
+				return false;
 
-			tr.backface = false;
-		}
-		else if (det > 0.f)
-		{// back face
-			Vec3 delta = m_vertices[0].pos - ray.Origin();
-			t = Vec3::Dot(m_normal, delta);
-			if (t < 0.f || t >= det) return false;
-
-			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
-			float dv = ray.Direction()[m_axis_v] * t - delta[m_axis_v] * det;
-
-			u = m_e2u * dv - m_e2v * du;
-			if (u < 0.f || u > det) return false;
-			v = m_e1v * du - m_e1u * dv;
-			if (v < 0.f || u + v > det) return false;
-
-			tr.backface = true;
 		}
 		else
-			return false;
+		{// back face
+			if (t < 0.f || t >= det)
+				return false;
+
+			float du = ray.Direction()[m_axis_u] * t - delta[m_axis_u] * det;
+			float dv = ray.Direction()[m_axis_v] * t - delta[m_axis_v] * det;
+
+			u = m_e2u * dv - m_e2v * du;
+			if (u < 0.f || u > det)
+				return false;
+
+			v = m_e1v * du - m_e1u * dv;
+			if (v < 0.f || u + v > det)
+				return false;
+		}
 
 		float invDet = 1.f / det;
 		t *= invDet;
 		u *= invDet;
 		v *= invDet;
-		t += tr.backface ? 1e-6f : -1e-6f;
+		t += backface ? 1e-6f : -1e-6f;
 
 		//////////////////////////////////////////////////////////////////////////
 
 		ray.Clip(t);
 
-		tr.fraction *= t;
 		tr.pTriangle = this;
+		tr.fraction *= t;
+		tr.backface = backface;
 		tr.pc = Vec2(u, v);
 
 		return true;
+	}
+
+	Vec2 GetTexCoord(const Vec3 & origin, const Vec3 & direction) const
+	{
+		Vec3 delta = m_vertices[0].pos - origin;
+		float t = Vec3::Dot(m_normal, delta);
+		float det = Vec3::Dot(m_normal, direction);
+
+		float du = direction[m_axis_u] * t - delta[m_axis_u] * det;
+		float dv = direction[m_axis_v] * t - delta[m_axis_v] * det;
+
+		Vec2 pc(m_e2u * dv - m_e2v * du, m_e1v * du - m_e1u * dv);
+
+		return GetTexCoord(pc / det);
 	}
 };
 

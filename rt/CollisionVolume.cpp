@@ -74,7 +74,7 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 	m_nTraceCount++;
 	const CollisionTriangle * pSkipTriangle = tr.pTriangle;
 
-	CollisionRay ray(vFrom.TransformedCoord(m_matInvTransformation), vTo.TransformedCoord(m_matInvTransformation));
+	CollisionRay ray(vFrom.TransformedCoord(m_matInvTransformation), vTo.TransformedCoord(m_matInvTransformation), tr);
 
 	const CollisionNode * pStackNodes[64]; // nMaxNodesLevel must be less than 64
 	const CollisionNode ** ppTopNode = pStackNodes;
@@ -125,6 +125,8 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 
 	tr.pVolume = this;
 	tr.pos = ray.End().TransformedCoord(m_matTransformation);
+	tr.localPos = ray.End();
+	tr.localDir = ray.Direction();
 
 	return true;
 }

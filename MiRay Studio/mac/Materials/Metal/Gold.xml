@@ -1,0 +1,6 @@
+<material name="Gold">
+	<layer>
+		<reflection>1</reflection>
+		<reflection-tint>0.8 0.6 0.1</reflection-tint>
+	</layer>
+</material>

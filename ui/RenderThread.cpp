@@ -26,6 +26,7 @@ RenderThread::RenderThread()
 	, m_pEnvironmentMap(NULL)
 	, m_numCPU(0)
 	, m_nFrameCount(0)
+	, m_fFramesRenderTime(0.0)
 	, m_bStop(true)
 	, m_bIsRenderMapUpdated(false)
 {
@@ -102,6 +103,7 @@ void RenderThread::Stop()
 void RenderThread::ThreadFunc()
 {
 	m_nFrameCount = 0;
+	m_fFramesRenderTime = 0.0;
 	while (!m_bStop)
 	{
 		int nScale = m_nFrameCount < 2 ? (2 << (1 - m_nFrameCount)) : 1;
@@ -143,6 +145,8 @@ void RenderThread::ThreadFunc()
 		}
 
 		m_nFrameCount++;
+		if (m_nFrameCount > 2)
+			m_fFramesRenderTime += tm2 - tm1;
 	}
 }
 

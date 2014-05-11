@@ -18,8 +18,11 @@
 #include "SceneUtils.h"
 #include "../rt/SoftwareRenderer.h"
 #include "../rt/OpenCLRenderer.h"
+#include "../resources/MaterialResource.h"
 
 using namespace mr;
+
+const float GIZMO_ARROW_LENGTH = 150.f;
 
 // ------------------------------------------------------------------------ //
 
@@ -55,6 +58,7 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_pBuffer(NULL)
 	, m_pRenderThread(new RenderThread())
 	, m_pGizmoObject(NULL)
+	, m_pSelectedMaterial(NULL)
 	, m_iMouseDown(0)
 	, m_vTargetPos(Vec3::Null)
 	, m_vTargetNormal(Vec3::Null)
@@ -92,6 +96,9 @@ void SceneView::Done()
 }
 
 // ------------------------------------------------------------------------ //
+
+int SceneView::FramesCount() const { return m_pRenderThread ? m_pRenderThread->FramesCount() : 0; }
+double SceneView::FramesRenderTime() const { return m_pRenderThread ? m_pRenderThread->FramesRenderTime() : 0.0; }
 
 void SceneView::Resize(float w, float h, float rw, float rh)
 {
@@ -277,42 +284,46 @@ void SceneView::AppendModel(const char * pFilename)
 	}
 }
 
-void SceneView::DeleteSelection()
+void SceneView::DeleteObject(ITransformable *pObject)
 {
-	for (auto it = m_models.begin(); it != m_models.end(); ++it)
-	{
-		if ((*it) == m_pGizmoObject)
-		{
-			m_models.erase(it);
-			SAFE_DELETE(m_pGizmoObject);
-			StopRenderThread();
-			ResumeRenderThread();
-			return;
-		}
-	}
+	StopRenderThread();
 
-	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+	if (m_pGizmoObject == pObject)
+		m_pGizmoObject = NULL;
+
+	auto itModel = std::find(m_models.begin(), m_models.end(), pObject);
+	if (itModel != m_models.end())
+		m_models.erase(itModel);
+	else
 	{
-		if ((*it) == m_pGizmoObject)
+		auto itLight = std::find(m_lights.begin(), m_lights.end(), pObject);
+		if (itLight != m_lights.end())
 		{
-			m_lights.erase(it);
-			SAFE_DELETE(m_pGizmoObject);
+			m_lights.erase(itLight);
 			if (m_pRenderThread->Renderer())
 				m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-			StopRenderThread();
-			ResumeRenderThread();
-			return;
 		}
 	}
+
+	delete pObject;
+
+	ResumeRenderThread();
 }
 
-void SceneView::RemoveModel(SceneModel * pModel)
+void SceneView::DeleteSelection()
 {
-	auto it = std::find(m_models.begin(), m_models.end(), pModel);
-	if (it != m_models.end())
-		m_models.erase(it);
+	DeleteObject(m_pGizmoObject);
+}
 
-	delete pModel;
+bool SceneView::RemoveModel(ITransformable * pObject)
+{
+	auto it = std::find(m_models.begin(), m_models.end(), pObject);
+	if (it == m_models.end())
+		return false;
+
+	delete (*it);
+	m_models.erase(it);
+	return true;
 }
 
 void SceneView::RemoveAllModels()
@@ -361,11 +372,39 @@ Vec3 SceneView::GetFrustumPosition(float x, float y, float z) const
 	return Vec3(v.x, v.y, v.z) / v.w;
 }
 
+float TraceBumpMap(const IMaterialLayer * pMaterial, Vec2 & tc, Vec3 & dir, int numLinearSearchSteps, int numBinarySearchSteps);
+//static Vec3 vLightPos, vLightDest;
+
 bool SceneView::GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal)
 {
 	TraceResult tr;
 	if (m_pBVH->TraceRay(m_matCamera.Pos(), GetFrustumPosition(x, y, 1.f), tr))
 	{
+		if (tr.pTriangle && tr.pTriangle->Material() && tr.pTriangle->Material()->Layer(0)->HasBumpMap())
+		{// bump mapping
+			const IMaterialLayer *pMaterial = tr.pTriangle->Material()->Layer(0);
+			Vec3 normal = tr.pTriangle->GetNormal(tr.pc);
+
+			sMaterialContext mc;
+			mc.tc = tr.pTriangle->GetTexCoord(tr.pc);
+			mc.dir = Vec3::Normalize(tr.pos - m_matCamera.Pos());
+			mc.normal = normal;
+			tr.pTriangle->GetTangents(mc.tangent, mc.binormal, mc.normal);
+
+			Vec3 dirTS(Vec3::Dot(mc.dir, mc.tangent), Vec3::Dot(mc.dir, mc.binormal), Vec3::Dot(mc.dir, mc.normal));
+			dirTS.Normalize();
+
+			float rayLength = 1.f / fabs(dirTS.z);
+			dirTS *= rayLength;
+
+			float bumpZ = TraceBumpMap(pMaterial, mc.tc, dirTS, 32, 5);
+			vPos = tr.pos + mc.dir * ((tr.backface ? (bumpZ - 1.f) : (1.f - bumpZ)) * rayLength);
+		
+			vNormal = pMaterial->NormalMapNormal(mc);
+
+			return true;
+		}
+		
 		vPos = tr.pos;
 		vNormal = tr.pTriangle->GetNormal(tr.pc);
 		if (tr.pVolume)
@@ -439,7 +478,7 @@ void SceneView::RotateCamera(float dx, float dy)
 	float dPitch = clamp(pitch - dy * 0.5f, -89.99f, 89.99f) - pitch;
 	matRotation.RotationAxis(m_matCamera.AxisX(), DEG2RAD(dPitch), m_vTargetPos);
 	m_matCamera = m_matCamera * matRotation;
-	
+
 	// normalize camera matrix
 	CalculateCameraMatrix(m_matCamera, m_matCamera.Pos(), 0.f,
 						  RAD2DEG(m_matCamera.AxisZ().Yaw()), RAD2DEG(m_matCamera.AxisZ().Pitch()));
@@ -530,12 +569,13 @@ void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton b
 		}
 		default:
 		{
+			int axis = m_iAxis;
 			m_iAxis = -1;
 			if (m_pGizmoObject)
 			{
 				Vec4 vCenter(m_matGizmo.Pos(), 1.f);
 				vCenter.Transform(m_matViewProj);
-				m_vAxisSize.x = 300.f * vCenter.w / (m_fWidth * m_matProj.m11);
+				m_vAxisSize.x = GIZMO_ARROW_LENGTH * vCenter.w / (m_fRWidth * m_matProj.m11);
 				m_vAxisSize.y = m_vAxisSize.x * 0.05f;
 				Vec3 vTargetPos = GetFrustumPosition(x, y, 1.f);
 				for (int i = 0; i < 3; i++)
@@ -544,9 +584,79 @@ void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton b
 						m_iAxis = i;
 				}
 			}
+			m_bShouldRedraw |= (axis != m_iAxis);
 			break;
 		}
 	}
+}
+
+bool SceneView::SetSelection(float x, float y, Vec3 * pPos)
+{
+	m_pGizmoObject = NULL;
+
+	TraceResult tr;
+	tr.pos = GetFrustumPosition(x, y, 1.f);
+	if (m_pBVH->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+	{
+		for (auto it = m_models.begin(); it != m_models.end(); ++it)
+		{
+			if ((*it)->GetVolume() == tr.pVolume)
+			{
+				m_pGizmoObject = (*it);
+				m_pSelectedMaterial = const_cast<IMaterial *>(tr.pTriangle->Material());
+				break;
+			}
+		}
+	}
+	
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+	{
+		if ((*it)->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+			m_pGizmoObject = (*it);
+	}
+	
+	m_bShouldRedraw = true;
+
+	if (!m_pGizmoObject)
+		return false;
+
+	m_matGizmo = m_pGizmoObject->Transformation();
+	if (pPos)
+		*pPos = tr.pos;
+
+	return true;
+}
+
+bool SceneView::SetSelectionMaterial(const char *material)
+{
+	SceneModel *pModel = dynamic_cast<SceneModel *>(m_pGizmoObject);
+	if (!pModel)
+		return false;
+
+	MaterialResource *pMaterial = dynamic_cast<MaterialResource *>(m_pSelectedMaterial);
+	if (!pMaterial)
+		return false;
+
+	pugi::xml_document doc;
+	if (doc.load_file(material).status != pugi::status_ok)
+		return false;
+	
+	pugi::xml_node node = doc.child("material");
+	if (node.empty())
+		return false;
+
+	StopRenderThread();
+
+	pMaterial->Load(node);
+
+	ResumeRenderThread();
+
+	return true;
+}
+
+Vec3 SceneView::WorldToView(const Vec3 &pos) const
+{
+	return pos.TransformedCoord(m_matView);
 }
 
 void SceneView::OnMouseClick(float x, float y, eMouseButton button)
@@ -623,7 +733,7 @@ void SceneView::DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, f
 {
 	Vec4 vCenter(pos, 1.f);
 	vCenter.Transform(m_matViewProj);
-	float l = size * vCenter.w / (m_fWidth * m_matProj.m11);
+	float l = size * vCenter.w / (m_fRWidth * m_matProj.m11);
 	float r1 = l * 0.02f;
 	float r2 = l * 0.04f;
 
@@ -647,15 +757,15 @@ void SceneView::DrawGizmo(const Matrix & mat, const BBox & bbox) const
 
 	static const Color axisColor[] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)};
 	for (int i = 0; i < 3; i++)
-		DrawArrow(mat.Pos(), mat.Axis(i), m_iAxis == i ? Color(255, 255, 0) : axisColor[i], 300.f);
+		DrawArrow(mat.Pos(), mat.Axis(i), m_iAxis == i ? Color(255, 255, 0) : axisColor[i], GIZMO_ARROW_LENGTH);
 }
 
 bool SceneView::ShouldRedraw() const
 {
-	if (m_renderMode != RM_OPENGL)
-		return m_pRenderMap && m_pRenderThread->IsRenderMapUpdated();
+	if (m_bShouldRedraw)
+		return true;
 
-	return m_bShouldRedraw;
+	return (m_renderMode != RM_OPENGL) ? (m_pRenderMap && m_pRenderThread->IsRenderMapUpdated()) : false;
 }
 
 void SceneView::Draw()
@@ -715,13 +825,21 @@ void SceneView::Draw()
 		glLoadMatrixf(m_matView);
 
 		if (m_iMouseDown && !m_bTransformation)
-			DrawArrow(m_vTargetPos, m_vTargetNormal, Color(255, 255, 0), 200.f);
+			DrawArrow(m_vTargetPos, m_vTargetNormal, Color(255, 255, 0), GIZMO_ARROW_LENGTH);
+
+		if (m_pGizmoObject)
+			DrawGizmo(m_matGizmo, m_pGizmoObject->OOBB());
+
+		glEnable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CW);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
 			(*it)->Draw();
 
-		if (m_pGizmoObject)
-			DrawGizmo(m_matGizmo, m_pGizmoObject->OOBB());
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_BLEND);
 	}
 }
 

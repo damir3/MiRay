@@ -32,6 +32,7 @@ class RenderThread
 	volatile bool	m_bStop;
 	volatile bool	m_bIsRenderMapUpdated;
 	volatile int	m_nFrameCount;
+	volatile double	m_fFramesRenderTime;
 	Mutex	m_mutex;
 	std::unique_ptr<Thread>	m_thread;
 
@@ -49,6 +50,8 @@ public:
 
 	void ThreadFunc();
 
+	int FramesCount() const { return m_nFrameCount - 2; }
+	double FramesRenderTime() const { return m_fFramesRenderTime; }
 	bool IsRenderMapUpdated() const { return m_bIsRenderMapUpdated; }
 	RectI LockRenderMap();
 	void UnlockRenderMap();

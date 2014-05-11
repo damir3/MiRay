@@ -10,6 +10,8 @@
 namespace mr
 {
 
+class TraceResult;
+
 class CollisionRay
 {
 	Vec3 m_vOrigin;
@@ -28,13 +30,16 @@ class CollisionRay
 	Vec3 m_vHalfDir;
 	Vec3 m_vHalfSize;
 #endif
+
+	TraceResult & m_tr;
 	
 public:
 	
-	CollisionRay(const Vec3 & origin, const Vec3 & end)
+	CollisionRay(const Vec3 & origin, const Vec3 & end, TraceResult & tr)
 		: m_vOrigin(origin)
 		, m_vEnd(end)
 		, m_vDir(end - origin)
+		, m_tr(tr)
 	{
 #ifdef USE_SSE
 		m_halfDir = _mm_mul_ps(m_vDir, _mm_set1_ps(0.5f));
@@ -52,6 +57,7 @@ public:
 	const Vec3 & Origin() const { return m_vOrigin; }
 	const Vec3 & End() const { return m_vEnd; }
 	const Vec3 & Direction() const { return m_vDir; }
+	TraceResult & TraceResult() { return m_tr; }
 
 	void Clip(float f)
 	{

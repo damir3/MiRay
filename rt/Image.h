@@ -23,6 +23,12 @@ public:
 	virtual void SetPixel(int x, int y, const ColorF & c) = 0;
 	virtual ColorF GetPixel(int x, int y) const = 0;
 	virtual ColorF GetPixel(float u, float v) const = 0;
+
+	virtual Vec3 GetPixelColor(int x, int y) const = 0;
+	virtual Vec3 GetPixelColor(float u, float v) const = 0;
+
+	virtual float GetPixelOpacity(int x, int y) const = 0;
+	virtual float GetPixelOpacity(float u, float v) const = 0;
 };
 
 }

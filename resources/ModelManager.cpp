@@ -438,7 +438,8 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 			const FbxSurfaceMaterial * pFbxMaterial = pFbxNode->GetMaterial(static_cast<int>(gi));
 			if (pFbxMaterial)
 			{
-				std::string strMaterial = pFbxMesh->GetName();
+//				printf("node '%s/%s/%s'\n", pFbxNode->GetName(), pFbxMesh->GetName(), pFbxMaterial->GetName());
+				std::string strMaterial = pFbxNode->GetName();
 				strMaterial += "/";
 				strMaterial += pFbxMaterial->GetName();
 				geom.m_pMaterial = model.MaterialManagerPtr()->Get(strMaterial.c_str());

@@ -13,6 +13,8 @@
 
 using namespace mr;
 
+static const float MIN_NORMALS_DP = cosf(DEG2RAD(85.f));
+
 // ------------------------------------------------------------------------ //
 
 SoftwareRenderer::SoftwareRenderer(BVH & scene)
@@ -25,7 +27,6 @@ SoftwareRenderer::SoftwareRenderer(BVH & scene)
 	, m_focalDistance(0.f)
 	, m_dofBlur(0.f)
 	, m_numAmbientOcclusionSamples(1)
-	, m_nRayCounter(0)
 {
 }
 
@@ -120,6 +121,7 @@ void SoftwareRenderer::Render(IImage & image, const RectI * pViewportRect,
 	m_random = Vec2(frand(), frand());
 	m_matRandom.RotationAxis(Vec3::Normalize(Vec3Rand()), acosf(frand()));
 
+//	numThreads = 1;
 	for (int i = 0; i < numThreads; i++)
 		m_renderThreads.push_back(new Thread(&ThreadFunc, this));
 
@@ -185,7 +187,9 @@ ColorF SoftwareRenderer::RenderPixel(const Vec2 &p) const
 		vDest = m_vCamDelta[2] + m_vCamDelta[0] * bp.x - m_vCamDelta[1] * bp.y;
 		vStart = Vec3::Lerp(vDest, pos, m_dofLC.y);
 	}
-	sResult res = TraceRay(vStart, vDest, 0, NULL);
+	sMaterialStack ms;
+	sResult res = TraceRay(vStart, vDest, 0, NULL, ms);
+//	printf("\n");
 	return ColorF(res.color.x, res.color.y, res.color.z, res.opacity.x);
 }
 
@@ -259,55 +263,231 @@ Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal) const
 
 // ------------------------------------------------------------------------ //
 
-SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle) const
+SoftwareRenderer::sMaterialStack::sMaterialStack(const sMaterialStack & mc) : nCount(mc.nCount)
+{
+	std::copy(mc.pMaterials, mc.pMaterials + nCount, pMaterials);
+}
+
+int SoftwareRenderer::sMaterialStack::FindMaterial(const IMaterialLayer *pMaterial) const
+{
+	int i = nCount;
+	while (i-- > 0)
+	{
+		if (pMaterials[i]->IndexOfRefraction() == pMaterial->IndexOfRefraction())
+			return i;
+	}
+
+	return -1;
+}
+
+void SoftwareRenderer::sMaterialStack::Remove(int i)
+{
+	if (i >= 0)
+	{
+		nCount--;
+		for (int j = i + 1; i < nCount; i = j++)
+			pMaterials[i] = pMaterials[j];
+	}
+}
+
+bool SoftwareRenderer::sMaterialStack::CheckTriangle(const CollisionTriangle *pTriangle, bool backface) const
+{
+	return (FindMaterial(pTriangle->Material()->Layer(0)) < 0) ^ backface;
+}
+
+// ------------------------------------------------------------------------ //
+
+float TraceBumpMap(const IMaterialLayer * pMaterial, Vec2 & tc, Vec3 & dir, int numLinearSearchSteps, int numBinarySearchSteps)
+{
+	const float bumpDepth = pMaterial->BumpDepth();
+	dir.x *= bumpDepth;
+	dir.y *= bumpDepth;
+	Vec3 step = dir * (1.f / numLinearSearchSteps);
+
+	bool backface = dir.z > 0.f;
+	Vec3 pos = backface ? Vec3(tc.x - dir.x, tc.y - dir.y, 0.f) : Vec3(tc.x, tc.y, 1.f);
+
+	for (int i = 0; i < numLinearSearchSteps; i++)
+	{
+		if ((pos.z < pMaterial->BumpMap(pos)) ^ backface)
+			break;
+		
+		pos += step;
+	}
+
+	for (int i = 0; i < numBinarySearchSteps; i++)
+	{
+		step *= 0.5f;
+		pos -= step;
+
+		if ((pos.z > pMaterial->BumpMap(pos)) ^ backface)
+			pos += step;
+	}
+
+	tc = pos;
+
+	return pos.z;
+}
+
+// ------------------------------------------------------------------------ //
+
+inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples) const
+{
+	Vec3 ambientOcclusion = Vec3::Null;
+	for (int i = 0; i < numSamples; i++)
+	{// ambient occlusion
+		Vec3 vRandDir;
+		do {
+			vRandDir = RandomDirection(N);
+		} while (Vec3::Dot(vRandDir, TN) <= 0.f);
+		
+		TraceResult otl;
+		if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
+		{
+			ColorF envColor = EnvironmentColor(vRandDir);
+			ambientOcclusion += Vec3(envColor.r, envColor.g, envColor.b);
+		}
+	}
+	color += ambientOcclusion * (m_ambientOcclusion / numSamples);
+//	color += (N.z * 0.3f + 0.7f);
+
+}
+
+inline void SoftwareRenderer::AddLighting(Vec3 &color, const Vec3 &P, const Vec3 &N, const TraceResult &tr,
+										  const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const
+{
+	for (std::vector<ILight *>::const_iterator it = m_lights.begin(); it != m_lights.end(); ++it)
+	{// lighting
+		const ILight * pLight = *it;
+		Vec3 lightPos = pLight->Position(P);
+		Vec3 lightDir = lightPos - P;
+		float l2 = lightDir.LengthSquared();
+		if (l2 <= 0.f)
+			continue;
+		
+		float dp = Vec3::Dot(N, lightDir);
+		if (dp <= 0.f)
+			continue;
+		
+		if (pMaterial->HasBumpMap())
+		{
+			Vec3 localLightPos = lightPos.TransformedCoord(tr.pVolume->InverseTransformation());
+			Vec3 dir = tr.localPos - localLightPos;
+			Vec2 tc = tr.pTriangle->GetTexCoord(localLightPos, dir);
+//			mc.tc = tc;
+//			res.color = pMaterial->Diffuse(mc);
+//			break;
+			
+			Vec3 dirTS(Vec3::Dot(dir, mc.tangent), Vec3::Dot(dir, mc.binormal), Vec3::Dot(dir, mc.normal));
+			dirTS.Normalize();
+			dirTS /= fabs(dirTS.z);
+			
+			float z = TraceBumpMap(pMaterial, tc, dirTS, 24, 5);
+			if ((dirTS.z < 0.f) ? (z > bumpZ) : (-z > bumpZ))
+				continue;
+		}
+		
+		TraceResult ltr;
+		if (m_scene.TraceRay(P, lightPos, ltr))
+			continue;
+
+		// diffuse
+		Vec3 vLightIntensity = pLight->Intensity(l2);
+		if (vLightIntensity != Vec3::Null)
+			color += vLightIntensity * dp / sqrtf(l2);
+		
+//		// specular
+//		if (bReflection)
+//			cReflection += pLight->Intensity(P, P + R * dist);
+	}
+}
+
+// ------------------------------------------------------------------------ //
+
+SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, sMaterialStack & ms) const
 {
 	TraceResult tr;
 	tr.pTriangle = pPrevTriangle;
-	++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
-	if (!m_scene.TraceRay(v1, v2, tr))
-		return sResult(EnvironmentColor(v2 - v1), v2);
+	tr.pTC = &ms;
+
+	int nMaterialIndex;
+	Vec3 vOrigin = v1;
+	Vec3 I = v2 - v1;
+	while (true)
+	{
+		if (!m_scene.TraceRay(vOrigin, v2, tr))
+			return sResult(EnvironmentColor(I), v2);
+
+		nMaterialIndex = ms.FindMaterial(tr.pTriangle->Material()->Layer(0));
+		if ((nMaterialIndex < 0) ^ tr.backface)
+			break;
+
+		tr.fraction = 0.f;
+		vOrigin = tr.pos + I * 1e-6f;
+	}
+
+	I.Normalize();
 
 	const IMaterialLayer * pMaterial = tr.pTriangle->Material()->Layer(0);
 	sMaterialContext mc;
-	Vec2 tc = tr.pTriangle->GetTexCoord(tr.pc);
-	Vec3 normal = tr.pTriangle->GetNormal(tr.pc);
-	mc.tc = tc;
-	mc.normal = normal;
-	mc.dir = v2 - v1;
+	mc.tc = tr.pTriangle->GetTexCoord(tr.pc);
+	mc.dir = tr.localDir;
+	mc.normal = Vec3::Normalize(tr.pTriangle->GetNormal(tr.pc)); // local space normal
 
-	if (pMaterial->HasNormalMap())
+	Vec3 normal = mc.normal;
+	float bumpZ;
+
+	if (pMaterial->HasBumpMap())
 	{// bump mapping
-		Vec3 nm = pMaterial->NormalMap(mc);
-		if (nm.x != 0.f || nm.y != 0.f)
-		{
-			Vec3 tangent, binormal;
-			tr.pTriangle->GetTangents(tangent, binormal, normal);
-			normal = tangent * nm.x + binormal * nm.y + normal * nm.z;
-		}
+		tr.pTriangle->GetTangents(mc.tangent, mc.binormal, mc.normal);
+
+		mc.dir.Normalize();
+		Vec3 dirTS(Vec3::Dot(mc.dir, mc.tangent), Vec3::Dot(mc.dir, mc.binormal), Vec3::Dot(mc.dir, mc.normal));
+		dirTS.Normalize();
+
+		float rayLength = 1.f / fabs(dirTS.z);
+		dirTS *= rayLength;
+
+		bumpZ = TraceBumpMap(pMaterial, mc.tc, dirTS, 32, 5);
+		tr.localPos += mc.dir * ((tr.backface ? (bumpZ - 1.f) : (1.f - bumpZ)) * rayLength);
+
+		normal = pMaterial->NormalMapNormal(mc);
 	}
 
 	if (tr.pVolume)
-		normal = normal.TransformedNormal(tr.pVolume->Transformation());
+		normal = normal.TransformedNormal(tr.pVolume->InverseTransformation());
 
 	normal.Normalize();
-	Vec3 N = tr.backface ? -normal : normal;
-	Vec3 TN = tr.backface ? -tr.pTriangle->Normal() : tr.pTriangle->Normal(); // triangle normal
+
+	const Vec3 triangleNormal = tr.pTriangle->Normal();
+	float dp = Vec3::Dot(normal, triangleNormal);
+	if (dp <= MIN_NORMALS_DP)
+	{
+		normal -= (dp - MIN_NORMALS_DP)  * triangleNormal;
+		normal.Normalize();
+	}
+
+	Vec3 N = tr.backface ? -normal : normal; // faceforward normal
+	Vec3 TN = tr.backface ? -triangleNormal : triangleNormal; // triangle normal
+	assert(Vec3::Dot(I, TN) < 0.f);
+//	assert(Vec3::Dot(N, TN) > 0.f);
 
 //	printf("%d: (%g %g %g) -> (%g %g %g) %p (%g %g %g)\n", nTraceDepth, v1.x, v1.y, v1.z, tr.pos.x, tr.pos.y, tr.pos.z, tr.pTriangle, normal.x, normal.y, normal.z);
 
 	Vec3 kR = pMaterial->Reflection(mc);
-	Vec3 I = Vec3::Normalize(v2 - v1);
 	
-	Vec3 ior = pMaterial->IndexOfRefraction(mc);
+	Vec3 ior = pMaterial->IndexOfRefraction();
 	if (pMaterial->FresnelReflection()/* && !tr.backface*/)
 	{// update reflectivity
+		Vec3 prevIOR(1.f);// = ms.GetIOR();
 		float ior1 = 0.f, ior2 = 1.f;
 		float fresnel = 0.f;
 		for (int i = 0; i < 3; i++)
 		{
-			if (ior1 != ior[i])
+			if (ior1 != ior[i] || ior2 != prevIOR[i])
 			{
 				ior1 = ior[i];
+				ior2 = prevIOR[i];
 				fresnel = tr.backface ? FresnelReflection(I, N, ior1, ior2) : FresnelReflection(I, N, ior2, ior1);
 			}
 			kR[i] = fminf(kR[i] + fresnel, 1.f);
@@ -323,30 +503,36 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	if (bReflection)
 	{// reflection
 		if (nTraceDepth >= m_nMaxDepth)
-			return sResult(pMaterial->ReflectionExitColor(mc), Vec3(1.f), tr.pos);
-		
-		float reflectionRoughness = pMaterial->ReflectionRoughness(mc);
-		Vec3 RN = reflectionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (reflectionRoughness * 0.25f)) : N;
-		R = Vec3::Reflect(I, RN);
-		float dp = Vec3::Dot(R, TN);
-		if (dp < 0.f) R -= TN * dp;
-		Vec3 v1R = tr.pos + TN * m_fDistEpsilon;
-		cR = TraceRay(v1R, v1R + R * m_fRayLength, nTraceDepth, tr.pTriangle);
-		cR.color.Scale(pMaterial->ReflectionTint(mc));
-
-		if (tr.backface)
 		{
-			// absorption (Beer–Lambert law)
-			Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cR.pos - v1R).Length();
-			cR.color.x *= expf(absorbtionExp.x);
-			cR.color.y *= expf(absorbtionExp.y);
-			cR.color.z *= expf(absorbtionExp.z);
+			cR = pMaterial->HasReflectionExitColor() ? sResult(pMaterial->ReflectionExitColor(mc), Vec3(1.f), tr.pos) :
+														sResult(EnvironmentColor(I), tr.pos);
 		}
-
-		if ((kR.x >= 1.f && kR.y >= 1.f && kR.z >= 1.f))
+		else
 		{
-			cR.color += pMaterial->Emissive(mc);
-			return cR;
+			float reflectionRoughness = pMaterial->ReflectionRoughness(mc);
+			Vec3 RN = reflectionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (reflectionRoughness * 0.25f)) : N;
+			R = Vec3::Reflect(I, RN);
+			float dp = Vec3::Dot(R, TN);
+			if (dp < 0.f) R -= TN * dp;
+			Vec3 v1R = tr.pos + TN * m_fDistEpsilon;
+			sMaterialStack msR(ms);
+			cR = TraceRay(v1R, v1R + R * m_fRayLength, nTraceDepth, tr.pTriangle, msR);
+			cR.color.Scale(pMaterial->ReflectionTint(mc));
+
+			if (tr.backface)
+			{
+				// absorption (Beer–Lambert law)
+				Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cR.pos - v1R).Length();
+				cR.color.x *= expf(absorbtionExp.x);
+				cR.color.y *= expf(absorbtionExp.y);
+				cR.color.z *= expf(absorbtionExp.z);
+			}
+
+			if ((kR.x >= 1.f && kR.y >= 1.f && kR.z >= 1.f))
+			{
+				cR.color += pMaterial->Emissive(mc);
+				return cR;
+			}
 		}
 	}
 
@@ -358,31 +544,65 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	if (bTransmission)
 	{// transmission
 		if (nTraceDepth >= m_nMaxDepth)
-			return sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos);
-
-		float refractionRoughness = pMaterial->RefractionRoughness(mc);
-		Vec3 RN = refractionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (refractionRoughness * 0.25f)) : N;
-		float eta = tr.backface ? ior.x : 1.f / ior.x;
-		Vec3 T = Vec3::Refract(I, RN, eta);
-		float dp = Vec3::Dot(T, TN);
-		if (dp > 0.f) T -= TN * dp;
-		if (T.Normalize() == 0.f)
-			return sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos);
-
-		Vec3 v1T = tr.pos - TN * m_fDistEpsilon;
-		cT = TraceRay(v1T, v1T + T * m_fRayLength, nTraceDepth, tr.pTriangle);
-		if (!tr.backface)
 		{
-			// absorption (Beer–Lambert law)
-			Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cT.pos - v1T).Length();
-			cT.color.x *= expf(absorbtionExp.x);
-			cT.color.y *= expf(absorbtionExp.y);
-			cT.color.z *= expf(absorbtionExp.z);
-
-			cT.color.Scale(pMaterial->RefractionTint(mc));
+			cT = pMaterial->HasRefractionExitColor() ? sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
+														sResult(EnvironmentColor(I), tr.pos);
 		}
+		else
+		{
+			float refractionRoughness = pMaterial->RefractionRoughness(mc);
+			Vec3 RN = refractionRoughness > 0.f ? Vec3::Normalize(N + Vec3Rand() * (refractionRoughness * 0.25f)) : N;
+			float eta = tr.backface ? ior.x : 1.f / ior.x;
+//			float eta;
+//			printf("%c %g ", tr.backface ? '<' : '>', ior.x);
+//			if (tr.backface)
+//			{
+//				Vec3 prevIOR = ms.Pop(pMaterial);
+//				if (prevIOR.x != 1.f)
+//					return sResult(Vec3(10.f, 0.f, 0.f), Vec3(1.f), tr.pos);
+//
+//				eta = ior.x / prevIOR.x;
+//			}
+//			else
+//			{
+//				Vec3 prevIOR = ms.Push(pMaterial);
+//				if (prevIOR.x != 1.f)
+//					return sResult(Vec3(0.f, 10.f, 0.f), Vec3(1.f), tr.pos);
+//				eta = prevIOR.x / ior.x;
+//			}
+//			eta = eta1;
+			
+			Vec3 T = Vec3::Refract(I, RN, eta);
+			float dp = Vec3::Dot(T, TN);
+			if (dp > 0.f) T -= TN * dp;
+			if (T.Normalize() == 0.f)
+			{
+				cT = pMaterial->HasRefractionExitColor() ? sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
+															sResult(EnvironmentColor(I), tr.pos);
+			}
+			else
+			{
+				if (tr.backface)
+					ms.Remove(nMaterialIndex);
+				else
+					ms.Add(pMaterial);
 
-//		return cT;
+				Vec3 v1T = tr.pos - TN * m_fDistEpsilon;
+				cT = TraceRay(v1T, v1T + T * m_fRayLength, nTraceDepth, tr.pTriangle, ms);
+				if (!tr.backface)
+				{
+					// absorption (Beer–Lambert law)
+					Vec3 absorbtionExp = pMaterial->AbsorbtionCoefficient() * (cT.pos - v1T).Length();
+					cT.color.x *= expf(absorbtionExp.x);
+					cT.color.y *= expf(absorbtionExp.y);
+					cT.color.z *= expf(absorbtionExp.z);
+					
+					cT.color.Scale(pMaterial->RefractionTint(mc));
+				}
+			}
+
+//			return cT;
+		}
 	}
 
 	Vec3 P = tr.pos + tr.pTriangle->Normal() * m_fDistEpsilon;
@@ -390,61 +610,18 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 	if (opacity.x > 0.f || opacity.y > 0.f || opacity.z > 0.f)
 	{
-		Vec3 diffuse = pMaterial->Diffuse(mc);
 		res.color += pMaterial->Ambient(mc);
 
 		if (m_ambientOcclusion > 0.f)
 		{
-			Vec3 ambientOcclusion = Vec3::Null;
 			float maxOpacity = fmaxf(fmaxf(opacity.x, opacity.y), opacity.z);
 			int numSamples = std::max<int>((int)(maxOpacity * m_ambientOcclusion * m_numAmbientOcclusionSamples), 1);
-			for (int i = 0; i < numSamples; i++)
-			{// ambient occlusion
-				Vec3 vRandDir;
-				do {
-					vRandDir = RandomDirection(normal);
-				} while (Vec3::Dot(vRandDir, TN) <= 0.f);
-
-				TraceResult otl;
-				++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
-				if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
-				{
-					ColorF envColor = EnvironmentColor(vRandDir);
-					ambientOcclusion += Vec3(envColor.r, envColor.g, envColor.b);
-				}
-			}
-			res.color += ambientOcclusion * (m_ambientOcclusion / numSamples);
+			AddAmbientOcclusion(res.color, P, normal, triangleNormal, numSamples);
 		}
 
-		if (!m_lights.empty())
-		{// lighting
-			ILight * pLight = m_lights[rand() % m_lights.size()];
-			Vec3 vLightPos = pLight->Position(P);
-			Vec3 vLightDir = vLightPos - P;
-			float l2 = vLightDir.LengthSquared();
-			if (l2 > 0.f)
-			{
-				float dp = Vec3::Dot(normal, vLightDir);
-				if (dp > 0.f)
-				{
-					TraceResult ltr;
-					++const_cast<SoftwareRenderer &>(*this).m_nRayCounter;
-					if (!m_scene.TraceRay(P, vLightPos, ltr))
-					{
-						// diffuse
-						Vec3 vLightIntensity = pLight->Intensity(l2);
-						if (vLightIntensity != Vec3::Null)
-							res.color += vLightIntensity * dp / sqrtf(l2);
-						
-//						// specular
-//						if (bReflection)
-//							cReflection += pLight->Intensity(P, P + R * dist);
-					}
-				}
-			}
-		}
+		AddLighting(res.color, P, normal, tr, pMaterial, mc, bumpZ);
 
-		res.color.Scale(diffuse);
+		res.color.Scale(pMaterial->Diffuse(mc));
 	}
 
 	if (bTransmission)

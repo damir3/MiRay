@@ -69,6 +69,12 @@ public:
 	ColorF GetPixel(int x, int y) const;
 	ColorF GetPixel(float u, float v) const;
 
+	Vec3 GetPixelColor(int x, int y) const;
+	Vec3 GetPixelColor(float u, float v) const;
+
+	float GetPixelOpacity(int x, int y) const;
+	float GetPixelOpacity(float u, float v) const;
+
 	const std::string & Name() const { return m_name; }
 
 	int Width() const { return m_width; }

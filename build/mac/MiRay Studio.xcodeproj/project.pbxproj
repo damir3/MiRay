@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		260418BF1903FAB900B74A86 /* AppController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 260418BE1903FAB900B74A86 /* AppController.mm */; };
 		262585511771C090006FD438 /* libcommon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854D1771C090006FD438 /* libcommon.a */; };
 		262585521771C090006FD438 /* libresources.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854E1771C090006FD438 /* libresources.a */; };
 		262585531771C090006FD438 /* librt.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2625854F1771C090006FD438 /* librt.a */; };
@@ -16,6 +17,19 @@
 		2646ED1518493C350071CBB0 /* libfbxsdk.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2646ED1318493C1D0071CBB0 /* libfbxsdk.dylib */; };
 		264A4E21172D2E1100B85FA0 /* SceneView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 264A4E20172D2E1100B85FA0 /* SceneView.mm */; };
 		264A4F24172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 in Frameworks */ = {isa = PBXBuildFile; fileRef = 264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */; };
+		2665567F191105970073BDA8 /* Dark Green Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655663191105820073BDA8 /* Dark Green Glass.xml */; };
+		26655680191105970073BDA8 /* Frosted Blue Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655664191105820073BDA8 /* Frosted Blue Glass.xml */; };
+		26655681191105970073BDA8 /* Frosted Green Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655665191105820073BDA8 /* Frosted Green Glass.xml */; };
+		26655682191105970073BDA8 /* Frosted Light Blue Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655666191105820073BDA8 /* Frosted Light Blue Glass.xml */; };
+		26655683191105980073BDA8 /* Light Blue Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655667191105820073BDA8 /* Light Blue Glass.xml */; };
+		26655684191105980073BDA8 /* Light Green Glass.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655668191105820073BDA8 /* Light Green Glass.xml */; };
+		2665568D191106080073BDA8 /* Dark Silver.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2665566A191105820073BDA8 /* Dark Silver.xml */; };
+		2665568E191106080073BDA8 /* Gold.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2665566B191105820073BDA8 /* Gold.xml */; };
+		2665568F191106080073BDA8 /* Matte Gold.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2665566C191105820073BDA8 /* Matte Gold.xml */; };
+		26655690191106080073BDA8 /* Matte Silver.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2665566D191105820073BDA8 /* Matte Silver.xml */; };
+		26655691191106080073BDA8 /* Silver.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2665566E191105820073BDA8 /* Silver.xml */; };
+		266556931911061C0073BDA8 /* Black Plastic.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655670191105820073BDA8 /* Black Plastic.xml */; };
+		266556941911061C0073BDA8 /* White Plastic.xml in CopyFiles */ = {isa = PBXBuildFile; fileRef = 26655671191105820073BDA8 /* White Plastic.xml */; };
 		26870840172D2A3D00D46007 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2687083F172D2A3D00D46007 /* Cocoa.framework */; };
 		2687084A172D2A3D00D46007 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 26870848172D2A3D00D46007 /* InfoPlist.strings */; };
 		2687084C172D2A3D00D46007 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 2687084B172D2A3D00D46007 /* main.mm */; };
@@ -42,6 +56,46 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		26655660191105570073BDA8 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Materials/Glass;
+			dstSubfolderSpec = 7;
+			files = (
+				2665567F191105970073BDA8 /* Dark Green Glass.xml in CopyFiles */,
+				26655680191105970073BDA8 /* Frosted Blue Glass.xml in CopyFiles */,
+				26655681191105970073BDA8 /* Frosted Green Glass.xml in CopyFiles */,
+				26655682191105970073BDA8 /* Frosted Light Blue Glass.xml in CopyFiles */,
+				26655683191105980073BDA8 /* Light Blue Glass.xml in CopyFiles */,
+				26655684191105980073BDA8 /* Light Green Glass.xml in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2665568C191105F70073BDA8 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Materials/Metal;
+			dstSubfolderSpec = 7;
+			files = (
+				2665568D191106080073BDA8 /* Dark Silver.xml in CopyFiles */,
+				2665568E191106080073BDA8 /* Gold.xml in CopyFiles */,
+				2665568F191106080073BDA8 /* Matte Gold.xml in CopyFiles */,
+				26655690191106080073BDA8 /* Matte Silver.xml in CopyFiles */,
+				26655691191106080073BDA8 /* Silver.xml in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		266556921911060C0073BDA8 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Materials/Plastic;
+			dstSubfolderSpec = 7;
+			files = (
+				266556931911061C0073BDA8 /* Black Plastic.xml in CopyFiles */,
+				266556941911061C0073BDA8 /* White Plastic.xml in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		26EE58DE176AE6810071FFF7 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -58,6 +112,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		260418BD1903FAB900B74A86 /* AppController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppController.h; sourceTree = "<group>"; };
+		260418BE1903FAB900B74A86 /* AppController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AppController.mm; sourceTree = "<group>"; };
 		2625854D1771C090006FD438 /* libcommon.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcommon.a; path = build/Release/libcommon.a; sourceTree = "<group>"; };
 		2625854E1771C090006FD438 /* libresources.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresources.a; path = build/Release/libresources.a; sourceTree = "<group>"; };
 		2625854F1771C090006FD438 /* librt.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = librt.a; path = build/Release/librt.a; sourceTree = "<group>"; };
@@ -66,6 +122,19 @@
 		264A4E1F172D2E1100B85FA0 /* SceneView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneView.h; sourceTree = "<group>"; };
 		264A4E20172D2E1100B85FA0 /* SceneView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = SceneView.mm; sourceTree = "<group>"; };
 		264A4F23172D2EC100B85FA0 /* libfreeimage-3.15.4.dylib-x86_64 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libfreeimage-3.15.4.dylib-x86_64"; path = "../../ThirdParty/FreeImage/libfreeimage-3.15.4.dylib-x86_64"; sourceTree = "<group>"; };
+		26655663191105820073BDA8 /* Dark Green Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Dark Green Glass.xml"; sourceTree = "<group>"; };
+		26655664191105820073BDA8 /* Frosted Blue Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Frosted Blue Glass.xml"; sourceTree = "<group>"; };
+		26655665191105820073BDA8 /* Frosted Green Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Frosted Green Glass.xml"; sourceTree = "<group>"; };
+		26655666191105820073BDA8 /* Frosted Light Blue Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Frosted Light Blue Glass.xml"; sourceTree = "<group>"; };
+		26655667191105820073BDA8 /* Light Blue Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Light Blue Glass.xml"; sourceTree = "<group>"; };
+		26655668191105820073BDA8 /* Light Green Glass.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Light Green Glass.xml"; sourceTree = "<group>"; };
+		2665566A191105820073BDA8 /* Dark Silver.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Dark Silver.xml"; sourceTree = "<group>"; };
+		2665566B191105820073BDA8 /* Gold.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Gold.xml; sourceTree = "<group>"; };
+		2665566C191105820073BDA8 /* Matte Gold.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Matte Gold.xml"; sourceTree = "<group>"; };
+		2665566D191105820073BDA8 /* Matte Silver.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Matte Silver.xml"; sourceTree = "<group>"; };
+		2665566E191105820073BDA8 /* Silver.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = Silver.xml; sourceTree = "<group>"; };
+		26655670191105820073BDA8 /* Black Plastic.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Black Plastic.xml"; sourceTree = "<group>"; };
+		26655671191105820073BDA8 /* White Plastic.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "White Plastic.xml"; sourceTree = "<group>"; };
 		2687083C172D2A3D00D46007 /* MiRay Studio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MiRay Studio.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2687083F172D2A3D00D46007 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		26870842172D2A3D00D46007 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -107,6 +176,50 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		26655661191105820073BDA8 /* Materials */ = {
+			isa = PBXGroup;
+			children = (
+				26655662191105820073BDA8 /* Glass */,
+				26655669191105820073BDA8 /* Metal */,
+				2665566F191105820073BDA8 /* Plastic */,
+			);
+			path = Materials;
+			sourceTree = "<group>";
+		};
+		26655662191105820073BDA8 /* Glass */ = {
+			isa = PBXGroup;
+			children = (
+				26655663191105820073BDA8 /* Dark Green Glass.xml */,
+				26655664191105820073BDA8 /* Frosted Blue Glass.xml */,
+				26655665191105820073BDA8 /* Frosted Green Glass.xml */,
+				26655666191105820073BDA8 /* Frosted Light Blue Glass.xml */,
+				26655667191105820073BDA8 /* Light Blue Glass.xml */,
+				26655668191105820073BDA8 /* Light Green Glass.xml */,
+			);
+			path = Glass;
+			sourceTree = "<group>";
+		};
+		26655669191105820073BDA8 /* Metal */ = {
+			isa = PBXGroup;
+			children = (
+				2665566A191105820073BDA8 /* Dark Silver.xml */,
+				2665566B191105820073BDA8 /* Gold.xml */,
+				2665566C191105820073BDA8 /* Matte Gold.xml */,
+				2665566D191105820073BDA8 /* Matte Silver.xml */,
+				2665566E191105820073BDA8 /* Silver.xml */,
+			);
+			path = Metal;
+			sourceTree = "<group>";
+		};
+		2665566F191105820073BDA8 /* Plastic */ = {
+			isa = PBXGroup;
+			children = (
+				26655670191105820073BDA8 /* Black Plastic.xml */,
+				26655671191105820073BDA8 /* White Plastic.xml */,
+			);
+			path = Plastic;
+			sourceTree = "<group>";
+		};
 		26870833172D2A3D00D46007 = {
 			isa = PBXGroup;
 			children = (
@@ -156,6 +269,8 @@
 			children = (
 				264A4E1F172D2E1100B85FA0 /* SceneView.h */,
 				264A4E20172D2E1100B85FA0 /* SceneView.mm */,
+				260418BD1903FAB900B74A86 /* AppController.h */,
+				260418BE1903FAB900B74A86 /* AppController.mm */,
 				26870851172D2A3D00D46007 /* AppDelegate.h */,
 				26870852172D2A3D00D46007 /* AppDelegate.mm */,
 				26870854172D2A3D00D46007 /* MainMenu.xib */,
@@ -168,6 +283,7 @@
 		26870846172D2A3D00D46007 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				26655661191105820073BDA8 /* Materials */,
 				26EE58DC176AE59C0071FFF7 /* kernel.cl */,
 				26EE58E0176AEE890071FFF7 /* studio.hdr */,
 				26DE4AE31774210200B3F45F /* cup.fbx */,
@@ -193,6 +309,9 @@
 				2687083A172D2A3D00D46007 /* Resources */,
 				262BADA91764874500D91D70 /* CopyFiles */,
 				26EE58DE176AE6810071FFF7 /* CopyFiles */,
+				26655660191105570073BDA8 /* CopyFiles */,
+				2665568C191105F70073BDA8 /* CopyFiles */,
+				266556921911060C0073BDA8 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -249,6 +368,7 @@
 			files = (
 				2687084C172D2A3D00D46007 /* main.mm in Sources */,
 				26870853172D2A3D00D46007 /* AppDelegate.mm in Sources */,
+				260418BF1903FAB900B74A86 /* AppController.mm in Sources */,
 				264A4E21172D2E1100B85FA0 /* SceneView.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
