@@ -75,7 +75,6 @@ class MaterialLayerImpl : public IMaterialLayer
 	std::string			m_bumpMapName;
 	ImagePtr			m_pNormalmap;
 	float				m_bumpDepth;
-	float				m_bumpTextureDepth;
 
 public:
 	MaterialLayerImpl();
@@ -106,9 +105,9 @@ public:
 	Vec3 AbsorbtionCoefficient() const { return m_absorbtionCoefficient; }
 
 	bool HasBumpMap() const { return m_pNormalmap != NULL; }
-	float BumpDepth() const { return m_bumpTextureDepth; }
-	float BumpMap(const Vec2 &tc) const { return m_pNormalmap->GetPixelOpacity(tc.x, tc.y); }
-	Vec3 NormalMapNormal(const sMaterialContext & mc) const
+	float BumpDepth() const { return m_bumpDepth; }
+	float BumpMapDepth(const Vec2 &tc) const { return m_pNormalmap->GetPixelOpacity(tc.x, tc.y); }
+	Vec3 BumpMapNormal(const sMaterialContext & mc) const
 	{
 		Vec3 nm = m_pNormalmap->GetPixelColor(mc.tc.x, mc.tc.y) * 2.f - mr::Vec3(1.f);
 		return mc.tangent * nm.x + mc.binormal * nm.y + mc.normal * nm.z;
@@ -143,8 +142,7 @@ MaterialLayerImpl::MaterialLayerImpl()
 	, m_absorption(1.f)
 	, m_absorptionDepth(10.f)
 	, m_absorbtionCoefficient(0.f)
-	, m_bumpDepth(8.f)
-	, m_bumpTextureDepth(0.f)
+	, m_bumpDepth(1.f)
 {
 }
 
@@ -351,11 +349,7 @@ void MaterialLayerImpl::LoadTextures(ImageManager * pImageManager)
 	LoadTexture(m_refractionExitColor, pImageManager);
 
 	if (!m_bumpMapName.empty() && m_bumpDepth > 0.f)
-	{
-		m_pNormalmap = pImageManager->LoadNormalmap(m_bumpMapName.c_str(), m_bumpDepth);
-		if (m_pNormalmap)
-			m_bumpTextureDepth = m_bumpDepth / m_pNormalmap->Width();
-	}
+		m_pNormalmap = pImageManager->LoadNormalmap(m_bumpMapName.c_str());
 }
 
 // ------------------------------------------------------------------------ //

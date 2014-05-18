@@ -157,22 +157,25 @@ ImagePtr ImageManager::Load(const char * strFilename)
 //	unsigned dpmY = FreeImage_GetDotsPerMeterY(dib);
 	FREE_IMAGE_TYPE imageType = FreeImage_GetImageType(dib);
 	FREE_IMAGE_COLOR_TYPE colorType = FreeImage_GetColorType(dib);
-	if ((colorType == FIC_RGB) || (colorType == FIC_RGBALPHA))
+	if ((colorType == FIC_RGB) || (colorType == FIC_RGBALPHA) || (colorType == FIC_PALETTE))
 	{
 		Image::eType it = Image::TYPE_NONE;
-		switch (imageType)
+		if (colorType != FIC_PALETTE)
 		{
-			case FIT_BITMAP:
-				if (bpp == 24)
-					it = Image::TYPE_3B;
-				else if (bpp == 32)
-					it = Image::TYPE_4B;
-				break;
-			case FIT_RGB16: it = Image::TYPE_3W; break;
-			case FIT_RGBA16: it = Image::TYPE_4W; break;
-			case FIT_RGBF: it = Image::TYPE_3F; break;
-			case FIT_RGBAF: it = Image::TYPE_4F; break;
-			default: break;
+			switch (imageType)
+			{
+				case FIT_BITMAP:
+					if (bpp == 24)
+						it = Image::TYPE_3B;
+					else if (bpp == 32)
+						it = Image::TYPE_4B;
+					break;
+				case FIT_RGB16:		it = Image::TYPE_3W; break;
+				case FIT_RGBA16:	it = Image::TYPE_4W; break;
+				case FIT_RGBF:		it = Image::TYPE_3F; break;
+				case FIT_RGBAF:		it = Image::TYPE_4F; break;
+				default: break;
+			}
 		}
 
 		if (it == Image::TYPE_NONE)
@@ -214,8 +217,45 @@ ImagePtr ImageManager::Load(const char * strFilename)
 			}
 		}
 	}
-	else if (colorType == FIC_PALETTE)
+	else if (colorType == FIC_MINISBLACK) // greyscale
 	{
+		Image::eType it = Image::TYPE_NONE;
+		switch (imageType)
+		{
+			case FIT_BITMAP:
+				if (bpp == 8)
+					it = Image::TYPE_1B;
+				break;
+			case FIT_UINT16:	it = Image::TYPE_1W; break;
+			case FIT_FLOAT:		it = Image::TYPE_1F; break;
+			default: break;
+		}
+
+		if (it == Image::TYPE_NONE)
+		{
+			it = Image::TYPE_1B;
+			FIBITMAP * dibNew = FreeImage_ConvertToGreyscale(dib);
+			FreeImage_Unload(dib);
+			dib = dibNew;
+		}
+
+		byte * bits = FreeImage_GetBits(dib);
+		if (bits != nullptr)
+		{
+			spImage.reset(new Image(*this, strFilename));
+			
+			m_resources[spImage->Name()] = spImage;
+			
+			if (spImage->Create(width, height, it))
+			{
+				uint32 srcPitch = FreeImage_GetPitch(dib);
+				uint32 destPixelSize = spImage->PixelSize();
+				uint32 destPitch = static_cast<uint32>(spImage->Width() * destPixelSize);
+				uint32 pitch = std::min(srcPitch, destPitch);
+				for (uint32 y = 0 ; y < height; y++)
+					memcpy(spImage->DataB() + y * destPitch, bits + (height - y - 1) * srcPitch, pitch);
+			}
+		}
 	}
 
 	FreeImage_Unload(dib);
@@ -316,7 +356,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 	return res;
 }
 
-ImagePtr ImageManager::LoadNormalmap(const char * strFilename, float bumpDepth)
+ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
 {
 	if (!strFilename || !*strFilename)
 		return nullptr;
@@ -343,6 +383,7 @@ ImagePtr ImageManager::LoadNormalmap(const char * strFilename, float bumpDepth)
 
 	const int w = pImage->Width();
 	const int h = pImage->Height();
+	const Vec2 scale((float)w / 256.f, (float)h / 256.f);
 	spNormalmapImage->Create(w, h, Image::TYPE_4F);
 
 	for (int y = 0; y < h; y++)
@@ -350,11 +391,11 @@ ImagePtr ImageManager::LoadNormalmap(const char * strFilename, float bumpDepth)
 		for (int x = 0; x < w; x++)
 		{
 			Vec3 normal;
-			normal.x  = pImage->GetPixel(x > 0 ? x - 1 : w - 1, y).r;
-			normal.x -= pImage->GetPixel(x + 1 < w ? x + 1 : 0, y).r;
-			normal.y  = pImage->GetPixel(x, y > 0 ? y - 1 : h - 1).r;
-			normal.y -= pImage->GetPixel(x, y + 1 < h ? y + 1 : 0).r;
-			normal.z = 2.f / bumpDepth;
+			normal.x = (pImage->GetPixel(x > 0 ? x - 1 : w - 1, y).r -
+						pImage->GetPixel(x + 1 < w ? x + 1 : 0, y).r) * scale.x;
+			normal.y = (pImage->GetPixel(x, y > 0 ? y - 1 : h - 1).r -
+						pImage->GetPixel(x, y + 1 < h ? y + 1 : 0).r) * scale.y;
+			normal.z = 1.f / 128.f;
 			normal.Normalize();
 			normal = normal * 0.5f + Vec3(0.5f, 0.5f, 0.5f);
 			spNormalmapImage->SetPixel(x, y, ColorF(normal.x, normal.y, normal.z, pImage->GetPixel(x, y).r));

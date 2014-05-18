@@ -28,7 +28,7 @@ public:
 	ImagePtr Create(int w, int h, Image::eType t);
 	ImagePtr Load(const char * strFilename);
 	ImagePtr CreateCopy(const Image * pSrcImage, Image::eType t);
-	ImagePtr LoadNormalmap(const char * strFilename, float bumpDepth);
+	ImagePtr LoadNormalmap(const char * strFilename);
 
 	enum eFileFormat
 	{

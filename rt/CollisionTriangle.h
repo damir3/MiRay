@@ -182,20 +182,19 @@ public:
 				m_vertices[2].tc * pc.y;
 	}
 
-	void GetTangents(Vec3 & tangent, Vec3 & binormal, const Vec3 & normal) const
+	void GetTangents(Vec3 & tangent, Vec3 & binormal, const Vec3 & normal, float bumpDepth) const
 	{
 		Vec2 dUV1 = m_vertices[1].tc - m_vertices[0].tc;
 		Vec2 dUV2 = m_vertices[2].tc - m_vertices[0].tc;
-		float f = (dUV1.x * dUV2.y - dUV1.y * dUV2.x);
-		//f = 1.f / f;
+		bumpDepth *= dUV1.x * dUV2.y - dUV1.y * dUV2.x;
 
-		tangent = (m_edgeU * dUV2.y - m_edgeV * dUV1.y) * f;
+		tangent = (m_edgeU * dUV2.y - m_edgeV * dUV1.y);
+		tangent *= bumpDepth / tangent.LengthSquared();
 		tangent -= normal * Vec3::Dot(tangent, normal);
-		tangent.Normalize();
 
-		binormal = (m_edgeV * dUV1.x - m_edgeU * dUV2.x) * f;
+		binormal = (m_edgeV * dUV1.x - m_edgeU * dUV2.x);
+		binormal *= bumpDepth / binormal.LengthSquared();
 		binormal -= normal * Vec3::Dot(binormal, normal);
-		binormal.Normalize();
 	}
 
 //	bool CheckTraceCount(uint32 nTraceCount)

@@ -16,7 +16,8 @@ void DrawLine(const Vec3 & p1, const Vec3 & p2, const Color & c, float w);
 void DrawGeosphere(const Vec3 & pos, float r, const Color & c, int lod);
 void DrawCylinder(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, int num);
 void DrawCone(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, int num);
-void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float size);
+void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float l);
+void DrawCircle(const Vec3 & p, const Vec3 & normal, float r1, float r2, const Color & c1, const Color & c2, float borderLineWidth);
 void DrawGizmo(const Matrix & mat, const BBox & bbox);
 void DrawCollisionNode(const class CollisionNode * pCN, byte level);
 

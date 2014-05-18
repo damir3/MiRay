@@ -23,6 +23,7 @@ public:
 		TYPE_1B,
 		TYPE_3B,
 		TYPE_4B,
+		TYPE_1W,
 		TYPE_3W,
 		TYPE_4W,
 		TYPE_1F,
@@ -37,6 +38,7 @@ public:
 			case TYPE_1B: return 1;
 			case TYPE_3B: return 3;
 			case TYPE_4B: return 4;
+			case TYPE_1W: return 2;
 			case TYPE_3W: return 6;
 			case TYPE_4W: return 8;
 			case TYPE_1F: return 4;
@@ -85,6 +87,10 @@ public:
 	{
 		switch (m_type)
 		{
+			case TYPE_1B:
+			case TYPE_1W:
+			case TYPE_1F:
+				return 1;
 			case TYPE_3B:
 			case TYPE_3W:
 			case TYPE_3F:

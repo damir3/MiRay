@@ -209,6 +209,22 @@
 		self.pSceneView->SaveImage([[[panel URL] path] UTF8String]);
 }
 
+- (IBAction)onEditMove:(id)sender {
+	self.pSceneView->SetGizmo(mr::GIZMO_MOVE);
+}
+
+- (IBAction)onEditRotate:(id)sender {
+	self.pSceneView->SetGizmo(mr::GIZMO_ROTATE);
+}
+
+- (IBAction)onEditScale:(id)sender {
+	self.pSceneView->SetGizmo(mr::GIZMO_SCALE);
+}
+
+- (IBAction)onEditDelete:(id)sender {
+	self.pSceneView->DeleteSelection();
+}
+
 - (IBAction)onResetCamera:(id)sender
 {
 	self.pSceneView->ResetCamera();

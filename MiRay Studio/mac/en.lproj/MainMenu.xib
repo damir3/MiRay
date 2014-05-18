@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5053" systemVersion="13C64" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="5053" systemVersion="13C1021" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment defaultVersion="1070" identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="5053"/>
@@ -124,10 +124,42 @@
                         </items>
                     </menu>
                 </menuItem>
+                <menuItem title="Edit" id="6vJ-zz-VG5">
+                    <modifierMask key="keyEquivalentModifierMask"/>
+                    <menu key="submenu" title="Edit" id="VEh-nQ-769">
+                        <items>
+                            <menuItem title="Move" keyEquivalent="m" id="hIp-GV-ckl">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="onEditMove:" target="mob-8J-rfA" id="rJN-Go-yhc"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Rotate" keyEquivalent="r" id="qBB-te-Z0u">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="onEditRotate:" target="mob-8J-rfA" id="WBG-vs-gmS"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Scale" keyEquivalent="s" id="Kam-I6-6G0">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="onEditScale:" target="mob-8J-rfA" id="QiK-sf-2JD"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="pbW-Fy-MYC"/>
+                            <menuItem title="Delete" keyEquivalent="" id="a5B-nK-agr">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="onEditDelete:" target="mob-8J-rfA" id="onW-LE-Psv"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
                 <menuItem title="View" id="295">
                     <menu key="submenu" title="View" id="296">
                         <items>
-                            <menuItem title="Reset Camera" keyEquivalent="r" id="572">
+                            <menuItem title="Reset Camera" keyEquivalent="c" id="572">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="onResetCamera:" target="mob-8J-rfA" id="dll-nu-zV3"/>

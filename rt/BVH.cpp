@@ -61,6 +61,7 @@ bool BVH::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult & tr)
 {
 	++m_nRayCounter;
 
+	tr.fraction = 1.f;
 	tr.pos = vTo;
 	bool res = false;
 	for (CollisionVolumeArray::iterator it = m_volumes.begin(), itEnd = m_volumes.end(); it != itEnd; ++it)

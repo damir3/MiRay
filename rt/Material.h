@@ -51,8 +51,8 @@ public:
 
 	virtual bool HasBumpMap() const = 0;
 	virtual float BumpDepth() const = 0;
-	virtual float BumpMap(const Vec2 &tc) const = 0;
-	virtual Vec3 NormalMapNormal(const sMaterialContext & mc) const = 0;
+	virtual float BumpMapDepth(const Vec2 &tc) const = 0;
+	virtual Vec3 BumpMapNormal(const sMaterialContext & mc) const = 0;
 };
 
 class IMaterial

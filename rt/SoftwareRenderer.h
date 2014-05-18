@@ -85,7 +85,8 @@ class SoftwareRenderer
 	ColorF EnvironmentColor(const Vec3 & v) const;
 	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, sMaterialStack & ms) const;
 	ColorF RenderPixel(const Vec2 & p) const;
-	inline void AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples) const;
+	inline void AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples, const TraceResult &tr,
+									const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const;
 	inline void AddLighting(Vec3 &color, const Vec3 &P, const Vec3 &N, const TraceResult &tr,
 							const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const;
 

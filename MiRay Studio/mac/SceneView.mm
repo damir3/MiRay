@@ -115,20 +115,6 @@
 			default: return;
 		}
 	}
-	else
-	{
-		switch (theEvent.keyCode)
-		{
-			case kVK_Delete: self.pSceneView->DeleteSelection(); break;
-			default: return;
-		}
-	}
-
-	//	if (theEvent.keyCode == kVK_Space)
-	//	{
-	//		float tm = self.pSceneView->RenderScene();
-	//		NSLog(@"%f", tm);
-	//	}
 }
 
 - (void)mouseDown:(NSEvent *)theEvent

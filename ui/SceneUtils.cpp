@@ -328,7 +328,76 @@ void DrawCone(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, i
 	glEnd();
 }
 
+void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float l)
+{
+	float r1 = l * 0.02f;
+	float r2 = l * 0.04f;
 	
+	Vec3 p1 = pos + dir * (l * 0.7f);
+	Vec3 p2 = pos + dir * l;
+	//DrawLine(pos, p1, c, 1.f);
+	DrawCylinder(pos, p1, r1, c, 8);
+	DrawCone(p1, p2, r2, c, 16);
+}
+
+void DrawCircle(const Vec3 & p, const Vec3 & normal, float r1, float r2, const Color & c1, const Color & c2, float borderLineWidth)
+{
+	enum {NUM_SEGMENTS = 64};
+	Vec3 points[2][NUM_SEGMENTS];
+	Vec3 vDirX = normal.Perpendicular();
+	Vec3 vDirY = Vec3::Cross(normal, vDirX);
+	for (int i = 0; i < NUM_SEGMENTS; i++)
+	{
+		float a = i * (M_2PIf / NUM_SEGMENTS);
+		float ca = cosf(a), sa = sinf(a);
+		points[0][i] = p + vDirX * (r1 * ca) + vDirY * (r1 * sa);
+		points[1][i] = p + vDirX * (r2 * ca) + vDirY * (r2 * sa);
+	}
+	
+	if (c2.a > 0 && r1 != r2)
+	{
+		glColor4ubv(c2);
+		glDisable(GL_CULL_FACE);
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int i = 0; i < NUM_SEGMENTS; i++)
+		{
+			glVertex3fv(points[0][i]);
+			glVertex3fv(points[1][i]);
+		}
+		glVertex3fv(points[0][0]);
+		glVertex3fv(points[1][0]);
+		glEnd();
+		glEnable(GL_CULL_FACE);
+		
+	}
+	
+	if (c1.a > 0 && borderLineWidth > 0.f)
+	{
+		glEnable(GL_LINE_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		glLineWidth(borderLineWidth);
+		
+		glColor4ubv(c1);
+		glBegin(GL_LINE_LOOP);
+		for (int i = 0; i < NUM_SEGMENTS; i++)
+			glVertex3fv(points[0][i]);
+
+		glVertex3fv(points[0][0]);
+		glEnd();
+		if (r1 != r2)
+		{
+			glBegin(GL_LINE_LOOP);
+			for (int i = 0; i < NUM_SEGMENTS; i++)
+				glVertex3fv(points[1][i]);
+
+			glVertex3fv(points[1][0]);
+			glEnd();
+		}
+		
+		glDisable(GL_LINE_SMOOTH);
+	}
+}
+
 void DrawCollisionNode(const CollisionNode * pCN, byte level)
 {
 	if (!pCN)

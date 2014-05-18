@@ -81,6 +81,7 @@ void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 	if (m_pRenderer && m_pRenderMap && m_pBuffer)
 	{
 		m_pRenderer->SetBackgroundColor(m_bgColor);
+		m_pRenderer->SetEnvironmentColor(m_bgColor);
 		m_pRenderer->SetEnvironmentMap(m_pEnvironmentMap);
 		m_bStop = false;
 		m_thread.reset(new Thread(&StaticThreadFunc, this));
@@ -126,11 +127,11 @@ void RenderThread::ThreadFunc()
 
 		if (!m_bStop || !m_nFrameCount)
 		{// update render map
-			if (m_mode == 0)
-				printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(),
-					   m_numCPU, (tm2 - tm1) * 1000.0, m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
-			else
-				printf("%d: %dx%d %f ms\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
+//			if (m_mode == 0)
+//				printf("%d: %dx%d (%d threads) %.2f ms, %.3f mrps\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(),
+//					   m_numCPU, (tm2 - tm1) * 1000.0, m_pRenderer->RaysCounter() * 1e-6 / (tm2 - tm1));
+//			else
+//				printf("%d: %dx%d %f ms\n", m_nFrameCount, rcViewport.Width(), rcViewport.Height(), (tm2 - tm1) * 1000.0);
 
 			m_mutex.lock();
 			memcpy(m_pRenderMap->Data(), m_pBuffer->Data(), rcViewport.Height() * m_pRenderMap->Width() * m_pRenderMap->PixelSize());

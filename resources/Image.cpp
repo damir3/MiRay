@@ -141,6 +141,11 @@ ColorF Image::GetPixel(int x, int y) const
 	assert(y >= 0 && y < m_height);
 	switch (m_type)
 	{
+		case TYPE_1B:
+		{
+			float c = B2F(m_pData[y * m_width + x]);
+			return ColorF(c, c, c);
+		}
 		case TYPE_3B:
 		{
 			const byte * pData = m_pData + (y * m_width + x) * 3;
@@ -151,6 +156,11 @@ ColorF Image::GetPixel(int x, int y) const
 			const byte * pData = m_pData + (y * m_width + x) * 4;
 			return ColorF(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]), B2F(pData[3]));
 		}
+		case TYPE_1W:
+		{
+			float c = W2F(reinterpret_cast<uint16 *>(m_pData)[y * m_width + x]);
+			return ColorF(c, c, c);
+		}
 		case TYPE_3W:
 		{
 			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
@@ -160,6 +170,11 @@ ColorF Image::GetPixel(int x, int y) const
 		{
 			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 4;
 			return ColorF(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]), W2F(pData[3]));
+		}
+		case TYPE_1F:
+		{
+			float c = reinterpret_cast<float *>(m_pData)[y * m_width + x];
+			return ColorF(c, c, c);
 		}
 		case TYPE_3F:
 		{
@@ -172,7 +187,7 @@ ColorF Image::GetPixel(int x, int y) const
 			return ColorF(pData[0], pData[1], pData[2], pData[3]);
 		}
 		default:
-			return ColorF::Null;
+			return ColorF::White;
 	}
 }
 
@@ -219,6 +234,11 @@ Vec3 Image::GetPixelColor(int x, int y) const
 	assert(y >= 0 && y < m_height);
 	switch (m_type)
 	{
+		case TYPE_1B:
+		{
+			float c = B2F(m_pData[y * m_width + x]);
+			return Vec3(c, c, c);
+		}
 		case TYPE_3B:
 		{
 			const byte * pData = m_pData + (y * m_width + x) * 3;
@@ -229,6 +249,11 @@ Vec3 Image::GetPixelColor(int x, int y) const
 			const byte * pData = m_pData + (y * m_width + x) * 4;
 			return Vec3(B2F(pData[0]), B2F(pData[1]), B2F(pData[2]));
 		}
+		case TYPE_1W:
+		{
+			float c = W2F(reinterpret_cast<uint16 *>(m_pData)[y * m_width + x]);
+			return Vec3(c, c, c);
+		}
 		case TYPE_3W:
 		{
 			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
@@ -238,6 +263,11 @@ Vec3 Image::GetPixelColor(int x, int y) const
 		{
 			const uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 4;
 			return Vec3(W2F(pData[0]), W2F(pData[1]), W2F(pData[2]));
+		}
+		case TYPE_1F:
+		{
+			float c = reinterpret_cast<float *>(m_pData)[y * m_width + x];
+			return Vec3(c, c, c);
 		}
 		case TYPE_3F:
 		{
@@ -250,7 +280,7 @@ Vec3 Image::GetPixelColor(int x, int y) const
 			return Vec3(pData[0], pData[1], pData[2]);
 		}
 		default:
-			return Vec3::Null;
+			return Vec3(1.f);
 	}
 }
 

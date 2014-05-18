@@ -14,6 +14,13 @@
 using namespace mr;
 
 static const float MIN_NORMALS_DP = cosf(DEG2RAD(85.f));
+enum
+{
+	BUMP_LINEAR_SEARCH_STEPS = 32,
+	BUMP_BINARY_SEARCH_STEPS = 5,
+	LIGHTING_BUMP_LINEAR_SEARCH_STEPS = 24,
+	BUMP_AMBIENT_OCCLUSION_LINEAR_SEARCH_STEPS = 16,
+};
 
 // ------------------------------------------------------------------------ //
 
@@ -124,25 +131,6 @@ void SoftwareRenderer::Render(IImage & image, const RectI * pViewportRect,
 //	numThreads = 1;
 	for (int i = 0; i < numThreads; i++)
 		m_renderThreads.push_back(new Thread(&ThreadFunc, this));
-
-//	printf("x1\n");
-
-//	RectI rc;
-//	while (GetNextArea(rc))
-//		RenderArea(rc);
-
-//	printf("x2\n");
-
-//	ColorF cScale(0.5f, 0.5f, 0.5f, 1.f);
-//	for (int y = 0; y < image.Height(); y++)
-//	{
-//		for (int x = 0; x < image.Width(); x++)
-//		{
-//			ColorF c = image.GetPixel(x, y) * cScale;
-//			image.SetPixel(x, y, c);
-//		}
-//	}
-//	printf("x3\n");
 }
 
 void SoftwareRenderer::Join()
@@ -297,19 +285,22 @@ bool SoftwareRenderer::sMaterialStack::CheckTriangle(const CollisionTriangle *pT
 
 // ------------------------------------------------------------------------ //
 
-float TraceBumpMap(const IMaterialLayer * pMaterial, Vec2 & tc, Vec3 & dir, int numLinearSearchSteps, int numBinarySearchSteps)
+Vec2 TraceBumpMap(Vec2 & tc, const Vec3 & dir,
+				  const IMaterialLayer * pMaterial, const sMaterialContext & mc,
+				  int numLinearSearchSteps, int numBinarySearchSteps)
 {
-	const float bumpDepth = pMaterial->BumpDepth();
-	dir.x *= bumpDepth;
-	dir.y *= bumpDepth;
-	Vec3 step = dir * (1.f / numLinearSearchSteps);
+	Vec3 dirTS(Vec3::Dot(dir, mc.tangent), Vec3::Dot(dir, mc.binormal), Vec3::Dot(dir, mc.normal));
+	float dpDN = dirTS.z;
+	dirTS.Normalize();
+	dirTS /= fabsf(dirTS.z);
+	Vec3 step = dirTS * (1.f / numLinearSearchSteps);
 
-	bool backface = dir.z > 0.f;
-	Vec3 pos = backface ? Vec3(tc.x - dir.x, tc.y - dir.y, 0.f) : Vec3(tc.x, tc.y, 1.f);
+	bool backface = dpDN > 0.f;
+	Vec3 pos = backface ? Vec3(tc.x - dirTS.x, tc.y - dirTS.y, 0.f) : Vec3(tc.x, tc.y, 1.f);
 
 	for (int i = 0; i < numLinearSearchSteps; i++)
 	{
-		if ((pos.z < pMaterial->BumpMap(pos)) ^ backface)
+		if ((pos.z < pMaterial->BumpMapDepth(pos)) ^ backface)
 			break;
 		
 		pos += step;
@@ -320,18 +311,19 @@ float TraceBumpMap(const IMaterialLayer * pMaterial, Vec2 & tc, Vec3 & dir, int 
 		step *= 0.5f;
 		pos -= step;
 
-		if ((pos.z > pMaterial->BumpMap(pos)) ^ backface)
+		if ((pos.z > pMaterial->BumpMapDepth(pos)) ^ backface)
 			pos += step;
 	}
 
 	tc = pos;
 
-	return pos.z;
+	return Vec2(pos.z, dpDN);
 }
 
 // ------------------------------------------------------------------------ //
 
-inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples) const
+inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples, const TraceResult &tr,
+												  const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const
 {
 	Vec3 ambientOcclusion = Vec3::Null;
 	for (int i = 0; i < numSamples; i++)
@@ -341,6 +333,17 @@ inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, co
 			vRandDir = RandomDirection(N);
 		} while (Vec3::Dot(vRandDir, TN) <= 0.f);
 		
+		if (pMaterial->HasBumpMap())
+		{
+			Vec3 dir = vRandDir.TransformedNormal(tr.pVolume->InverseTransformation());
+			Vec2 tc = tr.pTriangle->GetTexCoord(tr.localPos, dir);
+
+			const float Z_EPSILON = 1.f / BUMP_AMBIENT_OCCLUSION_LINEAR_SEARCH_STEPS - 1.f / BUMP_LINEAR_SEARCH_STEPS;
+			Vec2 res = TraceBumpMap(tc, -dir, pMaterial, mc, BUMP_AMBIENT_OCCLUSION_LINEAR_SEARCH_STEPS, 0) - Z_EPSILON;
+			if ((res.y < 0.f) ? (res.x > bumpZ) : (-res.x > bumpZ))
+				continue;
+		}
+		
 		TraceResult otl;
 		if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
 		{
@@ -349,7 +352,7 @@ inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, co
 		}
 	}
 	color += ambientOcclusion * (m_ambientOcclusion / numSamples);
-//	color += (N.z * 0.3f + 0.7f);
+//	color += Vec3(m_envColor) * (N.z * 0.3f + 0.7f);
 
 }
 
@@ -362,43 +365,48 @@ inline void SoftwareRenderer::AddLighting(Vec3 &color, const Vec3 &P, const Vec3
 		Vec3 lightPos = pLight->Position(P);
 		Vec3 lightDir = lightPos - P;
 		float l2 = lightDir.LengthSquared();
-		if (l2 <= 0.f)
+		if (l2 == 0.f)
 			continue;
-		
+
 		float dp = Vec3::Dot(N, lightDir);
 		if (dp <= 0.f)
 			continue;
-		
+
+		Vec3 vLightIntensity = pLight->Intensity(l2);
+		if (vLightIntensity == Vec3::Null)
+			continue;
+
 		if (pMaterial->HasBumpMap())
 		{
-			Vec3 localLightPos = lightPos.TransformedCoord(tr.pVolume->InverseTransformation());
-			Vec3 dir = tr.localPos - localLightPos;
-			Vec2 tc = tr.pTriangle->GetTexCoord(localLightPos, dir);
-//			mc.tc = tc;
-//			res.color = pMaterial->Diffuse(mc);
-//			break;
-			
-			Vec3 dirTS(Vec3::Dot(dir, mc.tangent), Vec3::Dot(dir, mc.binormal), Vec3::Dot(dir, mc.normal));
-			dirTS.Normalize();
-			dirTS /= fabs(dirTS.z);
-			
-			float z = TraceBumpMap(pMaterial, tc, dirTS, 24, 5);
-			if ((dirTS.z < 0.f) ? (z > bumpZ) : (-z > bumpZ))
+			Vec3 dir = tr.localPos - lightPos.TransformedCoord(tr.pVolume->InverseTransformation());
+			Vec2 tc = tr.pTriangle->GetTexCoord(tr.localPos, dir);
+
+			const float Z_EPSILON = 1.f / LIGHTING_BUMP_LINEAR_SEARCH_STEPS - 1.f / BUMP_LINEAR_SEARCH_STEPS;
+			Vec2 res = TraceBumpMap(tc, dir, pMaterial, mc, LIGHTING_BUMP_LINEAR_SEARCH_STEPS, 0) - Z_EPSILON;
+			if ((res.y < 0.f) ? (res.x > bumpZ) : (-res.x > bumpZ))
 				continue;
 		}
-		
+
 		TraceResult ltr;
 		if (m_scene.TraceRay(P, lightPos, ltr))
 			continue;
 
 		// diffuse
-		Vec3 vLightIntensity = pLight->Intensity(l2);
-		if (vLightIntensity != Vec3::Null)
-			color += vLightIntensity * dp / sqrtf(l2);
-		
+		color += vLightIntensity * (dp / sqrtf(l2));
+
 //		// specular
 //		if (bReflection)
 //			cReflection += pLight->Intensity(P, P + R * dist);
+	}
+}
+
+inline void FixNormal(Vec3 &normal, const Vec3 &triangleNormal)
+{
+	float dp = Vec3::Dot(normal, triangleNormal);
+	if (dp <= MIN_NORMALS_DP)
+	{
+		normal -= (dp - MIN_NORMALS_DP)  * triangleNormal;
+		normal.Normalize();
 	}
 }
 
@@ -422,7 +430,6 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		if ((nMaterialIndex < 0) ^ tr.backface)
 			break;
 
-		tr.fraction = 0.f;
 		vOrigin = tr.pos + I * 1e-6f;
 	}
 
@@ -435,41 +442,59 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	mc.normal = Vec3::Normalize(tr.pTriangle->GetNormal(tr.pc)); // local space normal
 
 	Vec3 normal = mc.normal;
-	float bumpZ;
+	Vec2 bumpRes;
 
 	if (pMaterial->HasBumpMap())
 	{// bump mapping
-		tr.pTriangle->GetTangents(mc.tangent, mc.binormal, mc.normal);
+		tr.pTriangle->GetTangents(mc.tangent, mc.binormal, mc.normal, pMaterial->BumpDepth());
 
 		mc.dir.Normalize();
-		Vec3 dirTS(Vec3::Dot(mc.dir, mc.tangent), Vec3::Dot(mc.dir, mc.binormal), Vec3::Dot(mc.dir, mc.normal));
-		dirTS.Normalize();
 
-		float rayLength = 1.f / fabs(dirTS.z);
-		dirTS *= rayLength;
+		bumpRes = TraceBumpMap(mc.tc, mc.dir, pMaterial, mc, BUMP_LINEAR_SEARCH_STEPS, BUMP_BINARY_SEARCH_STEPS);
+		tr.localPos += mc.dir * (pMaterial->BumpDepth() * (bumpRes.x - 1.f) / bumpRes.y);
 
-		bumpZ = TraceBumpMap(pMaterial, mc.tc, dirTS, 32, 5);
-		tr.localPos += mc.dir * ((tr.backface ? (bumpZ - 1.f) : (1.f - bumpZ)) * rayLength);
-
-		normal = pMaterial->NormalMapNormal(mc);
+		normal = pMaterial->BumpMapNormal(mc);
 	}
 
+	Vec3 triangleNormal = tr.pTriangle->Normal();
 	if (tr.pVolume)
-		normal = normal.TransformedNormal(tr.pVolume->InverseTransformation());
-
-	normal.Normalize();
-
-	const Vec3 triangleNormal = tr.pTriangle->Normal();
-	float dp = Vec3::Dot(normal, triangleNormal);
-	if (dp <= MIN_NORMALS_DP)
 	{
-		normal -= (dp - MIN_NORMALS_DP)  * triangleNormal;
+		normal.TTransformNormal(tr.pVolume->InverseTransformation());
 		normal.Normalize();
+		triangleNormal.TTransformNormal(tr.pVolume->InverseTransformation());
+		triangleNormal.Normalize();
 	}
+	else
+		normal.Normalize();
+
+	FixNormal(normal, triangleNormal);
 
 	Vec3 N = tr.backface ? -normal : normal; // faceforward normal
 	Vec3 TN = tr.backface ? -triangleNormal : triangleNormal; // triangle normal
-	assert(Vec3::Dot(I, TN) < 0.f);
+	float dpIN = Vec3::Dot(I, TN);
+	/*{
+		Vec3 p1 = vOrigin.TransformedCoord(tr.pVolume->InverseTransformation());
+		Vec3 p2 = v2.TransformedCoord(tr.pVolume->InverseTransformation());
+		Vec3 I2 = p2 - p1;
+		I2.Normalize();
+		Vec3 TN2 = tr.pTriangle->Normal();
+		TN2.Normalize();
+
+		Vec3 TN1 = TN2;
+		TN1.TransformNormal(tr.pVolume->Transformation());
+		TN1.Normalize();
+		
+		float dp1 = Vec3::Dot(I, TN1);
+		float dp2 = Vec3::Dot(I2, TN2);
+		if ((dp1 > 0.f) ^ tr.backface)
+		{
+			printf("%g %g\n", dp1, dp2);
+			TraceResult tr2;
+			CollisionRay ray(p1, p2, tr2);
+			tr.pTriangle->TraceRay(ray, tr2);
+		}
+	}*/
+	assert(dpIN < 0.f);
 //	assert(Vec3::Dot(N, TN) > 0.f);
 
 //	printf("%d: (%g %g %g) -> (%g %g %g) %p (%g %g %g)\n", nTraceDepth, v1.x, v1.y, v1.z, tr.pos.x, tr.pos.y, tr.pos.z, tr.pTriangle, normal.x, normal.y, normal.z);
@@ -605,7 +630,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		}
 	}
 
-	Vec3 P = tr.pos + tr.pTriangle->Normal() * m_fDistEpsilon;
+	Vec3 P = tr.pos + triangleNormal * m_fDistEpsilon;
 	sResult res(Vec3::Null, opacity, tr.pos);
 
 	if (opacity.x > 0.f || opacity.y > 0.f || opacity.z > 0.f)
@@ -616,10 +641,10 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 		{
 			float maxOpacity = fmaxf(fmaxf(opacity.x, opacity.y), opacity.z);
 			int numSamples = std::max<int>((int)(maxOpacity * m_ambientOcclusion * m_numAmbientOcclusionSamples), 1);
-			AddAmbientOcclusion(res.color, P, normal, triangleNormal, numSamples);
+			AddAmbientOcclusion(res.color, P, normal, triangleNormal, numSamples, tr, pMaterial, mc, bumpRes.x);
 		}
 
-		AddLighting(res.color, P, normal, tr, pMaterial, mc, bumpZ);
+		AddLighting(res.color, P, normal, tr, pMaterial, mc, bumpRes.x);
 
 		res.color.Scale(pMaterial->Diffuse(mc));
 	}
