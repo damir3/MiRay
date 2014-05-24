@@ -16,13 +16,13 @@ namespace mr
 class IImage;
 class ILight;
 class IMaterialLayer;
-struct sMaterialContext;
+struct MaterialContext;
 
 class SoftwareRenderer
 {
 	BVH &	m_scene;
 	ColorF	m_bgColor;
-	ColorF	m_envColor;
+	Vec3	m_envColor;
 	const IImage *m_pEnvironmentMap;
 	float	m_ambientOcclusion;
 	float	m_focalDistance;
@@ -51,14 +51,14 @@ class SoftwareRenderer
 	float	m_fRayLength;
 	int		m_nMaxDepth;
 
-	struct sMaterialStack : public ITriangleChecker
+	struct MaterialStack : public ITriangleChecker
 	{
 		enum {MAX_STACK_DEPTH = 64};
 		int nCount;
 		const IMaterialLayer *pMaterials[MAX_STACK_DEPTH];
 
-		sMaterialStack() : nCount(0) {}
-		sMaterialStack(const sMaterialStack & mc);
+		MaterialStack() : nCount(0) {}
+		MaterialStack(const MaterialStack & mc);
 
 		int FindMaterial(const IMaterialLayer *pMaterial) const;
 		void Add(const IMaterialLayer *pMaterial) { pMaterials[nCount++] = pMaterial; }
@@ -72,24 +72,24 @@ class SoftwareRenderer
 	bool GetNextArea(RectI & rc);
 	void RenderArea(const RectI & rc) const;
 
-	struct sResult
+	struct Result
 	{
 		Vec3 color;
 		Vec3 opacity;
 		Vec3 pos;
-		sResult(const Vec3 & c, const Vec3 & o, const Vec3 & p) : color(c), opacity(o), pos(p) {}
-		sResult(const ColorF & c, const Vec3 & p) : color(c.r, c.g, c.b), opacity(c.a), pos(p) {}
+		Result(const Vec3 & c, const Vec3 & o, const Vec3 & p) : color(c), opacity(o), pos(p) {}
+		Result(const ColorF & c, const Vec3 & p) : color(c.r, c.g, c.b), opacity(c.a), pos(p) {}
 	};
 
 	Vec3 RandomDirection(const Vec3 & normal) const;
-	ColorF EnvironmentColor(const Vec3 & v) const;
-	sResult TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, sMaterialStack & ms) const;
+	Vec3 EnvironmentColor(const Vec3 & v) const;
+	Result TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, MaterialStack & ms) const;
 	ColorF RenderPixel(const Vec2 & p) const;
-	inline void AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples, const TraceResult &tr,
-									const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const;
-	inline void AddLighting(Vec3 &color, const Vec3 &P, const Vec3 &N, const TraceResult &tr,
-							const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const;
 
+	inline void AddAmbientOcclusion(Vec3 & color, const Vec3 & P, const Vec3 & N, const Vec3 & TN, int numSamples, const TraceResult & tr,
+									const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const;
+	inline void AddLighting(Vec3 & color, const Vec3 & P, const Vec3 & N, const TraceResult & tr,
+							const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const;
 
 	static void ThreadFunc(void * pRenderer);
 

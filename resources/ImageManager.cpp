@@ -170,11 +170,11 @@ ImagePtr ImageManager::Load(const char * strFilename)
 					else if (bpp == 32)
 						it = Image::TYPE_4B;
 					break;
-				case FIT_RGB16:		it = Image::TYPE_3W; break;
-				case FIT_RGBA16:	it = Image::TYPE_4W; break;
-				case FIT_RGBF:		it = Image::TYPE_3F; break;
-				case FIT_RGBAF:		it = Image::TYPE_4F; break;
-				default: break;
+				case FIT_RGB16:	 it = Image::TYPE_3W; break;
+				case FIT_RGBA16: it = Image::TYPE_4W; break;
+				case FIT_RGBF:	 it = Image::TYPE_3F; break;
+				case FIT_RGBAF:	 it = Image::TYPE_4F; break;
+				default:		 it = Image::TYPE_NONE; break;
 			}
 		}
 
@@ -219,16 +219,13 @@ ImagePtr ImageManager::Load(const char * strFilename)
 	}
 	else if (colorType == FIC_MINISBLACK) // greyscale
 	{
-		Image::eType it = Image::TYPE_NONE;
+		Image::eType it;
 		switch (imageType)
 		{
-			case FIT_BITMAP:
-				if (bpp == 8)
-					it = Image::TYPE_1B;
-				break;
-			case FIT_UINT16:	it = Image::TYPE_1W; break;
-			case FIT_FLOAT:		it = Image::TYPE_1F; break;
-			default: break;
+			case FIT_BITMAP: it = (bpp == 8) ? Image::TYPE_1B : Image::TYPE_NONE; break;
+			case FIT_UINT16: it = Image::TYPE_1W; break;
+			case FIT_FLOAT:	 it = Image::TYPE_1F; break;
+			default:		 it = Image::TYPE_NONE; break;
 		}
 
 		if (it == Image::TYPE_NONE)
@@ -265,59 +262,96 @@ ImagePtr ImageManager::Load(const char * strFilename)
 
 // ------------------------------------------------------------------------ //
 
-bool ImageManager::Save(const char * strFilename, const Image & image, eFileFormat ff)
+bool ImageManager::Save(const char * strFilename, const Image & image, bool saveAlpha, eFileFormat ff)
 {
 	FREE_IMAGE_FORMAT fif;
 	switch (ff)
 	{
 		default:
-		case FILE_FORMAT_AUTO: fif = FreeImage_GetFIFFromFilename(strFilename); break;
-		case FILE_FORMAT_PNG: fif = FIF_PNG; break;
-		case FILE_FORMAT_JPEG: fif = FIF_JPEG; break;
-		case FILE_FORMAT_TIFF: fif = FIF_TIFF; break;
-		case FILE_FORMAT_TARGA: fif = FIF_TARGA; break;
-		case FILE_FORMAT_DDS: fif = FIF_DDS; break;
+		case FILE_FORMAT_AUTO:	fif = FreeImage_GetFIFFromFilename(strFilename); break;
+		case FILE_FORMAT_PNG:	fif = FIF_PNG; break;
+		case FILE_FORMAT_JPEG:	fif = FIF_JPEG; break;
+		case FILE_FORMAT_TIFF:	fif = FIF_TIFF; break;
+		case FILE_FORMAT_TARGA:	fif = FIF_TARGA; break;
+		case FILE_FORMAT_DDS:	fif = FIF_DDS; break;
 	}
 
+	FREE_IMAGE_TYPE type;
+	switch (image.Type())
+	{
+		default: type = FIT_BITMAP; break;
+		case Image::TYPE_1W: type = FIT_UINT16; break;
+		case Image::TYPE_3W: type = FIT_RGB16; break;
+		case Image::TYPE_4W: type = saveAlpha ? FIT_RGBA16 : FIT_RGB16; break;
+		case Image::TYPE_1F: type = FIT_FLOAT; break;
+		case Image::TYPE_3F: type = FIT_RGBF; break;
+		case Image::TYPE_4F: type = saveAlpha ? FIT_RGBAF : FIT_RGBF; break;
+	}
+
+	if (!FreeImage_FIFSupportsExportType(fif, type))
+	{
+		switch (type)
+		{
+			default:		type = FIT_BITMAP; break;
+			case FIT_FLOAT:	type = FIT_INT16; break;
+			case FIT_RGBF:	type = FIT_RGB16; break;
+			case FIT_RGBAF:	type = FIT_RGBA16; break;
+		}
+		if (!FreeImage_FIFSupportsExportType(fif, type))
+			type = FIT_BITMAP;
+	}
+
+	Image::eType imageType;
+	if (type == FIT_BITMAP)
+	{
+		int bpp = image.NumChannels();
+		if (!saveAlpha && bpp == 4)
+			bpp = 3;
+
+		if (!FreeImage_FIFSupportsExportBPP(fif, bpp * 8))
+		{
+			if (bpp == 3 || !FreeImage_FIFSupportsExportBPP(fif, 24))
+				return false;
+
+			bpp = 3;
+		}
+
+		switch (bpp)
+		{
+			case 1: imageType = Image::TYPE_1B; break;
+			case 3: imageType = Image::TYPE_3B; break;
+			case 4: imageType = Image::TYPE_4B; break;
+			default: return false;
+		}
+	}
+	else
+	{
+		switch (type)
+		{
+			case FIT_UINT16: imageType = Image::TYPE_1W; break;
+			case FIT_RGB16:	 imageType = Image::TYPE_3W; break;
+			case FIT_RGBA16: imageType = Image::TYPE_4W; break;
+			case FIT_FLOAT:	 imageType = Image::TYPE_1F; break;
+			case FIT_RGBF:	 imageType = Image::TYPE_3F; break;
+			case FIT_RGBAF:	 imageType = Image::TYPE_4F; break;
+			default: return false;
+		}
+	}
+	
 	int width = image.Width();
 	int height = image.Height();
 	int bpp = image.PixelSize();
 	const byte * pSrcData = image.DataB();
 
-	FREE_IMAGE_TYPE type;
-	switch (image.Type())
-	{
-		default:
-		case Image::TYPE_3B:
-		case Image::TYPE_4B:
-			type = FIT_BITMAP;
-			break;
-		case Image::TYPE_3W: type = FIT_RGB16; break;
-		case Image::TYPE_4W: type = FIT_RGBA16; break;
-		case Image::TYPE_3F: type = FIT_RGBF; break;
-		case Image::TYPE_4F: type = FIT_RGBAF; break;
-	}
-
 	ImagePtr pTmpImage;
-	if (!FreeImage_FIFSupportsExportBPP(fif, bpp * 8) ||
-		!FreeImage_FIFSupportsExportType(fif, type))
+	if (image.Type() != imageType)
 	{
-		if (!FreeImage_FIFSupportsExportType(fif, FIT_BITMAP))
-			return false;
-
-		type = FIT_BITMAP;
-		if (FreeImage_FIFSupportsExportBPP(fif, 32))
-			bpp = 4;
-		else if (FreeImage_FIFSupportsExportBPP(fif, 24))
-			bpp = 3;
-		else
-			return false;
-
-		pTmpImage = CreateCopy(&image, bpp == 4 ? Image::TYPE_4B : Image::TYPE_3B);
+		pTmpImage = CreateCopy(&image, imageType);
 		if (!pTmpImage)
 			return false;
 
 		pSrcData = pTmpImage->DataB();
+		bpp = pTmpImage->PixelSize();
 	}
 
 	bool res = false;
@@ -334,7 +368,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 			for (int y = 0 ; y < height; y++)
 				memcpy(bits + (height - y - 1) * destPitch, pSrcData + y * srcPitch, pitch);
 
-			if ((FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR) && (bpp == 3 || bpp == 4))
+			if ((FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR) && (imageType == Image::TYPE_3B || bpp == Image::TYPE_4B))
 			{
 				for (int y = 0 ; y < height; y++)
 				{
@@ -346,7 +380,7 @@ bool ImageManager::Save(const char * strFilename, const Image & image, eFileForm
 					}
 				}
 			}
-			
+
 			res = FreeImage_Save(fif, dib, strFilename) != FALSE;
 		}
 

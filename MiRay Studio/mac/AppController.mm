@@ -82,8 +82,8 @@
 																		alignment:NSRightTextAlignment]];
 
 	[self.toolbarText setAttributedStringValue:tableString];
-	[self.toolbarText setAutoresizesSubviews:YES];
-	[self.toolbarText setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+	[self.toolbarText setAutoresizesSubviews:NO];
+	[self.toolbarText setAutoresizingMask:NSViewNotSizable];
 }
 
 - (NSMutableAttributedString *) tableCellAttributedStringWithString:(NSString *)string

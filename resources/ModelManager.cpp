@@ -486,14 +486,14 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 
 // ------------------------------------------------------------------------ //
 
-struct sNormalKey
+struct NormalKey
 {
 	int vi;
 	Vec3 vNormal;
 	
-	sNormalKey(int i, const Vec3 & normal) : vi(i), vNormal(normal) {}
+	NormalKey(int i, const Vec3 & normal) : vi(i), vNormal(normal) {}
 	
-	bool operator < (const sNormalKey & nk) const
+	bool operator < (const NormalKey & nk) const
 	{
 		if (vi < nk.vi) return true;
 		if (vi > nk.vi) return false;
@@ -511,7 +511,7 @@ struct sNormalKey
 	}
 };
 
-typedef std::map<sNormalKey, size_t> NormalsMap;
+typedef std::map<NormalKey, size_t> NormalsMap;
 
 void RecalculateMeshNormals(FbxMesh * pFbxMesh, const FbxVector4 * pVertexArray, FbxVector4 * pNormalsArray)
 {
@@ -534,7 +534,7 @@ void RecalculateMeshNormals(FbxMesh * pFbxMesh, const FbxVector4 * pVertexArray,
 				FbxVector4 lNormal;
 				if (pFbxMesh->GetPolygonVertexNormal(pi, vi, lNormal))
 				{
-					sNormalKey nk(i, Vec3((float)lNormal[0], (float)lNormal[1], (float)lNormal[2]));
+					NormalKey nk(i, Vec3((float)lNormal[0], (float)lNormal[1], (float)lNormal[2]));
 					NormalsMap::const_iterator it = mapNormals.find(nk);
 					if (it == mapNormals.end())
 						vNormalIndex[ni] = mapNormals[nk] = iNormalsCount++;

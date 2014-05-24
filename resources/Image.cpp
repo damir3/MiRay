@@ -77,6 +77,11 @@ void Image::SetPixel(int x, int y, const ColorF & c)
 	assert(y >= 0 && y < m_height);
 	switch (m_type)
 	{
+		case TYPE_1B:
+		{
+			m_pData[y * m_width + x] = F2B(clamp(c.r, 0.f, 1.f));
+			break;
+		}
 		case TYPE_3B:
 		{
 			byte * pData = m_pData + (y * m_width + x) * 3;
@@ -94,6 +99,11 @@ void Image::SetPixel(int x, int y, const ColorF & c)
 			pData[3] = F2B(clamp(c.a, 0.f, 1.f));
 			break;
 		}
+		case TYPE_1W:
+		{
+			reinterpret_cast<uint16 *>(m_pData)[y * m_width + x] = F2W(clamp(c.r, 0.f, 1.f));
+			break;
+		}
 		case TYPE_3W:
 		{
 			uint16 * pData = reinterpret_cast<uint16 *>(m_pData) + (y * m_width + x) * 3;
@@ -109,6 +119,11 @@ void Image::SetPixel(int x, int y, const ColorF & c)
 			pData[1] = F2W(clamp(c.g, 0.f, 1.f));
 			pData[2] = F2W(clamp(c.b, 0.f, 1.f));
 			pData[3] = F2W(clamp(c.a, 0.f, 1.f));
+			break;
+		}
+		case TYPE_1F:
+		{
+			reinterpret_cast<float *>(m_pData)[y * m_width + x] = c.r;
 			break;
 		}
 		case TYPE_3F:

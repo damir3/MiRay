@@ -51,11 +51,11 @@ void CollisionVolume::Build(byte nMaxNodesLevel)
 	
 	if (nMaxNodesLevel > 0)
 	{
-		CollisionNode::sPolygonArray polygons;
+		CollisionNode::PolygonArray polygons;
 		polygons.reserve(m_triangles.size());
 		for (CollisionTriangleArray::iterator it = m_triangles.begin(), itEnd = m_triangles.end(); it != itEnd; ++it)
 		{
-			polygons.push_back(CollisionNode::sPolygon(&(*it)));
+			polygons.push_back(CollisionNode::Polygon(&(*it)));
 			polygons.back().AddVertex(it->Vertex(0).pos);
 			polygons.back().AddVertex(it->Vertex(1).pos);
 			polygons.back().AddVertex(it->Vertex(2).pos);

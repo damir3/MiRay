@@ -379,9 +379,11 @@ void OnMouseButtonUp(mr::eMouseButton button, HWND hWnd, LPARAM lParam)
 	if (!g_nMouseState)
 	{
 		ReleaseCapture();
-		g_pSceneView->OnMouseUp(button);
+		g_ptMousePos.x = GET_X_LPARAM(lParam);
+		g_ptMousePos.y = GET_Y_LPARAM(lParam);
+		g_pSceneView->OnMouseUp((float)g_ptMousePos.x, (float)g_ptMousePos.y, button);
 		if (!g_bMouseMoved)
-			g_pSceneView->OnMouseClick((float)GET_X_LPARAM(lParam), (float)GET_Y_LPARAM(lParam), button);
+			g_pSceneView->OnMouseClick((float)g_ptMousePos.x, (float)g_ptMousePos.y, button);
 	}
 }
 

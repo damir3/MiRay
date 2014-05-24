@@ -9,6 +9,7 @@
 
 #include "CollisionNode.h"
 #include "CollisionVolume.h"
+#include <atomic>
 
 namespace mr
 {

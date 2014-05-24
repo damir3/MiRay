@@ -10,7 +10,7 @@
 namespace mr
 {
 
-class TraceResult;
+struct TraceResult;
 
 class CollisionRay
 {

@@ -8,7 +8,7 @@
 
 namespace mr
 {
-	
+
 void DrawGrid();
 void DrawWireframeBox(const BBox & box, const Color & c);
 void DrawBox(const BBox & box, const Color & c);
@@ -20,6 +20,10 @@ void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float l);
 void DrawCircle(const Vec3 & p, const Vec3 & normal, float r1, float r2, const Color & c1, const Color & c2, float borderLineWidth);
 void DrawGizmo(const Matrix & mat, const BBox & bbox);
 void DrawCollisionNode(const class CollisionNode * pCN, byte level);
+
+bool GetRayAxisIntersectionDelta(const Vec3 & rayStart, const Vec3 & rayDir, const Vec3 & axisPos, const Vec3 & axisDir, float l, float t, Vec3 & delta);
+bool GetRayPlaneIntersectionDelta(const Vec3 & rayStart, const Vec3 & rayEnd, const Vec3 & axisPos, const Vec3 & axisDir, Vec3 & delta);
+float GetRayBoxIntersection(const Vec3 & rayStart, const Vec3 & rayEnd, const BBox & box);
 
 void SaveFloat(float v, const char * name, pugi::xml_node node);
 void SaveVec3(const Vec3 & v, const char * name, pugi::xml_node node);

@@ -208,7 +208,7 @@ void SceneModel::RenderMesh::DrawNormals(float l)
 
 // ------------------------------------------------------------------------ //
 
-struct sArrayBufferVertex
+struct ArrayBufferVertex
 {
 	Vec3 pos;
 	Color color;
@@ -224,14 +224,14 @@ SceneModel::RenderGeometry::RenderGeometry(Model::Geometry & geom)
 	glGenBuffers(1, &m_vertexBuffer);
 	if (m_vertexBuffer > 0)
 	{
-		std::vector<sArrayBufferVertex> vertices(geom.m_vertices.size());
+		std::vector<ArrayBufferVertex> vertices(geom.m_vertices.size());
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
 			vertices[i].pos = geom.m_vertices[i].pos;
 			vertices[i].color = VertexColor(Color::White, geom.m_vertices[i].normal);
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(sArrayBufferVertex), vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(ArrayBufferVertex), vertices.data(), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	
@@ -265,13 +265,13 @@ void SceneModel::RenderGeometry::Draw()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(sArrayBufferVertex), (void*)0);
+	glVertexPointer(3, GL_FLOAT, sizeof(ArrayBufferVertex), (void*)0);
 	glEnableClientState(GL_COLOR_ARRAY);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(sArrayBufferVertex), (void*)12);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ArrayBufferVertex), (void*)12);
 //	glEnableClientState(GL_NORMAL_ARRAY);
-//	glNormalPointer(GL_FLOAT, sizeof(sArrayBufferVertex), (void*)12);
+//	glNormalPointer(GL_FLOAT, sizeof(ArrayBufferVertex), (void*)12);
 //	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-//	glTexCoordPointer(2, GL_FLAT, sizeof(sArrayBufferVertex), (void*)48);
+//	glTexCoordPointer(2, GL_FLAT, sizeof(ArrayBufferVertex), (void*)48);
 	
 	glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, 0);
 	
@@ -289,7 +289,7 @@ void SceneModel::RenderGeometry::DrawWireframe()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(sArrayBufferVertex), (void*)0);
+	glVertexPointer(3, GL_FLOAT, sizeof(ArrayBufferVertex), (void*)0);
 	
 //	glEnable(GL_BLEND);
 //	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

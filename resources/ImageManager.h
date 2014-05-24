@@ -40,7 +40,7 @@ public:
 		FILE_FORMAT_DDS,
 	};
 
-	bool Save(const char * strFilename, const Image & image, eFileFormat ff = FILE_FORMAT_AUTO);
+	bool Save(const char * strFilename, const Image & image, bool saveAlpha, eFileFormat ff = FILE_FORMAT_AUTO);
 };
 
 }

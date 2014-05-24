@@ -28,7 +28,7 @@ SoftwareRenderer::SoftwareRenderer(BVH & scene)
 	: m_scene(scene)
 	, m_pImage(NULL)
 	, m_bgColor(ColorF::Null)
-	, m_envColor(ColorF::White)
+	, m_envColor(1.f)
 	, m_pEnvironmentMap(NULL)
 	, m_ambientOcclusion(1.f)
 	, m_focalDistance(0.f)
@@ -52,7 +52,7 @@ void SoftwareRenderer::SetBackgroundColor(const ColorF & bgColor)
 
 void SoftwareRenderer::SetEnvironmentColor(const ColorF & envColor)
 {
-	m_envColor = envColor;
+	m_envColor = Vec3(envColor);
 }
 
 void SoftwareRenderer::SetEnvironmentMap(const IImage * pEnvironmentMap)
@@ -175,8 +175,8 @@ ColorF SoftwareRenderer::RenderPixel(const Vec2 &p) const
 		vDest = m_vCamDelta[2] + m_vCamDelta[0] * bp.x - m_vCamDelta[1] * bp.y;
 		vStart = Vec3::Lerp(vDest, pos, m_dofLC.y);
 	}
-	sMaterialStack ms;
-	sResult res = TraceRay(vStart, vDest, 0, NULL, ms);
+	MaterialStack ms;
+	Result res = TraceRay(vStart, vDest, 0, NULL, ms);
 //	printf("\n");
 	return ColorF(res.color.x, res.color.y, res.color.z, res.opacity.x);
 }
@@ -221,12 +221,12 @@ void SoftwareRenderer::ThreadFunc(void * pRenderer)
 
 // ------------------------------------------------------------------------ //
 
-ColorF SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
+Vec3 SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 {
 	if (!m_pEnvironmentMap)
 		return m_envColor;
 
-	return m_pEnvironmentMap->GetPixel(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f) * m_envColor;
+	return m_pEnvironmentMap->GetPixelColor(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f) * m_envColor;
 
 //	float l = Vec2(vDir.x, vDir.z).Length();
 //	float d = (atan2f(vDir.y, l) * (0.5f / M_PIf) + 0.25f);
@@ -251,12 +251,12 @@ Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal) const
 
 // ------------------------------------------------------------------------ //
 
-SoftwareRenderer::sMaterialStack::sMaterialStack(const sMaterialStack & mc) : nCount(mc.nCount)
+SoftwareRenderer::MaterialStack::MaterialStack(const MaterialStack & mc) : nCount(mc.nCount)
 {
 	std::copy(mc.pMaterials, mc.pMaterials + nCount, pMaterials);
 }
 
-int SoftwareRenderer::sMaterialStack::FindMaterial(const IMaterialLayer *pMaterial) const
+int SoftwareRenderer::MaterialStack::FindMaterial(const IMaterialLayer *pMaterial) const
 {
 	int i = nCount;
 	while (i-- > 0)
@@ -268,7 +268,7 @@ int SoftwareRenderer::sMaterialStack::FindMaterial(const IMaterialLayer *pMateri
 	return -1;
 }
 
-void SoftwareRenderer::sMaterialStack::Remove(int i)
+void SoftwareRenderer::MaterialStack::Remove(int i)
 {
 	if (i >= 0)
 	{
@@ -278,7 +278,7 @@ void SoftwareRenderer::sMaterialStack::Remove(int i)
 	}
 }
 
-bool SoftwareRenderer::sMaterialStack::CheckTriangle(const CollisionTriangle *pTriangle, bool backface) const
+bool SoftwareRenderer::MaterialStack::CheckTriangle(const CollisionTriangle *pTriangle, bool backface) const
 {
 	return (FindMaterial(pTriangle->Material()->Layer(0)) < 0) ^ backface;
 }
@@ -286,7 +286,7 @@ bool SoftwareRenderer::sMaterialStack::CheckTriangle(const CollisionTriangle *pT
 // ------------------------------------------------------------------------ //
 
 Vec2 TraceBumpMap(Vec2 & tc, const Vec3 & dir,
-				  const IMaterialLayer * pMaterial, const sMaterialContext & mc,
+				  const IMaterialLayer * pMaterial, const MaterialContext & mc,
 				  int numLinearSearchSteps, int numBinarySearchSteps)
 {
 	Vec3 dirTS(Vec3::Dot(dir, mc.tangent), Vec3::Dot(dir, mc.binormal), Vec3::Dot(dir, mc.normal));
@@ -322,8 +322,8 @@ Vec2 TraceBumpMap(Vec2 & tc, const Vec3 & dir,
 
 // ------------------------------------------------------------------------ //
 
-inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, const Vec3 &N, const Vec3 &TN, int numSamples, const TraceResult &tr,
-												  const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const
+inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 & color, const Vec3 & P, const Vec3 & N, const Vec3 & TN, int numSamples, const TraceResult & tr,
+												  const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const
 {
 	Vec3 ambientOcclusion = Vec3::Null;
 	for (int i = 0; i < numSamples; i++)
@@ -346,18 +346,16 @@ inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 &color, const Vec3 &P, co
 		
 		TraceResult otl;
 		if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
-		{
-			ColorF envColor = EnvironmentColor(vRandDir);
-			ambientOcclusion += Vec3(envColor.r, envColor.g, envColor.b);
-		}
+			ambientOcclusion += EnvironmentColor(vRandDir);
 	}
+
 	color += ambientOcclusion * (m_ambientOcclusion / numSamples);
-//	color += Vec3(m_envColor) * (N.z * 0.3f + 0.7f);
+//	color += m_envColor * (N.z * 0.3f + 0.7f);
 
 }
 
-inline void SoftwareRenderer::AddLighting(Vec3 &color, const Vec3 &P, const Vec3 &N, const TraceResult &tr,
-										  const IMaterialLayer *pMaterial, const sMaterialContext &mc, float bumpZ) const
+inline void SoftwareRenderer::AddLighting(Vec3 & color, const Vec3 & P, const Vec3 & N, const TraceResult & tr,
+										  const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const
 {
 	for (std::vector<ILight *>::const_iterator it = m_lights.begin(); it != m_lights.end(); ++it)
 	{// lighting
@@ -412,7 +410,7 @@ inline void FixNormal(Vec3 &normal, const Vec3 &triangleNormal)
 
 // ------------------------------------------------------------------------ //
 
-SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, sMaterialStack & ms) const
+SoftwareRenderer::Result SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 & v2, int nTraceDepth, const CollisionTriangle * pPrevTriangle, MaterialStack & ms) const
 {
 	TraceResult tr;
 	tr.pTriangle = pPrevTriangle;
@@ -424,7 +422,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	while (true)
 	{
 		if (!m_scene.TraceRay(vOrigin, v2, tr))
-			return sResult(EnvironmentColor(I), v2);
+			return Result(EnvironmentColor(I), nTraceDepth == 0 ? Vec3::Null : Vec3(1.f), v2);
 
 		nMaterialIndex = ms.FindMaterial(tr.pTriangle->Material()->Layer(0));
 		if ((nMaterialIndex < 0) ^ tr.backface)
@@ -436,7 +434,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	I.Normalize();
 
 	const IMaterialLayer * pMaterial = tr.pTriangle->Material()->Layer(0);
-	sMaterialContext mc;
+	MaterialContext mc;
 	mc.tc = tr.pTriangle->GetTexCoord(tr.pc);
 	mc.dir = tr.localDir;
 	mc.normal = Vec3::Normalize(tr.pTriangle->GetNormal(tr.pc)); // local space normal
@@ -521,7 +519,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 	bool bReflection = (kR.x > 0.f || kR.y > 0.f || kR.z > 0.f);
 	Vec3 R; // reflection direction
-	sResult cR(Vec3::Null, Vec3::Null, tr.pos);
+	Result cR(Vec3::Null, Vec3::Null, tr.pos);
 
 	nTraceDepth++;
 //	if (frand() < kR.x)
@@ -529,8 +527,8 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	{// reflection
 		if (nTraceDepth >= m_nMaxDepth)
 		{
-			cR = pMaterial->HasReflectionExitColor() ? sResult(pMaterial->ReflectionExitColor(mc), Vec3(1.f), tr.pos) :
-														sResult(EnvironmentColor(I), tr.pos);
+			cR = pMaterial->HasReflectionExitColor() ? Result(pMaterial->ReflectionExitColor(mc), Vec3(1.f), tr.pos) :
+														Result(EnvironmentColor(I), tr.pos);
 		}
 		else
 		{
@@ -540,7 +538,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 			float dp = Vec3::Dot(R, TN);
 			if (dp < 0.f) R -= TN * dp;
 			Vec3 v1R = tr.pos + TN * m_fDistEpsilon;
-			sMaterialStack msR(ms);
+			MaterialStack msR(ms);
 			cR = TraceRay(v1R, v1R + R * m_fRayLength, nTraceDepth, tr.pTriangle, msR);
 			cR.color.Scale(pMaterial->ReflectionTint(mc));
 
@@ -563,15 +561,15 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 
 	Vec3 opacity = pMaterial->Opacity(mc);
 	bool bTransmission = (opacity.x < 1.f || opacity.y < 1.f || opacity.z < 1.f);
-	sResult cT(Vec3::Null, Vec3::Null, tr.pos);
+	Result cT(Vec3::Null, Vec3::Null, tr.pos);
 
 //	if (frand() > opacity.x)
 	if (bTransmission)
 	{// transmission
 		if (nTraceDepth >= m_nMaxDepth)
 		{
-			cT = pMaterial->HasRefractionExitColor() ? sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
-														sResult(EnvironmentColor(I), tr.pos);
+			cT = pMaterial->HasRefractionExitColor() ? Result(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
+													   Result(EnvironmentColor(I), tr.pos);
 		}
 		else
 		{
@@ -584,7 +582,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 //			{
 //				Vec3 prevIOR = ms.Pop(pMaterial);
 //				if (prevIOR.x != 1.f)
-//					return sResult(Vec3(10.f, 0.f, 0.f), Vec3(1.f), tr.pos);
+//					return Result(Vec3(10.f, 0.f, 0.f), Vec3(1.f), tr.pos);
 //
 //				eta = ior.x / prevIOR.x;
 //			}
@@ -592,7 +590,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 //			{
 //				Vec3 prevIOR = ms.Push(pMaterial);
 //				if (prevIOR.x != 1.f)
-//					return sResult(Vec3(0.f, 10.f, 0.f), Vec3(1.f), tr.pos);
+//					return Result(Vec3(0.f, 10.f, 0.f), Vec3(1.f), tr.pos);
 //				eta = prevIOR.x / ior.x;
 //			}
 //			eta = eta1;
@@ -602,8 +600,8 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 			if (dp > 0.f) T -= TN * dp;
 			if (T.Normalize() == 0.f)
 			{
-				cT = pMaterial->HasRefractionExitColor() ? sResult(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
-															sResult(EnvironmentColor(I), tr.pos);
+				cT = pMaterial->HasRefractionExitColor() ? Result(pMaterial->RefractionExitColor(mc), Vec3(1.f), tr.pos) :
+															Result(EnvironmentColor(I), tr.pos);
 			}
 			else
 			{
@@ -631,7 +629,7 @@ SoftwareRenderer::sResult SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3
 	}
 
 	Vec3 P = tr.pos + triangleNormal * m_fDistEpsilon;
-	sResult res(Vec3::Null, opacity, tr.pos);
+	Result res(Vec3::Null, opacity, tr.pos);
 
 	if (opacity.x > 0.f || opacity.y > 0.f || opacity.z > 0.f)
 	{

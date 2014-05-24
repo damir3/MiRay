@@ -80,34 +80,34 @@ public:
 	MaterialLayerImpl();
 	~MaterialLayerImpl();
 
-	Vec3 Ambient(const sMaterialContext & mc) const { return m_ambient.Color(mc.tc); }
-	Vec3 Emissive(const sMaterialContext & mc) const { return m_emissive.Color(mc.tc); }
-	Vec3 Diffuse(const sMaterialContext & mc) const { return m_diffuse.Color(mc.tc); }
-	Vec3 Opacity(const sMaterialContext & mc) const { return m_opacity.Color(mc.tc); }
+	Vec3 Ambient(const MaterialContext & mc) const { return m_ambient.Color(mc.tc); }
+	Vec3 Emissive(const MaterialContext & mc) const { return m_emissive.Color(mc.tc); }
+	Vec3 Diffuse(const MaterialContext & mc) const { return m_diffuse.Color(mc.tc); }
+	Vec3 Opacity(const MaterialContext & mc) const { return m_opacity.Color(mc.tc); }
 	Vec3 IndexOfRefraction() const { return m_indexOfRefraction; }
 
 	bool FresnelReflection() const { return m_fresnelReflection; }
 	bool RaytracedReflection() const { return true; }
 	
-	Vec3 Reflection(const sMaterialContext & mc) const { return m_reflection.Color(mc.tc); }
-	Vec3 ReflectionTint(const sMaterialContext & mc) const { return m_reflectionTint.Color(mc.tc); }
-	float ReflectionRoughness(const sMaterialContext & mc) const { return m_reflectionRoughness.Value(mc.tc); }
+	Vec3 Reflection(const MaterialContext & mc) const { return m_reflection.Color(mc.tc); }
+	Vec3 ReflectionTint(const MaterialContext & mc) const { return m_reflectionTint.Color(mc.tc); }
+	float ReflectionRoughness(const MaterialContext & mc) const { return m_reflectionRoughness.Value(mc.tc); }
 	bool HasReflectionExitColor() const { return m_reflectionExitColor.GetColor().x >= 0.f; }
-	Vec3 ReflectionExitColor(const sMaterialContext & mc) const { return m_reflectionExitColor.Color(mc.tc); }
+	Vec3 ReflectionExitColor(const MaterialContext & mc) const { return m_reflectionExitColor.Color(mc.tc); }
 	bool HasReflectionMap() const { return false; }
-	Vec3 ReflectionMap(const sMaterialContext & mc) const { return Vec3::Null; }
+	Vec3 ReflectionMap(const MaterialContext & mc) const { return Vec3::Null; }
 	
-	Vec3 RefractionTint(const sMaterialContext & mc) const { return m_refractionTint.Color(mc.tc); }
-	float RefractionRoughness(const sMaterialContext & mc) const { return m_refractionRoughness.Value(mc.tc); }
+	Vec3 RefractionTint(const MaterialContext & mc) const { return m_refractionTint.Color(mc.tc); }
+	float RefractionRoughness(const MaterialContext & mc) const { return m_refractionRoughness.Value(mc.tc); }
 	bool HasRefractionExitColor() const { return m_refractionExitColor.GetColor().x >= 0.f; }
-	Vec3 RefractionExitColor(const sMaterialContext & mc) const { return m_refractionExitColor.Color(mc.tc); }
+	Vec3 RefractionExitColor(const MaterialContext & mc) const { return m_refractionExitColor.Color(mc.tc); }
 
 	Vec3 AbsorbtionCoefficient() const { return m_absorbtionCoefficient; }
 
 	bool HasBumpMap() const { return m_pNormalmap != NULL; }
 	float BumpDepth() const { return m_bumpDepth; }
 	float BumpMapDepth(const Vec2 &tc) const { return m_pNormalmap->GetPixelOpacity(tc.x, tc.y); }
-	Vec3 BumpMapNormal(const sMaterialContext & mc) const
+	Vec3 BumpMapNormal(const MaterialContext & mc) const
 	{
 		Vec3 nm = m_pNormalmap->GetPixelColor(mc.tc.x, mc.tc.y) * 2.f - mr::Vec3(1.f);
 		return mc.tangent * nm.x + mc.binormal * nm.y + mc.normal * nm.z;

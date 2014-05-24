@@ -91,7 +91,9 @@ private:
 	Matrix			m_matGizmoStart;
 	Vec3			m_vGizmoStartDelta;
 	float			m_fGizmoScale;
+	float			m_fGizmoLength;
 	int				m_iGizmoAxis;
+	Vec2			m_vGizmoStartMousePos;
 	Vec3			m_vGizmoDelta;
 	bool			m_bGizmoTransformation;
 	Vec3			m_vTargetPos;
@@ -109,18 +111,17 @@ private:
 
 	Vec3 GetFrustumPosition(float x, float y, float z) const;
 	bool GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal);
-	bool GetRayAxisIntersectionDelta(const Vec3 & rayTarget, const Vec3 & pos, const Vec3 & axis, bool checkIntersection, Vec3 & delta);
-	bool GetRayPlaneIntersectionDelta(Vec3 & rayTarget, const Vec3 & pos, const Vec3 & axis, Vec3 & delta);
-	bool CheckRayCircleIntersectionDelta(Vec3 & rayTarget, const Vec3 & pos, const Vec3 & axis, Vec3 & delta);
 	float PosScale(const Vec3 & p) const;
+	void UpdateGizmoSize();
 	void DrawGizmo(const Matrix & mat, const BBox & bbox) const;
 
 	void UpdateRenderMapTexture();
-	void DrawRenderMap();
+	void DrawRenderMap(bool blend);
 
 	void RotateCamera(float dx, float dy);
 	void MoveCamera(float dx, float dy);
 	void UpdateMatrices();
+	void Set3DMode();
 
 public:
 	SceneView(const char * pResourcesPath);
@@ -170,7 +171,7 @@ public:
 	bool SetSelectionMaterial(const char *material);
 
 	void OnMouseDown(float x, float y, eMouseButton button);
-	void OnMouseUp(eMouseButton button);
+	void OnMouseUp(float x, float y, eMouseButton button);
 	void OnMouseClick(float x, float y, eMouseButton button);
 	void OnMouseMove(float x, float y, float dx, float dy, eMouseButton button);
 

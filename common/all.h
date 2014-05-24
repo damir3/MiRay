@@ -33,8 +33,8 @@ typedef uint64_t			uint64;
 #define F2B(a)			static_cast<byte>((a) * 255.f)
 #define B2F(a)			((a) * (1.f / 255.f))
 
-#define F2W(a)			static_cast<uint16>((a) * 65536.f)
-#define W2F(a)			((a) * (1.f / 65536.f))
+#define F2W(a)			static_cast<uint16>((a) * 65535.f)
+#define W2F(a)			((a) * (1.f / 65535.f))
 
 #define SAFE_DELETE(a)	if (a) { delete (a); (a) = NULL; }
 
