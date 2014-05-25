@@ -25,9 +25,9 @@ public:
 	ImageManager();
 	~ImageManager();
 
-	ImagePtr Create(int w, int h, Image::eType t);
+	ImagePtr Create(int w, int h, Image::eType t, const char * name = nullptr);
 	ImagePtr Load(const char * strFilename);
-	ImagePtr CreateCopy(const Image * pSrcImage, Image::eType t);
+	ImagePtr CreateCopy(const Image * pSrcImage, Image::eType t, const char * name = nullptr);
 	ImagePtr LoadNormalmap(const char * strFilename);
 
 	enum eFileFormat

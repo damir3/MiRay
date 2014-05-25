@@ -30,34 +30,41 @@ void ImageManager::Release(const std::string & name)
 		m_resources.erase(it);
 }
 
-ImagePtr ImageManager::Create(int w, int h, Image::eType t)
+ImagePtr ImageManager::Create(int w, int h, Image::eType t, const char * name)
 {
-	ImagePtr spImage(new Image(*this, nullptr));
+	ImagePtr spImage;
+	switch (t)
+	{
+		case Image::TYPE_1B: spImage.reset(new Image1B(*this, name)); break;
+		case Image::TYPE_3B: spImage.reset(new Image3B(*this, name)); break;
+		case Image::TYPE_4B: spImage.reset(new Image4B(*this, name)); break;
+		case Image::TYPE_1W: spImage.reset(new Image1W(*this, name)); break;
+		case Image::TYPE_3W: spImage.reset(new Image3W(*this, name)); break;
+		case Image::TYPE_4W: spImage.reset(new Image4W(*this, name)); break;
+		case Image::TYPE_1F: spImage.reset(new Image1F(*this, name)); break;
+		case Image::TYPE_3F: spImage.reset(new Image3F(*this, name)); break;
+		case Image::TYPE_4F: spImage.reset(new Image4F(*this, name)); break;
+		default: break;
+	}
 	if (!spImage)
 		return nullptr;
 
 	m_resources[spImage->Name()] = spImage;
 
-	spImage->Create(w, h, t);
+	spImage->Create(w, h);
 
 	return std::move(spImage);
 }
 
-ImagePtr ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t)
+ImagePtr ImageManager::CreateCopy(const Image * pSrcImage, Image::eType t, const char * name)
 {
 	if (!pSrcImage)
 		return nullptr;
 
-	ImagePtr spImage(new Image(*this, nullptr));
-	if (!spImage)
-		return nullptr;
-
-	m_resources[spImage->Name()] = spImage;
-
 	const int w = pSrcImage->Width();
 	const int h = pSrcImage->Height();
-	spImage->Create(w, h, t);
-	if (!spImage->Data())
+	ImagePtr spImage = Create(w, h, t, name);
+	if (!spImage || !spImage->Data())
 		return nullptr;
 
 	if (pSrcImage->Type() == spImage->Type())
@@ -189,11 +196,8 @@ ImagePtr ImageManager::Load(const char * strFilename)
 		byte * bits = FreeImage_GetBits(dib);
 		if (bits != nullptr)
 		{
-			spImage.reset(new Image(*this, strFilename));
-			
-			m_resources[spImage->Name()] = spImage;
-
-			if (spImage->Create(width, height, it))
+			spImage = Create(width, height, it, strFilename);
+			if (spImage && spImage->Data())
 			{
 				uint32 srcPitch = FreeImage_GetPitch(dib);
 				uint32 destPixelSize = spImage->PixelSize();
@@ -239,11 +243,8 @@ ImagePtr ImageManager::Load(const char * strFilename)
 		byte * bits = FreeImage_GetBits(dib);
 		if (bits != nullptr)
 		{
-			spImage.reset(new Image(*this, strFilename));
-			
-			m_resources[spImage->Name()] = spImage;
-			
-			if (spImage->Create(width, height, it))
+			spImage = Create(width, height, it, strFilename);
+			if (spImage && spImage->Data())
 			{
 				uint32 srcPitch = FreeImage_GetPitch(dib);
 				uint32 destPixelSize = spImage->PixelSize();
@@ -409,7 +410,7 @@ ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
 	if (!pImage)
 		return nullptr;
 
-	ImagePtr spNormalmapImage(new Image(*this, strNormalmapName.c_str()));
+	ImagePtr spNormalmapImage(new Image4F(*this, strNormalmapName.c_str()));
 	if (!spNormalmapImage)
 		return nullptr;
 
@@ -418,7 +419,7 @@ ImagePtr ImageManager::LoadNormalmap(const char * strFilename)
 	const int w = pImage->Width();
 	const int h = pImage->Height();
 	const Vec2 scale((float)w / 256.f, (float)h / 256.f);
-	spNormalmapImage->Create(w, h, Image::TYPE_4F);
+	spNormalmapImage->Create(w, h);
 
 	for (int y = 0; y < h; y++)
 	{

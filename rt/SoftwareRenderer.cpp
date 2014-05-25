@@ -226,14 +226,14 @@ Vec3 SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 	if (!m_pEnvironmentMap)
 		return m_envColor;
 
-	return m_pEnvironmentMap->GetPixelColor(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f) * m_envColor;
+	return m_pEnvironmentMap->GetPixelColorUV(vDir.Yaw() * (1.f / M_2PIf) + 0.5f, vDir.Pitch() * (-1.f / M_PIf) + 0.5f) * m_envColor;
 
 //	float l = Vec2(vDir.x, vDir.z).Length();
 //	float d = (atan2f(vDir.y, l) * (0.5f / M_PIf) + 0.25f);
 //	if (l > 0.f)
 //		d /= l;
 //
-//	return m_pEnvironmentMap->GetPixel(vDir.x * d + 0.5f, vDir.z * -d + 0.5f);
+//	return m_pEnvironmentMap->GetPixelColorUV(vDir.x * d + 0.5f, vDir.z * -d + 0.5f) * m_envColor;
 }
 
 Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal) const
