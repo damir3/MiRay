@@ -65,10 +65,13 @@ private:
 	Matrix	m_matProj;
 	Matrix	m_matViewProj;
 	ColorF	m_bgColor;
-	bool	m_bShowGrid;
-	bool	m_bShowWireframe;
-	bool	m_bShowNormals;
-	bool	m_bShowBVH;
+	float	m_floorIOR;
+	float	m_floorShadow;
+	bool	m_showFloor;
+	bool	m_showGrid;
+	bool	m_showWireframe;
+	bool	m_showNormals;
+	bool	m_showBVH;
 	bool	m_bShouldRedraw;
 	GLint	m_width, m_height;
 	GLuint	m_texture;
@@ -132,18 +135,21 @@ public:
 
 	void SetGizmo(eGizmo gizmo);
 	eGizmo Gizmo() const { return m_gizmo; }
-	
-	bool ShowGrid() const { return m_bShowGrid; }
-	void SetShowGrid(bool b) { m_bShowGrid = b; m_bShouldRedraw = true; }
 
-	bool ShowWireframe() const { return m_bShowWireframe; }
-	void SetShowWireframe(bool b) { m_bShowWireframe = b; m_bShouldRedraw = true; }
+	bool ShowFloor() const { return m_showFloor; }
+	void SetShowFloor(bool b);
 
-	bool ShowNormals() const { return m_bShowNormals; }
-	void SetShowNormals(bool b) { m_bShowNormals = b; m_bShouldRedraw = true; }
+	bool ShowGrid() const { return m_showGrid; }
+	void SetShowGrid(bool b) { m_showGrid = b; m_bShouldRedraw = true; }
 
-	bool ShowBVH() const { return m_bShowBVH; }
-	void SetShowBVH(bool b) { m_bShowBVH = b; m_bShouldRedraw = true; }
+	bool ShowWireframe() const { return m_showWireframe; }
+	void SetShowWireframe(bool b) { m_showWireframe = b; m_bShouldRedraw = true; }
+
+	bool ShowNormals() const { return m_showNormals; }
+	void SetShowNormals(bool b) { m_showNormals = b; m_bShouldRedraw = true; }
+
+	bool ShowBVH() const { return m_showBVH; }
+	void SetShowBVH(bool b) { m_showBVH = b; m_bShouldRedraw = true; }
 
 	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; m_bShouldRedraw = true; }
 

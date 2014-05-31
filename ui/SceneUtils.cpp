@@ -251,7 +251,7 @@ void DrawGeosphere(const Vec3 & pos, float r, const Color & c, int lod)
 void DrawCylinder(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, int num)
 {
 	Vec3 dirZ = Vec3::Normalize(p2 - p1);
-	Vec3 dirX = dirZ.Perpendicular();
+	Vec3 dirX = dirZ.GetPerpendicular();
 	Vec3 dirY = Vec3::Cross(dirZ, dirX);
 	float da = M_2PIf / num;
 	glBegin(GL_TRIANGLES);
@@ -295,7 +295,7 @@ void DrawCone(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, i
 {
 	Vec3 dirZ = p2 - p1;
 	float length = dirZ.Normalize();
-	Vec3 dirX = dirZ.Perpendicular();
+	Vec3 dirX = dirZ.GetPerpendicular();
 	Vec3 dirY = Vec3::Cross(dirZ, dirX);
 	float g = sqrtf(radius * radius + length * length);
 	float f1 = radius / g;
@@ -345,7 +345,7 @@ void DrawCircle(const Vec3 & p, const Vec3 & normal, float r1, float r2, const C
 {
 	enum {NUM_SEGMENTS = 64};
 	Vec3 points[2][NUM_SEGMENTS];
-	Vec3 dirX = normal.Perpendicular();
+	Vec3 dirX = normal.GetPerpendicular();
 	Vec3 dirY = Vec3::Cross(normal, dirX);
 	for (int i = 0; i < NUM_SEGMENTS; i++)
 	{
@@ -455,19 +455,26 @@ bool GetRayAxisIntersectionDelta(const Vec3 & rayStart, const Vec3 & rayEnd, con
 	Vec3 normal = Vec3::Cross(rayDir, axisDir);
 	if (normal.Normalize() == 0.f)
 		return false;
-	
+
+	Vec3 deltaPos = rayStart - axisPos;
 	if (t > 0.f)
 	{
-		float d = Vec3::Dot(normal, axisPos - rayStart);
+		float d = Vec3::Dot(normal, deltaPos);
 		if (fabsf(d) > t)
 			return false;
 	}
 	
 	Vec3 dir = Vec3::Cross(normal, rayDir);
-	float dist = Vec3::Dot(dir, rayStart - axisPos) / Vec3::Dot(dir, axisDir);
-	if (l > 0.f && (dist < 0.f || dist > l))
-		return false;
-	
+	float dist = Vec3::Dot(dir, deltaPos) / Vec3::Dot(dir, axisDir);
+	if (l > 0.f)
+	{
+		if (dist < 0.f || dist > l)
+			return false;
+		
+		if ((deltaPos - axisDir * dist).LengthSquared() > rayDir.LengthSquared())
+			return false;
+	}
+
 	delta = axisDir * dist;
 	return true;
 }

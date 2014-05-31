@@ -125,7 +125,7 @@ bool SceneModel::Load(pugi::xml_node node, ModelManager *pModelManager)
 		ReadVec3(scale, "scale", transformation);
 	}
 
-	mat = MatrixBuilder().AddScale(scale).AddRotation(rotation).AddPosition(position);
+	mat = MatrixBuilder().AddRotation(rotation).AddScale(scale).AddPosition(position);
 
 	std::string strFilename = filename.text().get();
 	return Init(strFilename.c_str(), mat, pModelManager, node);

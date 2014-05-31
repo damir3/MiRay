@@ -30,6 +30,9 @@ SoftwareRenderer::SoftwareRenderer(BVH & scene)
 	, m_bgColor(ColorF::Null)
 	, m_envColor(1.f)
 	, m_pEnvironmentMap(NULL)
+	, m_showFloor(false)
+	, m_floorIOR(1.f)
+	, m_floorShadow(0.3f)
 	, m_ambientOcclusion(1.f)
 	, m_focalDistance(0.f)
 	, m_dofBlur(0.f)
@@ -63,12 +66,11 @@ void SoftwareRenderer::SetEnvironmentMap(const IImage * pEnvironmentMap)
 void SoftwareRenderer::SetAmbientOcclusion(float f, size_t numSamples)
 {
 	m_ambientOcclusion = f;
-	m_numAmbientOcclusionSamples = numSamples;
+	m_numAmbientOcclusionSamples = (int)numSamples;
 }
 
 void SoftwareRenderer::SetFocalDistance(float dist)
 {
-	printf("dist=%f\n", dist);
 	m_focalDistance = dist;
 }
 
@@ -238,7 +240,7 @@ Vec3 SoftwareRenderer::EnvironmentColor(const Vec3 & vDir) const
 
 Vec3 SoftwareRenderer::RandomDirection(const Vec3 & normal) const
 {
-	Vec3 axis1 = normal.Perpendicular();
+	Vec3 axis1 = normal.GetPerpendicular();
 	Vec3 axis2 = Vec3::Cross(normal, axis1);
 	//	float cosA = m_random.x;
 	float cosA = frand();
@@ -332,10 +334,13 @@ inline void SoftwareRenderer::AddAmbientOcclusion(Vec3 & color, const Vec3 & P, 
 		do {
 			vRandDir = RandomDirection(N);
 		} while (Vec3::Dot(vRandDir, TN) <= 0.f);
-		
+
+		if (m_showFloor && vRandDir.z < 0.f)
+			continue;
+
 		if (pMaterial->HasBumpMap())
 		{
-			Vec3 dir = vRandDir.TransformedNormal(tr.pVolume->InverseTransformation());
+			Vec3 dir = vRandDir.GetTransformedNormal(tr.pVolume->InverseTransformation());
 			Vec2 tc = tr.pTriangle->GetTexCoord(tr.localPos, dir);
 
 			const float Z_EPSILON = 1.f / BUMP_AMBIENT_OCCLUSION_LINEAR_SEARCH_STEPS - 1.f / BUMP_LINEAR_SEARCH_STEPS;
@@ -376,7 +381,7 @@ inline void SoftwareRenderer::AddLighting(Vec3 & color, const Vec3 & P, const Ve
 
 		if (pMaterial->HasBumpMap())
 		{
-			Vec3 dir = tr.localPos - lightPos.TransformedCoord(tr.pVolume->InverseTransformation());
+			Vec3 dir = tr.localPos - lightPos.GetTransformedCoord(tr.pVolume->InverseTransformation());
 			Vec2 tc = tr.pTriangle->GetTexCoord(tr.localPos, dir);
 
 			const float Z_EPSILON = 1.f / LIGHTING_BUMP_LINEAR_SEARCH_STEPS - 1.f / BUMP_LINEAR_SEARCH_STEPS;
@@ -398,6 +403,53 @@ inline void SoftwareRenderer::AddLighting(Vec3 & color, const Vec3 & P, const Ve
 	}
 }
 
+inline Vec3 SoftwareRenderer::CalcFloorIllumination(const Vec3 & P) const
+{
+	Vec3 l = Vec3(1.f);
+
+	if (m_ambientOcclusion > 0.f)
+	{
+		int n = 0;
+		for (int i = 0; i < m_numAmbientOcclusionSamples; i++)
+		{// ambient occlusion
+			Vec3 vRandDir = RandomDirection(Vec3::Z);
+			
+			TraceResult otl;
+			if (!m_scene.TraceRay(P, P + vRandDir * m_fRayLength, otl))
+				n++;
+		}
+
+		l *= (float)n / (float)m_numAmbientOcclusionSamples;
+	}
+
+	for (std::vector<ILight *>::const_iterator it = m_lights.begin(); it != m_lights.end(); ++it)
+	{// lighting
+		const ILight * pLight = *it;
+		Vec3 lightPos = pLight->Position(P);
+		Vec3 lightDir = lightPos - P;
+		float l2 = lightDir.LengthSquared();
+		if (l2 == 0.f)
+			continue;
+		
+		float dp = Vec3::Dot(Vec3::Z, lightDir);
+		if (dp <= 0.f)
+			continue;
+
+		Vec3 vLightIntensity = pLight->Intensity(l2);
+		if (vLightIntensity == Vec3::Null)
+			continue;
+				
+		TraceResult ltr;
+		if (m_scene.TraceRay(P, lightPos, ltr))
+			continue;
+		
+		// diffuse
+		l += vLightIntensity * (dp / sqrtf(l2));
+	}
+
+	return l;
+}
+
 inline void FixNormal(Vec3 &normal, const Vec3 &triangleNormal)
 {
 	float dp = Vec3::Dot(normal, triangleNormal);
@@ -417,12 +469,35 @@ SoftwareRenderer::Result SoftwareRenderer::TraceRay(const Vec3 & v1, const Vec3 
 	tr.pTC = &ms;
 
 	int nMaterialIndex;
-	Vec3 vOrigin = v1;
+	Vec3 vOrigin = v1, vDest = v2;
+	if (m_showFloor)// && nTraceDepth == 0)
+	{// floor clipping
+		if (vDest.z < 0.f)
+			vDest = Vec3::Lerp(vOrigin, vDest, vOrigin.z / (vOrigin.z - vDest.z));
+	}
+
 	Vec3 I = v2 - v1;
 	while (true)
 	{
-		if (!m_scene.TraceRay(vOrigin, v2, tr))
-			return Result(EnvironmentColor(I), nTraceDepth == 0 ? Vec3::Null : Vec3(1.f), v2);
+		if (!m_scene.TraceRay(vOrigin, vDest, tr))
+		{
+			Vec3 envColor = EnvironmentColor(I);
+			if (vDest.z != v2.z)
+			{// floor
+				if (m_floorShadow > 0.f)
+					envColor.Scale(Vec3::Lerp(Vec3(1.f), CalcFloorIllumination(vDest), m_floorShadow));
+
+				float fresnel = m_floorIOR > 1.f ? FresnelReflection(Vec3::Normalize(I), Vec3::Z, 1.f, m_floorIOR) : 0.f;
+				if (fresnel <= 0.01f)
+					return Result(envColor, Vec3::Null, vDest);
+
+				Result res = TraceRay(vDest, vDest + Vec3(I.x, I.y, -I.z), nTraceDepth + 1, NULL, ms);
+				res.color = Vec3::Lerp(envColor, res.color, fresnel);
+				return res;
+			}
+			else
+				return Result(envColor, nTraceDepth == 0 ? Vec3::Null : Vec3(1.f), vDest);
+		}
 
 		nMaterialIndex = ms.FindMaterial(tr.pTriangle->Material()->Layer(0));
 		if ((nMaterialIndex < 0) ^ tr.backface)

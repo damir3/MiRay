@@ -1,9 +1,16 @@
 <?xml version="1.0"?>
 <scene>
+	<background>
+		<color>1 1 1</color>
+	</background>
 	<environment>
 		<map>studio.hdr</map>
 		<color>1 1 1</color>
 	</environment>
+	<floor>
+		<ior>1.0</ior>
+		<shadow>0.4</shadow>
+	</floor>
 	<camera>
 		<position>1.12941e-07 -19.2337 6.14566</position>
 		<yaw>-90</yaw>
@@ -29,7 +36,7 @@
 				<layer>
 					<opacity>0</opacity>
 					<fresnel-reflection>1</fresnel-reflection>
-					<ior>1.5</ior>
+					<ior>1.45</ior>
 					<absorption>0.03 0.25 0.5</absorption>
 					<absorption-depth>3</absorption-depth>
 				</layer>
@@ -38,12 +45,11 @@
 				<layer>
 					<opacity>0</opacity>
 					<fresnel-reflection>1</fresnel-reflection>
-					<ior>1.5</ior>
+					<ior>1.45</ior>
 					<absorption>0.03 0.25 0.5</absorption>
 					<absorption-depth>3</absorption-depth>
 				</layer>
 			</material>
 		</materials>
-		
 	</model>
 </scene>

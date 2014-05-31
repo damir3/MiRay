@@ -230,6 +230,10 @@
 	self.pSceneView->ResetCamera();
 }
 
+- (IBAction)onShowFloor:(id)sender {
+	self.pSceneView->SetShowFloor(!self.pSceneView->ShowFloor());
+}
+
 - (IBAction)onShowGrid:(id)sender
 {
 	self.pSceneView->SetShowGrid(!self.pSceneView->ShowGrid());
@@ -270,7 +274,9 @@
 	NSMenuItem *it = (id)item;
 	
 	SEL s = item.action;
-	if (s == @selector(onShowGrid:))
+	if (s == @selector(onShowFloor:))
+		it.state = self.pSceneView->ShowFloor() ? NSOnState : NSOffState;
+	else if (s == @selector(onShowGrid:))
 		it.state = self.pSceneView->ShowGrid() ? NSOnState : NSOffState;
 	else if (s == @selector(onShowWireframe:))
 		it.state = self.pSceneView->ShowWireframe() ? NSOnState : NSOffState;

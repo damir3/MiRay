@@ -24,10 +24,13 @@ class SoftwareRenderer
 	ColorF	m_bgColor;
 	Vec3	m_envColor;
 	const IImage *m_pEnvironmentMap;
+	bool	m_showFloor;
+	float	m_floorShadow;
+	float	m_floorIOR;
 	float	m_ambientOcclusion;
 	float	m_focalDistance;
 	float	m_dofBlur;
-	size_t	m_numAmbientOcclusionSamples;
+	int		m_numAmbientOcclusionSamples;
 	std::vector<ILight *>	m_lights;
 
 	IImage *m_pImage;
@@ -90,6 +93,7 @@ class SoftwareRenderer
 									const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const;
 	inline void AddLighting(Vec3 & color, const Vec3 & P, const Vec3 & N, const TraceResult & tr,
 							const IMaterialLayer * pMaterial, const MaterialContext & mc, float bumpZ) const;
+	inline Vec3 CalcFloorIllumination(const Vec3 & P) const;
 
 	static void ThreadFunc(void * pRenderer);
 
@@ -104,6 +108,9 @@ public:
 	void SetBackgroundColor(const ColorF & bgColor);
 	void SetEnvironmentColor(const ColorF & envColor);
 	void SetEnvironmentMap(const IImage * pEnvironmentMap);
+	void SetShowFloor(bool b) { m_showFloor = b; }
+	void SetFloorIOR(float ior) { m_floorIOR = ior; }
+	void SetFloorShadow(float f) { m_floorShadow = f; }
 	void SetAmbientOcclusion(float f, size_t numSamples);
 	void SetDepthOfField(float blur);
 	void SetFocalDistance(float dist);

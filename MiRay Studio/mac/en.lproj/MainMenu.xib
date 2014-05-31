@@ -165,6 +165,12 @@
                                     <action selector="onResetCamera:" target="mob-8J-rfA" id="dll-nu-zV3"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Show Floor" keyEquivalent="f" id="LDe-h0-ZSo">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="onShowFloor:" target="mob-8J-rfA" id="pbZ-mo-KA8"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Show Grid" keyEquivalent="g" id="573">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

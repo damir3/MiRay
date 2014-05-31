@@ -23,8 +23,6 @@ class RenderThread
 	int		m_mode;
 	Image *	m_pRenderMap;
 	Image *	m_pBuffer;
-	ColorF	m_bgColor;
-	const Image * m_pEnvironmentMap;
 	Matrix	m_matCamera;
 	Matrix	m_matViewProj;
 	int		m_numCPU;
@@ -44,8 +42,7 @@ public:
 	void SetRenderer(SoftwareRenderer * pRenderer);
 	void SetOpenCLRenderer(OpenCLRenderer * pRenderer);
 
-	void Start(int mode, Image & renderMap, Image & buffer, const ColorF & bgColor, const Image * pEnvironmentMap,
-			   const Matrix & matCamera, const Matrix & matViewProj);
+	void Start(int mode, Image & renderMap, Image & buffer, const Matrix & matCamera, const Matrix & matViewProj);
 	void Stop();
 
 	void ThreadFunc();

@@ -45,10 +45,13 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_matView(Matrix::Identity)
 	, m_matViewProj(Matrix::Identity)
 	, m_bgColor(1.f, 1.f, 1.f)
-	, m_bShowGrid(true)
-	, m_bShowWireframe(false)
-	, m_bShowNormals(false)
-	, m_bShowBVH(false)
+	, m_floorIOR(1.f)
+	, m_floorShadow(0.5f)
+	, m_showFloor(true)
+	, m_showGrid(true)
+	, m_showWireframe(false)
+	, m_showNormals(false)
+	, m_showBVH(false)
 	, m_bShouldRedraw(false)
 	, m_width(0), m_height(0)
 	, m_texture(0)
@@ -149,6 +152,13 @@ void SceneView::SetGizmo(eGizmo gizmo)
 	OnMouseMove(m_vMousePos.x, m_vMousePos.y, 0.f, 0.f, MOUSE_NONE);
 }
 
+void SceneView::SetShowFloor(bool b)
+{
+	m_showFloor = b;
+	StopRenderThread();
+	ResumeRenderThread();
+}
+
 void SceneView::ResetScene()
 {
 	StopRenderThread();
@@ -172,6 +182,7 @@ bool SceneView::LoadScene(const char * pFilename)
 
 	RemoveAllModels();
 	RemoveAllLights();
+	m_showFloor = false;
 
 	std::string strPrevDirectory =  PushDirectory(pFilename);
 	for (pugi::xml_node object = node.first_child(); object; object = object.next_sibling())
@@ -196,18 +207,23 @@ bool SceneView::LoadScene(const char * pFilename)
 		{
 			Vec3 position(0.f);
 			float yaw = 0.f, pitch = 0.f;
+			m_fFocalDistance = 10.f;
+			m_fDepthOfField = 0.f;
 			ReadVec3(position, "position", object);
 			ReadFloat(yaw, "yaw", object);
 			ReadFloat(pitch, "pitch", object);
 			ReadFloat(m_fFOV, "fov", object);
+			ReadFloat(m_fFocalDistance, "focal-distance", object);
+			ReadFloat(m_fDepthOfField, "depth-of-field", object);
 			CalculateCameraMatrix(m_matCamera, position, 0.f, yaw, pitch);
-			if (m_pRenderThread->Renderer())
-			{
-				ReadFloat(m_fFocalDistance, "focal-distance", object);
-				ReadFloat(m_fDepthOfField, "depth-of-field", object);
-				m_pRenderThread->Renderer()->SetFocalDistance(m_fFocalDistance);
-				m_pRenderThread->Renderer()->SetDepthOfField(m_fDepthOfField);
-			}
+		}
+		else if (!strcmp(object.name(), "floor"))
+		{
+			m_showFloor = true;
+			m_floorShadow = 0.5f;
+			m_floorIOR = 1.f;
+			ReadFloat(m_floorShadow, "shadow", object);
+			ReadFloat(m_floorIOR, "ior", object);
 		}
 		else if (!strcmp(object.name(), "environment"))
 		{
@@ -229,8 +245,6 @@ bool SceneView::LoadScene(const char * pFilename)
 	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
 	m_matView.Inverse(m_matCamera);
 	m_matViewProj = m_matView * m_matProj;
-	if (m_pRenderThread->Renderer())
-		m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
 
 	m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
 
@@ -250,15 +264,21 @@ bool SceneView::SaveScene(const char * pFilename) const
 		node.append_child("map").text().set(m_pEnvironmentMap->Name().c_str());
 		SaveVec3((Vec3 &)m_bgColor, "color", node);
 	}
+	
+	{// save floor
+		pugi::xml_node node = scene.append_child("floor");
+		SaveFloat(m_floorShadow, "shadow", node);
+		SaveFloat(m_floorIOR, "ior", node);
+	}
 
 	{// save camera
-		pugi::xml_node camera = scene.append_child("camera");
-		SaveVec3(m_matCamera.Pos(), "position", camera);
-		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", camera);
-		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", camera);
-		SaveFloat(m_fFOV, "fov", camera);
-		SaveFloat(m_fFocalDistance, "focal-distance", camera);
-		SaveFloat(m_fDepthOfField, "depth-of-field", camera);
+		pugi::xml_node node = scene.append_child("camera");
+		SaveVec3(m_matCamera.Pos(), "position", node);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", node);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", node);
+		SaveFloat(m_fFOV, "fov", node);
+		SaveFloat(m_fFocalDistance, "focal-distance", node);
+		SaveFloat(m_fDepthOfField, "depth-of-field", node);
 	}
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
@@ -284,17 +304,6 @@ void SceneView::AppendModel(const char * pFilename)
 
 		m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
 		
-		//if (m_pRenderThread->Renderer())
-		//{// update lights
-		//	BBox bbox = m_pBVH->BoundingBox();
-		//	OmniLight * pLight = new OmniLight();
-		//	pLight->SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
-		//	pLight->SetRadius(bbox.Size().Length() * 0.04f);
-		//	pLight->SetIntensity(Vec3(0.3f) * bbox.Size().LengthSquared());
-		//	m_lights.push_back(pLight);
-		//	m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-		//}
-		
 		ResetCamera();
 	}
 	else
@@ -319,11 +328,7 @@ void SceneView::DeleteObject(ITransformable *pObject)
 	{
 		auto itLight = std::find(m_lights.begin(), m_lights.end(), pObject);
 		if (itLight != m_lights.end())
-		{
 			m_lights.erase(itLight);
-			if (m_pRenderThread->Renderer())
-				m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-		}
 	}
 
 	delete pObject;
@@ -360,8 +365,6 @@ void SceneView::RemoveAllModels()
 void SceneView::RemoveAllLights()
 {
 	m_pGizmoObject = NULL;
-	if (m_pRenderThread && m_pRenderThread->Renderer())
-		m_pRenderThread->Renderer()->SetLights(0, NULL);
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
 		delete (*it);
@@ -454,8 +457,7 @@ void SceneView::ResetCamera(int i)
 	m_fFarZ = l * 10.f;
 
 	float dist = l / powf(2.f, (float)i);
-	if (m_pRenderThread->Renderer())
-		m_pRenderThread->Renderer()->SetFocalDistance(dist);
+	m_fFocalDistance = dist;
 
 	m_nFrameCount = 0;
 	CalculateCameraMatrix(m_matCamera, vCenter, dist, -90.f, 10.f);
@@ -669,8 +671,8 @@ void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton b
 
 						Matrix matGizmoInv;
 						matGizmoInv.Inverse(matNormalized);
-						Vec3 rayStartLocal = rayStart.TransformedCoord(matGizmoInv);
-						Vec3 rayEndLocal = rayEnd.TransformedCoord(matGizmoInv);
+						Vec3 rayStartLocal = rayStart.GetTransformedCoord(matGizmoInv);
+						Vec3 rayEndLocal = rayEnd.GetTransformedCoord(matGizmoInv);
 
 						Vec3 ds(0.5f * GIZMO_BOX_SIZE * m_fGizmoScale);
 						for (int i = 0; i < 4; i++)
@@ -766,7 +768,7 @@ bool SceneView::SetSelectionMaterial(const char *material)
 
 Vec3 SceneView::WorldToView(const Vec3 &pos) const
 {
-	return pos.TransformedCoord(m_matView);
+	return pos.GetTransformedCoord(m_matView);
 }
 
 void SceneView::OnMouseClick(float x, float y, eMouseButton button)
@@ -777,9 +779,10 @@ void SceneView::OnMouseClick(float x, float y, eMouseButton button)
 	tr.pos = GetFrustumPosition(x, y, 1.f);
 	if (m_pBVH->TraceRay(m_matCamera.Pos(), tr.pos, tr))
 	{
-		if (button == MOUSE_MIDDLE && m_pRenderThread->Renderer())
+		if (button == MOUSE_MIDDLE)
 		{
-			m_pRenderThread->Renderer()->SetFocalDistance(-tr.pos.TransformedCoord(m_matView).z);
+			m_fFocalDistance = -tr.pos.GetTransformedCoord(m_matView).z;
+			printf("dist=%f\n", m_fFocalDistance);
 			StopRenderThread();
 			ResumeRenderThread();
 		}
@@ -974,7 +977,7 @@ void SceneView::Draw()
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 
-		if (m_bShowGrid)
+		if (m_showGrid)
 			DrawGrid();
 
 		for (auto it = m_models.begin(); it != m_models.end(); ++it)
@@ -985,15 +988,15 @@ void SceneView::Draw()
 			glMatrixMode(GL_MODELVIEW);
 			glMultMatrixf(pVolume->Transformation());
 
-			if (m_bShowWireframe)
+			if (m_showWireframe)
 				(*it)->DrawWireframe();
 			else
 				(*it)->Draw();
 
-			if (m_bShowNormals)
+			if (m_showNormals)
 				(*it)->DrawNormals(m_fNearZ);
 
-			if (m_bShowBVH)
+			if (m_showBVH)
 				DrawCollisionNode(pVolume->Root(), 0);
 
 			glPopMatrix();
@@ -1002,7 +1005,7 @@ void SceneView::Draw()
 
 	DrawRenderMap(false);
 	
-	if (m_renderMode == RM_SOFTWARE && m_pGizmoObject && m_bShowGrid)
+	if (m_renderMode == RM_SOFTWARE && m_pGizmoObject && m_showGrid)
 	{
 		Set3DMode();
 
@@ -1135,7 +1138,21 @@ void SceneView::ResumeRenderThread()
 	m_bShouldRedraw = true;
 	if (m_renderMode != RM_OPENGL)
 	{
+		if (SoftwareRenderer *pRenderer = m_pRenderThread->Renderer())
+		{
+			pRenderer->SetBackgroundColor(m_bgColor);
+			pRenderer->SetEnvironmentColor(m_bgColor);
+			pRenderer->SetEnvironmentMap(m_pEnvironmentMap.get());
+			pRenderer->SetShowFloor(m_showFloor);
+			pRenderer->SetFloorIOR(m_floorIOR);
+			pRenderer->SetFloorShadow(m_floorShadow);
+			pRenderer->SetFocalDistance(m_fFocalDistance);
+			pRenderer->SetDepthOfField(m_fDepthOfField);
+			pRenderer->SetLights(m_lights.size(), (ILight **)m_lights.data());
+		}
+
 		m_pRenderThread->Start(m_renderMode == RM_SOFTWARE ? 0 : 1,
-							   *m_pRenderMap.get(), *m_pBuffer.get(), m_bgColor, m_pEnvironmentMap.get(), m_matCamera, m_matViewProj);
+							   *m_pRenderMap.get(), *m_pBuffer.get(),
+							   m_matCamera, m_matViewProj);
 	}
 }

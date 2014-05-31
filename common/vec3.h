@@ -192,15 +192,15 @@ struct TVec3
 
 	// -------------------------------------------------------------------- //
 	
-	TVec3 TransformedCoord(const Matrix &mat) const;
-	TVec3 TransformedNormal(const Matrix &mat) const;
+	TVec3 GetTransformedCoord(const Matrix &mat) const;
+	TVec3 GetTransformedNormal(const Matrix &mat) const;
 	void Rotate(const TVec3 &axis, float sin_a, float cos_a);
 	void Rotate(const TVec3 &axis, float angle);
-	void TransformCoord(const Matrix &mat) { *this = TransformedCoord(mat); }
-	void TransformNormal(const Matrix &mat) { *this = TransformedNormal(mat); }
+	void TransformCoord(const Matrix &mat) { *this = GetTransformedCoord(mat); }
+	void TransformNormal(const Matrix &mat) { *this = GetTransformedNormal(mat); }
 	void TTransformCoord(const Matrix &mat);
 	void TTransformNormal(const Matrix &mat);
-	TVec3 Perpendicular() const;
+	TVec3 GetPerpendicular() const;
 
 	void Scale(const TVec3 &scale)
 	{

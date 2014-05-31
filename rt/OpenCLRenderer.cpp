@@ -506,8 +506,7 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 
 void OpenCLRenderer::Render(IImage & image, const RectI * pViewportRect,
 							const Matrix & matCamera, const Matrix & matViewProj,
-							const ColorF & bgColor, const IImage * pEnvironmentMap,
-							int numThreads, int nFrameNumber)
+							int nFrameNumber)
 {
 	if (!m_bInitialized)
 		return;

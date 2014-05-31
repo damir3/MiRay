@@ -23,8 +23,7 @@ RenderThread::RenderThread()
 	, m_pOpenCLRenderer(NULL)
 	, m_pRenderMap(NULL)
 	, m_pBuffer(NULL)
-	, m_pEnvironmentMap(NULL)
-	, m_numCPU(0)
+	, m_numCPU(1)
 	, m_nFrameCount(0)
 	, m_fFramesRenderTime(0.0)
 	, m_bStop(true)
@@ -55,9 +54,7 @@ void RenderThread::SetOpenCLRenderer(OpenCLRenderer * pRenderer)
 
 static void StaticThreadFunc(void * pRenderThread) { reinterpret_cast<RenderThread *>(pRenderThread)->ThreadFunc(); }
 
-void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
-						 const ColorF &bgColor, const Image *pEnvironmentMap,
-						 const Matrix &matCamera, const Matrix &matViewProj)
+void RenderThread::Start(int mode, Image & renderMap, Image & buffer, const Matrix &matCamera, const Matrix &matViewProj)
 {
 	if (!m_pRenderer)
 		return;
@@ -65,8 +62,6 @@ void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 	m_mode = mode;
 	m_pRenderMap = &renderMap;
 	m_pBuffer = &buffer;
-	m_bgColor = bgColor;
-	m_pEnvironmentMap = pEnvironmentMap;
 	m_matCamera = matCamera;
 	m_matViewProj = matViewProj;
 #ifdef _WIN32
@@ -80,9 +75,6 @@ void RenderThread::Start(int mode, Image & renderMap, Image & buffer,
 
 	if (m_pRenderer && m_pRenderMap && m_pBuffer)
 	{
-		m_pRenderer->SetBackgroundColor(m_bgColor);
-		m_pRenderer->SetEnvironmentColor(m_bgColor);
-		m_pRenderer->SetEnvironmentMap(m_pEnvironmentMap);
 		m_bStop = false;
 		m_thread.reset(new Thread(&StaticThreadFunc, this));
 	}
@@ -120,8 +112,7 @@ void RenderThread::ThreadFunc()
 		}
 		else if (m_mode == 1 && m_pOpenCLRenderer)
 		{
-			m_pOpenCLRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj,
-									  m_bgColor, m_pEnvironmentMap, m_numCPU, std::max(m_nFrameCount - 2, 0));
+			m_pOpenCLRenderer->Render(*m_pBuffer, &rcViewport, m_matCamera, m_matViewProj, std::max(m_nFrameCount - 2, 0));
 		}
 		double tm2 = Timer::GetSeconds();
 

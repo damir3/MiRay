@@ -56,8 +56,7 @@ public:
 	
 	void Render(IImage & image, const RectI * pViewportRect,
 				const Matrix & matCamera, const Matrix & matViewProj,
-				const ColorF & bgColor, const IImage * pEnvironmentMap,
-				int numThreads, int nFrameNumber);
+				int nFrameNumber);
 	
 	void Join();
 	void Interrupt();
