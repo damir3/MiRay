@@ -70,7 +70,7 @@ class FBXSDK_DLL FbxProceduralTexture : public FbxTexture
 	bool operator==(FbxProceduralTexture const& pTexture) const;
 
 protected:
-	virtual void Construct(const FbxProceduralTexture* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 
 	void Init();

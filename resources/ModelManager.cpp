@@ -6,11 +6,100 @@
 //  Copyright (c) 2013 Damir Sagidullin. All rights reserved.
 //
 
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#include <direct.h>
+//#include <Shlwapi.h>
+//#pragma comment(lib, "Shlwapi.lib")
+#define getcwd	_getcwd
+#define chdir	_chdir
+#endif
 
 #include "ModelManager.h"
 
 using namespace mr;
+
+// ------------------------------------------------------------------------ //
+
+std::string mr::GetFullPath(const char * pLocalPath)
+{
+#ifndef _WIN32
+	char * pActualPath = realpath(pLocalPath, NULL);
+	if (pActualPath == NULL)
+		return pLocalPath;
+	
+	std::string strFullPath = pActualPath;
+	free(pActualPath);
+	return strFullPath;
+#else
+	char cFullPathName[MAX_PATH];
+	if (0 == GetFullPathNameA(pLocalPath, sizeof(cFullPathName), cFullPathName, NULL))
+		return pLocalPath;
+
+	return cFullPathName;
+#endif
+}
+
+//std::string mr::GetLocalPath(const char * pFullPath)
+//{
+//	char cCurrentPath[FILENAME_MAX];
+//	if (!getcwd(cCurrentPath, sizeof(cCurrentPath)))
+//		return pFullPath;
+//
+//#ifndef _WIN32
+//	const char *pDirPath = cCurrentPath;
+//	while (*pFullPath == *pDirPath)
+//	{
+//		pFullPath++;
+//		pDirPath++;
+//	}
+//
+//	std::string strRelativePath = *pDirPath ? "../" : "";
+//	while (*pDirPath)
+//	{
+//		if (*pDirPath++ == '/')
+//			strRelativePath += "../";
+//	}
+//	strRelativePath += pFullPath;
+//	return strRelativePath;
+//#else
+//    char cRelativePath[MAX_PATH] = "";	
+//    if (!PathRelativePathToA(cRelativePath, cCurrentPath, FILE_ATTRIBUTE_DIRECTORY, pFullPath, FILE_ATTRIBUTE_NORMAL))
+//		return pFullPath;
+//
+//	return cRelativePath;
+//#endif
+//}
+
+std::string mr::PushDirectory(const char * pFilename)
+{
+	std::string strPrevDirectory;
+	char cCurrentPath[FILENAME_MAX];
+	if (getcwd(cCurrentPath, sizeof(cCurrentPath)))
+		strPrevDirectory = cCurrentPath;
+
+	std::string	strLocalPath = pFilename;
+	size_t p1 = strLocalPath.find_last_of('/');
+#ifdef _WIN32
+	size_t p2 = strLocalPath.find_last_of('\\');
+	if (p2 != std::string::npos)
+		p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
+#endif
+	
+	if (p1 != std::string::npos)
+		strLocalPath.resize(p1 + 1);
+	
+	if (!strLocalPath.empty())
+		chdir(strLocalPath.c_str());
+
+	return strPrevDirectory;
+}
+
+void mr::PopDirectory(const char * pPrevDirectory)
+{
+	chdir(pPrevDirectory);
+}
 
 // ------------------------------------------------------------------------ //
 
@@ -47,23 +136,37 @@ ModelManager::~ModelManager()
 
 // ------------------------------------------------------------------------ //
 
-Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
+void ModelManager::Release(const std::string & name)
 {
-	Model * pModel = static_cast<Model *>(Find(strFilename));
-	if (pModel)
+	auto it = m_resources.find(name);
+	if (it != m_resources.end())
+		m_resources.erase(it);
+}
+
+ModelPtr ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
+{
+	std::string strFullPath = GetFullPath(strFilename);
+
+	auto it = m_resources.find(strFilename);
+	if (it != m_resources.end())
 	{
-		pModel->AddRef();
-		return pModel;
+		ModelPtr spModel = it->second.lock();
+		if (spModel)
+			return spModel;
 	}
+	
+	printf("Loading model '%s'...\n", strFullPath.c_str());
 
 	if (!m_pSdkManager || !m_pImporter)
-		return NULL;
+		return nullptr;
 
 	FbxScene * m_pScene = FbxScene::Create(m_pSdkManager, "");
 	if (!m_pScene)
-		return NULL;
+		return nullptr;
 
-	if (m_pImporter->Initialize(strFilename, -1, m_pSdkManager->GetIOSettings()))
+	ModelPtr spModel;
+
+	if (m_pImporter->Initialize(strFullPath.c_str(), -1, m_pSdkManager->GetIOSettings()))
 	{
 		int lFileMajor, lFileMinor, lFileRevision;
 		m_pImporter->GetFileVersion(lFileMajor, lFileMinor, lFileRevision);
@@ -80,38 +183,26 @@ Model * ModelManager::LoadModel(const char * strFilename, pugi::xml_node node)
 				FbxSystemUnit(1.0).ConvertScene(m_pScene);
 
 			FbxTime time;
-			pModel = new Model(*this, strFilename);
+			spModel.reset(new Model(*this, strFullPath.c_str()));
 
 			if (!node.empty())
-				pModel->MaterialManagerPtr()->LoadMaterials(node);
+				spModel->MaterialManagerPtr()->LoadMaterials(node);
 
-			CollectMeshes(*pModel, m_pScene->GetRootNode(), (FbxAnimLayer *)NULL, time);
+			CollectMeshes(*spModel.get(), m_pScene->GetRootNode(), (FbxAnimLayer *)NULL, time);
 
-			pModel->MaterialManagerPtr()->CleanupMaterials();
+			spModel->MaterialManagerPtr()->CleanupMaterials();
 
 			{// load textures
-				std::string	strLocalPath = strFilename;
-				size_t p1 = strLocalPath.find_last_of('/');
-#ifdef _WIN32
-				size_t p2 = strLocalPath.find_last_of('\\');
-				if (p2 != std::string::npos)
-					p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
-#endif
-
-				if (p1 != std::string::npos)
-					strLocalPath.resize(p1 + 1);
-
-				if (!strLocalPath.empty())
-					chdir(strLocalPath.c_str());
-
-				pModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
+				std::string strPrevDirectory = PushDirectory(strFullPath.c_str());
+				spModel->MaterialManagerPtr()->LoadTextures(m_pImageManager);
+				PopDirectory(strPrevDirectory.c_str());
 			}
 		}
 	}
 
 	m_pScene->Destroy();
 
-	return pModel;
+	return spModel;
 }
 
 
@@ -347,7 +438,8 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 			const FbxSurfaceMaterial * pFbxMaterial = pFbxNode->GetMaterial(static_cast<int>(gi));
 			if (pFbxMaterial)
 			{
-				std::string strMaterial = pFbxMesh->GetName();
+//				printf("node '%s/%s/%s'\n", pFbxNode->GetName(), pFbxMesh->GetName(), pFbxMaterial->GetName());
+				std::string strMaterial = pFbxNode->GetName();
 				strMaterial += "/";
 				strMaterial += pFbxMaterial->GetName();
 				geom.m_pMaterial = model.MaterialManagerPtr()->Get(strMaterial.c_str());
@@ -385,7 +477,6 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 //						}
 					}
 				}
-				geom.m_pMaterial->AddRef();
 			}
 		}
 	}
@@ -395,14 +486,14 @@ void ModelManager::AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlob
 
 // ------------------------------------------------------------------------ //
 
-struct sNormalKey
+struct NormalKey
 {
 	int vi;
 	Vec3 vNormal;
 	
-	sNormalKey(int i, const Vec3 & normal) : vi(i), vNormal(normal) {}
+	NormalKey(int i, const Vec3 & normal) : vi(i), vNormal(normal) {}
 	
-	bool operator < (const sNormalKey & nk) const
+	bool operator < (const NormalKey & nk) const
 	{
 		if (vi < nk.vi) return true;
 		if (vi > nk.vi) return false;
@@ -420,7 +511,7 @@ struct sNormalKey
 	}
 };
 
-typedef std::map<sNormalKey, size_t> NormalsMap;
+typedef std::map<NormalKey, size_t> NormalsMap;
 
 void RecalculateMeshNormals(FbxMesh * pFbxMesh, const FbxVector4 * pVertexArray, FbxVector4 * pNormalsArray)
 {
@@ -443,7 +534,7 @@ void RecalculateMeshNormals(FbxMesh * pFbxMesh, const FbxVector4 * pVertexArray,
 				FbxVector4 lNormal;
 				if (pFbxMesh->GetPolygonVertexNormal(pi, vi, lNormal))
 				{
-					sNormalKey nk(i, Vec3((float)lNormal[0], (float)lNormal[1], (float)lNormal[2]));
+					NormalKey nk(i, Vec3((float)lNormal[0], (float)lNormal[1], (float)lNormal[2]));
 					NormalsMap::const_iterator it = mapNormals.find(nk);
 					if (it == mapNormals.end())
 						vNormalIndex[ni] = mapNormals[nk] = iNormalsCount++;

@@ -1,0 +1,6 @@
+<material name="White Plastic">
+	<layer>
+		<ior>1.55</ior>
+		<fresnel-reflection>1</fresnel-reflection>
+	</layer>
+</material>

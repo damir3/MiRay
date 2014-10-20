@@ -151,7 +151,7 @@ public:
 	double GetDefaultIKPullHips() const;
 
 	/** Set default IK pull hips.
-	  * \param pIKPull A value between 0.0 and 100.0, 100.0 means complete IK pull.
+	  * \param pIKPullHips A value between 0.0 and 100.0, 100.0 means complete IK pull.
 	  * \remarks This function only works if marker type is set to FbxMarker::eIK_EFFECTOR.
 	  */
 	void SetDefaultIKPullHips(double pIKPullHips);

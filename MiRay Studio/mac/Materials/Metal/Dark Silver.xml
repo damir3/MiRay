@@ -1,0 +1,6 @@
+<material name="Dark Silver">
+	<layer>
+		<reflection>1</reflection>
+		<reflection-tint>0.4</reflection-tint>
+	</layer>
+</material>

@@ -103,19 +103,23 @@ public:
 	  * \name Criteria based member management
 	  */
 	//@{
-        /** Returns the number of class T objects contained within the collection.
-		  * \return The number of objects of class T the collection contains.
+        /** Returns the number of objects contained within the collection that meet the specified criteria.
+		  * \param pCriteria Defines a set of criteria that each object must meet in order to be included in the results.
+		  * \return The number of objects the collection contains that meet the specified criteria.
 		  */
         inline int GetMemberCount(const FbxCriteria& pCriteria) const { return GetSrcObjectCount(pCriteria); }
 
-        /** Returns the member of class T at the given index in the collection.
+        /** Returns the member at the given index in the collection if it meets the specified criteria.
+		  * \param pCriteria Defines a set of criteria that the returned object must meet.
 		  * \param pIndex The given index.
-		  * \return The member of class T at the given index.
+		  * \return The member at the given index if it meets the criteria; NULL otherwise.
 		  */
         inline FbxObject* GetMember(const FbxCriteria& pCriteria, int pIndex=0) const { return GetSrcObject(pCriteria, pIndex); }
 
-        /** Searches for a member of class T.
+        /** Searches for a member with the given name that also meets the given criteria.
+		  * \param pCriteria Defines a set of criteria that the returned object must meet.
 		  * \param pName Member name.
+		  * \return The member with the given name if it meets the criteria; NULL if no match could be found.
 		  */
 		inline FbxObject* FindMember(const FbxCriteria& pCriteria, const char* pName) const { return FindSrcObject(pCriteria, pName); }
 	//@}
@@ -128,18 +132,6 @@ public:
 		  * \param pSelection If \c true, all objects are selected, if \c false, all objects are deselected.
 		  */
         virtual void SetSelectedAll(bool pSelection);
-
-        /** Selects/Deselects an object.
-		  * \param pObject The object to be selected or deselected.
-		  * \param pSelection If \c true, pObject is selected, if \c false, pObject is deselected.
-		  */
-        virtual void SetSelected(FbxObject* pObject, bool pSelection);
-
-        /** Returns whether the specified object is selected or not.
-		  * \param pObject The specified object.
-          * \return Whether pObject is selected or not. 
-		  */
-        virtual bool GetSelected(FbxObject* pObject);
 	//@}
 };
 

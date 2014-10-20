@@ -208,14 +208,15 @@ public:
 		//! Flags available to control objects.
 		enum EObjectFlag
 		{
-			eNone = 0,					//!< No flags.
-			eInitialized = 1 << 0,		//!< Automatically set when FbxObject::Construct() is completed.
-			eSystem = 1 << 1,			//!< When set, object is deleted upon FbxManager destroy only. Use carefully!
-			eSavable = 1 << 2,			//!< If set, object is stored in FBX file upon export. All objects are savable by default.
-			eSelected = 1 << 3,			//!< Used by the selection mechanic to specify a selected object.
-			eHidden = 1 << 4,			//!< Used for interface representation; if set, the object should not be visible.
-			eContentLoaded = 1 << 5,	//!< Used by load-on-demand mechanic to specify if an object has its content loaded.
-			eDontLocalize = 1 << 6		//!< Used by asset builder; Do not localize this object
+			eNone = 0,					 //!< No flags.
+			eInitialized = 1 << 0,		 //!< Automatically set when FbxObject::Construct() is completed.
+			eSystem = 1 << 1,			 //!< When set, object is deleted upon FbxManager destroy only. Use carefully!
+			eSavable = 1 << 2,			 //!< If set, object is stored in FBX file upon export. All objects are savable by default.
+			eSelected = 1 << 3,			 //!< Used by the selection mechanic to specify a selected object.
+			eHidden = 1 << 4,			 //!< Used for interface representation; if set, the object should not be visible.
+			eContentLoaded = 1 << 5,	 //!< Used by load-on-demand mechanic to specify if an object has its content loaded.
+			eDontLocalize = 1 << 6,		 //!< Used by asset builder; Do not localize this object
+            eCopyCalledByClone = 1 << 16 //!< Used internally. If set, modify the Copy behavior of the object
 		};
 
 		/** Set the state of object flags.
@@ -260,12 +261,16 @@ public:
 		* \param pCloneType	    The type of clone to be created. By default, the clone type is eDeepClone.
 		* \param pContainer	    An optional parameter to specify which object will "contain" the new object. By contain, we mean the new object
 		*					    will become a source to the container, connection-wise.
+        * \param pSet           See remark section.
 		* \return			    The new clone, or NULL (if the specified clone type is not supported).
 		* \remark			    When doing either a "deep" or "reference" clone type, the clone will always get its properties values set from
 		*					    the source object properties values. 
         * \remark               Since this is a virtual function, some classes might do additional tasks.
+        * \remark               The \e pSet argument is not used in the default implementation of this method. Specialized implementations should
+        *                       cast this pointer to FbxCloneManager::CloneSet to have access to the cloned objects so far. Typically, this
+        *                       pointer is set by the clone manager.
         */
-		virtual FbxObject* Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL) const;
+		virtual FbxObject* Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL) const;
 
 		/** Checks if this object is a reference clone of another object.
 		* \return \c True if this object is a clone of another object, \c false otherwise */
@@ -1652,7 +1657,7 @@ public:
 /** Safe casting of FBX SDK objects into other FBX SDK class types. This cast will perform
   * the complete test to make sure the object inherits from the requested class type. This is
   * the equivalent of a dynamic_cast but much faster.
-  * \param pPlug	The object to try to cast into T type.
+  * \param pObject	The object to try to cast into T type.
   * \return			A non-null pointer if the cast was successful.
   */
 template <class T> inline T* FbxCast(FbxObject* pObject)
@@ -1663,7 +1668,7 @@ template <class T> inline T* FbxCast(FbxObject* pObject)
 /** Safe const casting of FBX SDK objects into other FBX SDK class types. This cast will perform
   * the complete test to make sure the object inherits from the requested class type. This is
   * the equivalent of a dynamic_cast but much faster.
-  * \param pPlug	The object to try to cast into T type.
+  * \param pObject	The object to try to cast into T type.
   * \return			A non-null pointer if the cast was successful.
   */
 template <class T> inline const T* FbxCast(const FbxObject* pObject)

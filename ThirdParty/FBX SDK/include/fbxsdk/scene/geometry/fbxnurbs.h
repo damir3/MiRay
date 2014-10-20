@@ -40,7 +40,7 @@ public:
     void Reset();
 
     /**
-      * \name NURBS surface Properties
+      * \name NURBS surface properties
       */
     //@{
 
@@ -54,16 +54,13 @@ public:
       */
     inline ESurfaceMode GetSurfaceMode() const {return mSurfaceMode;}
 
-    /** \enum NURBS types.
-      * - \e ePeriodic
-      * - \e eClosed
-      * - \e eOpen
+    /** NURBS types.
       */
     enum EType
     {
-        ePeriodic,
-        eClosed,
-        eOpen
+        ePeriodic,	//!< Periodic.
+        eClosed,	//!< Closed.
+        eOpen		//!< Open.
     };
 
     /** Allocates memory space for an array of control points as well as knot
@@ -180,7 +177,7 @@ public:
     //@}
 
     /**
-      * \name NURBS Export Flags
+      * \name NURBS export flags
       */
     //@{
 
@@ -229,9 +226,11 @@ public:
     };
 
     virtual FbxObject& Copy(const FbxObject& pObject);
+    virtual void SetControlPointAt(const FbxVector4 &pCtrlPoint , int pIndex) { ParentClass::SetControlPointAt(pCtrlPoint, pIndex); }
+    virtual void InitControlPoints(int pCount)                                { ParentClass::InitControlPoints(pCount);             }
 
 protected:
-	virtual void Construct(const FbxNurbs* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
     FbxUInt mUOrder, mVOrder;

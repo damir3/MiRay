@@ -41,6 +41,9 @@
     <ClInclude Include="..\..\ThirdParty\glew\include\GL\wglew.h">
       <Filter>glew</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\MiRay Studio\win\targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="../../MiRay Studio/win/MiRay Studio.cpp">

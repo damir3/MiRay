@@ -7,12 +7,19 @@
 //
 
 #import "AppDelegate.h"
+#import "AppController.h"
+
+@interface AppDelegate()
+
+@property (weak) IBOutlet AppController *appController;
+
+@end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-	// Insert code here to initialize your application
+	[self.appController initScene];
 }
 
 @end

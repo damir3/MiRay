@@ -124,15 +124,17 @@ public:
 	  */
 	EImportOffsetType mImportOffsetType;
 
-	/**	Returns the thumbnail of the take.
-	  * \return                 Pointer to the thumbnail. Maybe NULL if not found.
+	/** Deprecated function. Alwyas rreturns NULL. 
+          * The thumbnail do not exist on a take anymore. There is only one
+	  * on the FbxSceneInfo object.
 	  */
-	FbxThumbnail* GetTakeThumbnail();
+	FBX_DEPRECATED FbxThumbnail* GetTakeThumbnail();
 
-	/** Sets the take thumbnail.
-	  * \param pTakeThumbnail   The referenced thumbnail object.
-	  */
-	void SetTakeThumbnail(FbxThumbnail* pTakeThumbnail);
+	/** Deprecated function.
+          * The thumbnail do not exist on a take anymore. There is only one
+	  * on the FbxSceneInfo object.
+          */
+	FBX_DEPRECATED void SetTakeThumbnail(FbxThumbnail* pTakeThumbnail);
 
     /** Copies the layer information from the take information.
       * \param pTakeInfo          The take information to be copied.
@@ -144,10 +146,6 @@ public:
 
     //! Current Layer.
 	int							mCurrentLayer;
-
-protected:
-    //! The take thumbnail.
-	FbxThumbnail* mTakeThumbnail;
 };
 
 #include <fbxsdk/fbxsdk_nsend.h>

@@ -24,6 +24,9 @@ struct TVec3
 	operator T* () { return &x; }
 	operator const T* () const { return &x; }
 	operator TVec2<T> () const { return TVec2<T>(x, y); }
+#ifdef USE_SSE
+	operator __m128 () const { return _mm_setr_ps(x, y, z, 0.f); }
+#endif
 
 	//operator TVec3<double> () const {return TVec3<double>(x, y, z);}
 	//operator TVec3<float> () const {return TVec3<float>((float)x, (float)y, (float)z);}
@@ -189,15 +192,15 @@ struct TVec3
 
 	// -------------------------------------------------------------------- //
 	
-	TVec3 TransformedCoord(const Matrix &mat) const;
-	TVec3 TransformedNormal(const Matrix &mat) const;
+	TVec3 GetTransformedCoord(const Matrix &mat) const;
+	TVec3 GetTransformedNormal(const Matrix &mat) const;
 	void Rotate(const TVec3 &axis, float sin_a, float cos_a);
 	void Rotate(const TVec3 &axis, float angle);
-	void TransformCoord(const Matrix &mat) { *this = TransformedCoord(mat); }
-	void TransformNormal(const Matrix &mat) { *this = TransformedNormal(mat); }
+	void TransformCoord(const Matrix &mat) { *this = GetTransformedCoord(mat); }
+	void TransformNormal(const Matrix &mat) { *this = GetTransformedNormal(mat); }
 	void TTransformCoord(const Matrix &mat);
 	void TTransformNormal(const Matrix &mat);
-	TVec3 Perpendicular() const;
+	TVec3 GetPerpendicular() const;
 
 	void Scale(const TVec3 &scale)
 	{
@@ -254,7 +257,7 @@ struct TVec3
 	{
 		T IdotN = TVec3::Dot(i, n);
 		T cost2 = (T)1.0 - eta * eta * ((T)1.0 - IdotN * IdotN);
-		return cost2 > (T)0.0 ? (i * eta - n * (eta * IdotN + (T)sqrt(cost2))) : TVec3::Null;
+		return cost2 >= (T)0.0 ? (i * eta - n * (eta * IdotN + (T)sqrt(cost2))) : TVec3::Null;
 	}
 };
 

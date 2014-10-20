@@ -83,7 +83,7 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxDeformer* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual FbxStringList GetTypeFlags() const { return FbxStringList(); }
 
 	bool		mMultiLayer;

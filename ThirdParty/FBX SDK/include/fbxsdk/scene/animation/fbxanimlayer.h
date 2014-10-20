@@ -108,7 +108,7 @@ public:
 	void Reset();
 
     /**
-      * \name BlendMode bypass functions.
+      * \name BlendMode bypass functions
       * This section provides methods to bypass the current layer blend mode by data type.
       * When the state is \c true, the evaluators that are processing the layer will 
       * need to consider that, for the given data type, the blend mode is forced to be Overwrite. 
@@ -133,7 +133,7 @@ public:
     //@}
 
 
-    /** \enum BlendMode Blend mode type between animation layers.
+    /** Blend mode type between animation layers.
       */
 	enum EBlendMode
 	{
@@ -148,7 +148,7 @@ public:
 									animation of the preceding layers for the same attribute. */
 	};
     
-    /** \enum RotationAccumulationMode Rotation accumulation mode of animation layer.
+    /** Rotation accumulation mode of animation layer.
       */
 	enum ERotationAccumulationMode
 	{
@@ -156,7 +156,7 @@ public:
 		eRotationByChannel	//! Rotation values are weighted per component and the result rotation curves are calculated by adding each independent Euler XYZ value.
 	};
 
-    /** \enum ScaleAccumulationMode Scale accumulation mode of animation layer.
+    /** Scale accumulation mode of animation layer.
       */
 	enum EScaleAccumulationMode
 	{
@@ -165,7 +165,7 @@ public:
 	};
 
     /**
-      * \name CurveNode Management
+      * \name CurveNode management
       */
     //@{
         /** Create a FbxAnimCurveNode based on the property data type.

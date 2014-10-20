@@ -150,7 +150,7 @@ __kernel void MainKernel(__global float4 * result,
 					}
 				}
 
-				if (res.z < 1.0)
+				if (res.z < 1.0f)
 				{
 					float3 rayEnd = mad(rayDirection, res.z, rayOrigin);
 					if (all(isgreaterequal(rayEnd, node->center - node->extents)) && all(islessequal(rayEnd, node->center + node->extents)))

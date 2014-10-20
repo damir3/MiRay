@@ -22,36 +22,43 @@ MaterialManager::~MaterialManager()
 
 // ------------------------------------------------------------------------ //
 
-MaterialResource * MaterialManager::Get(const char * strName)
+MaterialPtr MaterialManager::Get(const char * strName)
 {
-	return static_cast<MaterialResource *>(Find(strName));
-	
+	auto it = m_resources.find(strName);
+	if (it == m_resources.end())
+		return nullptr;
+
+	return it->second.lock();
 }
 
-MaterialResource * MaterialManager::Create(const char * strName)
+MaterialPtr MaterialManager::Create(const char * strName)
 {
-	MaterialResource * pMaterial = static_cast<MaterialResource *>(Find(strName));
-	if (pMaterial)
+	auto it = m_resources.find(strName);
+	if (it != m_resources.end())
 	{
-		pMaterial->AddRef();
-		return pMaterial;
+		MaterialPtr spMaterial = it->second.lock();
+		if (spMaterial)
+			return spMaterial;
 	}
-	
+
 	printf("Creating Material '%s'...\n", strName);
 
-	pMaterial = new MaterialResource(*this, strName);
-	return pMaterial;
+	MaterialPtr spMaterial(new MaterialResource(*this, strName));
+	m_resources[spMaterial->Name()] = spMaterial;
+
+	return std::move(spMaterial);
+}
+
+void MaterialManager::Release(const std::string & name)
+{
+	auto it = m_resources.find(name);
+	if (it != m_resources.end())
+		m_resources.erase(it);
 }
 
 void MaterialManager::CleanupMaterials()
 {
-	// make temporary resources list
-	std::vector<IResource *> resources(m_resources.size());
-	std::copy(m_resources.begin(), m_resources.end(), resources.begin());
-
-	// cleanup resources
-	for (auto it = resources.begin(); it != resources.end(); ++it)
-		(*it)->Release();
+	m_vTmpMaterials.clear();
 }
 
 bool MaterialManager::LoadMaterials(pugi::xml_node doc)
@@ -63,9 +70,13 @@ bool MaterialManager::LoadMaterials(pugi::xml_node doc)
 		if (!strName || !*strName)
 			continue;
 
-		MaterialResource * pMaterial = Create(strName);
-		pMaterial->Load(material);
+		MaterialPtr spMaterial = Create(strName);
+		assert(spMaterial);
+
+		spMaterial->Load(material);
+		m_vTmpMaterials.push_back(spMaterial);
 	}
+
 	return true;
 }
 
@@ -74,11 +85,14 @@ bool MaterialManager::SaveMaterials(pugi::xml_node doc)
 	pugi::xml_node materials = doc.append_child("materials");
 	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
 	{
-		MaterialResource * pMaterial = static_cast<MaterialResource *>(*it);
-		pugi::xml_node material = materials.append_child("material");
-		material.append_attribute("name").set_value(pMaterial->Name());
+		MaterialPtr spMaterial = it->second.lock();
+		if (spMaterial)
+		{
+			pugi::xml_node material = materials.append_child("material");
+			material.append_attribute("name").set_value(spMaterial->Name().c_str());
 
-		pMaterial->Save(material);
+			spMaterial->Save(material);
+		}
 	}
 	return true;
 }
@@ -86,5 +100,9 @@ bool MaterialManager::SaveMaterials(pugi::xml_node doc)
 void MaterialManager::LoadTextures(ImageManager * pImageManager)
 {
 	for (auto it = m_resources.begin(); it != m_resources.end(); ++it)
-		static_cast<MaterialResource *>(*it)->LoadTextures(pImageManager);
+	{
+		MaterialPtr spMaterial = it->second.lock();
+		if (spMaterial)
+			spMaterial->LoadTextures(pImageManager);
+	}
 }

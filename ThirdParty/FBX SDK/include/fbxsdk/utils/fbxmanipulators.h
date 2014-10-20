@@ -82,6 +82,12 @@ public:
 	* \remark If this property is not correctly set, movements will be erronous. */
 	FbxPropertyT<FbxFloat> ViewportHeight;
 
+	/** Invert the camera horizontal manipulation direction if set to true. False by default. */
+	FbxPropertyT<FbxBool> InvertX;
+
+	/** Invert the camera vertical manipulation direction if set to true. False by default. */
+	FbxPropertyT<FbxBool> InvertY;
+
 	/** Restore the camera transform upon destruction of the manipulator. */
 	FbxPropertyT<FbxBool> Restore;
 
@@ -90,7 +96,7 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxCameraManipulator* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
 	virtual void ConstructProperties(bool pForceSet);
 	virtual bool PropertyNotify(EPropertyNotifyType pType, FbxProperty& pProperty);
@@ -100,13 +106,15 @@ private:
 	FbxCamera*	GetCamera() const;
 	FbxNode*	GetCameraNode() const;
 	FbxNode*	GetCameraLookAtNode() const;
+	FbxNode*	GetCameraTargetUpNode() const;
 	FbxVector4	GetCameraPosition() const;
 	void		SetCameraPosition(const FbxVector4& pPosition);
 	FbxVector4	GetCameraRotation() const;
 	void		SetCameraRotation(const FbxVector4& pRotation);
 	FbxVector4	GetCameraLookAtPosition() const;
 	void		SetCameraLookAtPosition(const FbxVector4& pPosition);
-	void		StoreCameraState();
+	FbxVector4	GetCameraTargetUpPosition() const;
+	void		SetCameraTargetUpPosition(const FbxVector4& pPosition);
 
 	double		ComputeRotationAxis(FbxVector4& pFront, FbxVector4& pUp, FbxVector4& pRight) const;
 	void		ComputeRotationMatrix(FbxAMatrix& pRM);
@@ -115,13 +123,12 @@ private:
 	void		MoveCameraToFitBBoxInFrustum(int pOnAnimLayer, const FbxTime& pTime, const FbxVector4& pBBoxMin, const FbxVector4& pBBoxMax);
 	bool		Frame(int pOnAnimLayer, const FbxTime& pTime, bool pSelected);
 	void		Evaluate(double& v, const FbxTime& pTime, FbxProperty& p, FbxAnimLayer* pAnimLayer);
-	FbxVector4	RejectionOfOn(const FbxVector4& a, const FbxVector4& b);
 
 	EAction		mCurrentAction;
-	float		mBeginX, mBeginY;
-	FbxVector4	mBeginPosition, mBeginLookAtPosition;
-	FbxVector4	mAxisX, mAxisY, mAxisZ;
+	float		mBeginMousePos[3], mLastMousePos[3];
+	FbxVector4	mBeginPosition, mBeginLookAtPosition, mBeginTargetUpPosition, mRotationAxis[3];
   	FbxVector4	mInitialPosition, mInitialRotation, mInitialLookAt;
+    bool        mReverseX;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };
 

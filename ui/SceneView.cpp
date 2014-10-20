@@ -7,6 +7,8 @@
 //
 #ifndef _WIN32
 #include <unistd.h>
+#else
+#include <direct.h>
 #endif
 
 #include "SceneView.h"
@@ -16,8 +18,15 @@
 #include "SceneUtils.h"
 #include "../rt/SoftwareRenderer.h"
 #include "../rt/OpenCLRenderer.h"
+#include "../resources/MaterialResource.h"
 
 using namespace mr;
+
+const float GIZMO_ARROW_LENGTH = 200.f;
+const float GIZMO_CIRCLE_RADIUS = 200.f;
+const float GIZMO_CIRCLE_THICKNESS = 20.f;
+const float GIZMO_BOX_SIZE = 30.f;
+const float GIZMO_MIN_SCALE = 0.1f;
 
 // ------------------------------------------------------------------------ //
 
@@ -28,16 +37,22 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_fRWidth(0.f)
 	, m_fRHeight(0.f)
 	, m_fFOV(60.f)
+	, m_fFocalDistance(10.f)
+	, m_fDepthOfField(0.f)
 	, m_fNearZ(0.1f)
 	, m_fFarZ(1000.f)
 	, m_matCamera(Matrix::Identity)
 	, m_matView(Matrix::Identity)
 	, m_matViewProj(Matrix::Identity)
 	, m_bgColor(1.f, 1.f, 1.f)
-	, m_bShowGrid(true)
-	, m_bShowWireframe(false)
-	, m_bShowNormals(false)
-	, m_bShowBVH(false)
+	, m_floorIOR(1.f)
+	, m_floorShadow(0.5f)
+	, m_showFloor(true)
+	, m_showGrid(true)
+	, m_showWireframe(false)
+	, m_showNormals(false)
+	, m_showBVH(false)
+	, m_bShouldRedraw(false)
 	, m_width(0), m_height(0)
 	, m_texture(0)
 	, m_nFrameCount(0)
@@ -50,15 +65,21 @@ SceneView::SceneView(const char * pResourcesPath)
 	, m_pRenderMap(NULL)
 	, m_pBuffer(NULL)
 	, m_pRenderThread(new RenderThread())
-	, m_pGizmoObject(NULL)
 	, m_iMouseDown(0)
+	, m_vMousePos(0.f, 0.f)
+	, m_gizmo(GIZMO_MOVE)
+	, m_pGizmoObject(NULL)
+	, m_pSelectedMaterial(NULL)
+	, m_vGizmoStartDelta(0.f)
+	, m_fGizmoScale(0.f)
+	, m_iGizmoAxis(-1)
+	, m_vGizmoStartMousePos(0.f)
+	, m_vGizmoDelta(0.f)
+	, m_bGizmoTransformation(false)
 	, m_vTargetPos(Vec3::Null)
 	, m_vTargetNormal(Vec3::Null)
-	, m_vGizmoStartDelta(0.f)
-	, m_iAxis(-1)
-	, m_bTransformation(false)
 {
-	m_pModelManager = new ModelManager(m_pImageManager);
+	m_pModelManager.reset(new ModelManager(m_pImageManager.get()));
 	m_pRenderThread->SetRenderer(new SoftwareRenderer(*m_pBVH));
 
 	ResetCamera();
@@ -66,15 +87,15 @@ SceneView::SceneView(const char * pResourcesPath)
 
 SceneView::~SceneView()
 {
-	SAFE_DELETE(m_pRenderThread);
+	m_pRenderThread.reset();
 	RemoveAllModels();
 	RemoveAllLights();
-	SAFE_RELEASE(m_pBuffer);
-	SAFE_RELEASE(m_pRenderMap);
-	SAFE_RELEASE(m_pEnvironmentMap);
-	delete m_pModelManager;
-	delete m_pImageManager;
-	delete m_pBVH;
+	m_pBuffer.reset();
+	m_pRenderMap.reset();
+	m_pEnvironmentMap.reset();
+	m_pModelManager.reset();
+	m_pImageManager.reset();
+	m_pBVH.reset();
 }
 
 bool SceneView::Init()
@@ -88,6 +109,9 @@ void SceneView::Done()
 
 // ------------------------------------------------------------------------ //
 
+int SceneView::FramesCount() const { return m_pRenderThread ? m_pRenderThread->FramesCount() : 0; }
+double SceneView::FramesRenderTime() const { return m_pRenderThread ? m_pRenderThread->FramesRenderTime() : 0.0; }
+
 void SceneView::Resize(float w, float h, float rw, float rh)
 {
 	m_fWidth = w;
@@ -100,10 +124,8 @@ void SceneView::Resize(float w, float h, float rw, float rh)
 	int width = (int)m_fRWidth;
 	int height = (int)m_fRHeight;
 	
-	SAFE_RELEASE(m_pRenderMap);
 	m_pRenderMap = m_pImageManager->Create(width, height, Image::TYPE_4F);
 	
-	SAFE_RELEASE(m_pBuffer);
 	m_pBuffer = m_pImageManager->Create(width, height, Image::TYPE_4F);
 	if (m_pBuffer)
 		std::fill(m_pBuffer->DataF(), m_pBuffer->DataF() + m_pBuffer->Width() * m_pBuffer->Height() * m_pBuffer->NumChannels(), 0.f);
@@ -118,6 +140,25 @@ void SceneView::SetRenderMode(eRenderMode rm)
 	ResumeRenderThread();
 }
 
+void SceneView::SetGizmo(eGizmo gizmo)
+{
+	if (m_gizmo == gizmo)
+		return;
+
+	m_gizmo = gizmo;
+	m_bGizmoTransformation = false;
+	m_iGizmoAxis = -1;
+	m_bShouldRedraw = true;
+	OnMouseMove(m_vMousePos.x, m_vMousePos.y, 0.f, 0.f, MOUSE_NONE);
+}
+
+void SceneView::SetShowFloor(bool b)
+{
+	m_showFloor = b;
+	StopRenderThread();
+	ResumeRenderThread();
+}
+
 void SceneView::ResetScene()
 {
 	StopRenderThread();
@@ -125,8 +166,6 @@ void SceneView::ResetScene()
 	RemoveAllModels();
 	RemoveAllLights();
 	ResetCamera();
-
-	ResumeRenderThread();
 }
 
 bool SceneView::LoadScene(const char * pFilename)
@@ -139,36 +178,19 @@ bool SceneView::LoadScene(const char * pFilename)
 	if (node.empty())
 		return false;
 
-	{// set current directory
-		std::string	strLocalPath = pFilename;
-		size_t p1 = strLocalPath.find_last_of('/');
-#ifdef _WIN32
-		size_t p2 = strLocalPath.find_last_of('\\');
-		if (p2 != std::string::npos)
-			p1 = (p1 != std::string::npos) ? std::max(p1, p2) : p2;
-#endif
-
-		if (p1 != std::string::npos)
-			strLocalPath.resize(p1 + 1);
-		
-		if (!strLocalPath.empty())
-		{
-			chdir(strLocalPath.c_str());
-			strLocalPath.clear();
-		}
-	}
-
 	StopRenderThread();
 
 	RemoveAllModels();
 	RemoveAllLights();
+	m_showFloor = false;
 
+	std::string strPrevDirectory =  PushDirectory(pFilename);
 	for (pugi::xml_node object = node.first_child(); object; object = object.next_sibling())
 	{
 		if (!strcmp(object.name(), "model"))
 		{
 			SceneModel *pSceneModel = new SceneModel(*m_pBVH);
-			if (pSceneModel->Load(object, m_pModelManager))
+			if (pSceneModel->Load(object, m_pModelManager.get()))
 				m_models.push_back(pSceneModel);
 			else
 				SAFE_DELETE(pSceneModel);
@@ -185,11 +207,23 @@ bool SceneView::LoadScene(const char * pFilename)
 		{
 			Vec3 position(0.f);
 			float yaw = 0.f, pitch = 0.f;
+			m_fFocalDistance = 10.f;
+			m_fDepthOfField = 0.f;
 			ReadVec3(position, "position", object);
 			ReadFloat(yaw, "yaw", object);
 			ReadFloat(pitch, "pitch", object);
 			ReadFloat(m_fFOV, "fov", object);
+			ReadFloat(m_fFocalDistance, "focal-distance", object);
+			ReadFloat(m_fDepthOfField, "depth-of-field", object);
 			CalculateCameraMatrix(m_matCamera, position, 0.f, yaw, pitch);
+		}
+		else if (!strcmp(object.name(), "floor"))
+		{
+			m_showFloor = true;
+			m_floorShadow = 0.5f;
+			m_floorIOR = 1.f;
+			ReadFloat(m_floorShadow, "shadow", object);
+			ReadFloat(m_floorIOR, "ior", object);
 		}
 		else if (!strcmp(object.name(), "environment"))
 		{
@@ -197,12 +231,10 @@ bool SceneView::LoadScene(const char * pFilename)
 
 			pugi::xml_node filename = object.child("map");
 			if (!filename.empty())
-			{
-				SAFE_RELEASE(m_pEnvironmentMap);
 				m_pEnvironmentMap = m_pImageManager->Load(filename.text().get());
-			}
 		}
 	}
+	PopDirectory(strPrevDirectory.c_str());
 
 	BBox bbox = m_pBVH->BoundingBox();
 	float l = 30.f;
@@ -213,8 +245,8 @@ bool SceneView::LoadScene(const char * pFilename)
 	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
 	m_matView.Inverse(m_matCamera);
 	m_matViewProj = m_matView * m_matProj;
-	if (m_pRenderThread->Renderer())
-		m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
+
+	m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
 
 	ResumeRenderThread();
 
@@ -229,16 +261,24 @@ bool SceneView::SaveScene(const char * pFilename) const
 
 	{// save environment map
 		pugi::xml_node node = scene.append_child("environment");
-		node.append_child("map").text().set(m_pEnvironmentMap->Name());
+		node.append_child("map").text().set(m_pEnvironmentMap->Name().c_str());
 		SaveVec3((Vec3 &)m_bgColor, "color", node);
+	}
+	
+	{// save floor
+		pugi::xml_node node = scene.append_child("floor");
+		SaveFloat(m_floorShadow, "shadow", node);
+		SaveFloat(m_floorIOR, "ior", node);
 	}
 
 	{// save camera
-		pugi::xml_node camera = scene.append_child("camera");
-		SaveVec3(m_matCamera.Pos(), "position", camera);
-		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", camera);
-		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", camera);
-		SaveFloat(m_fFOV, "fov", camera);
+		pugi::xml_node node = scene.append_child("camera");
+		SaveVec3(m_matCamera.Pos(), "position", node);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Yaw()), "yaw", node);
+		SaveFloat(RAD2DEG(m_matCamera.AxisZ().Pitch()), "pitch", node);
+		SaveFloat(m_fFOV, "fov", node);
+		SaveFloat(m_fFocalDistance, "focal-distance", node);
+		SaveFloat(m_fDepthOfField, "depth-of-field", node);
 	}
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
@@ -254,71 +294,62 @@ void SceneView::AppendModel(const char * pFilename)
 {
 	StopRenderThread();
 
-	RemoveAllModels();
-
 	SceneModel *pSceneModel = new SceneModel(*m_pBVH);
-	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager, pugi::xml_node()))
+	if (pSceneModel->Init(pFilename, Matrix::Identity, m_pModelManager.get(), pugi::xml_node()))
 	{
+		RemoveAllModels();
+		RemoveAllLights();
+
 		m_models.push_back(pSceneModel);
 
 		m_pRenderThread->SetOpenCLRenderer(new OpenCLRenderer(*m_pBVH, (m_resourcesPath + "/kernel.cl").c_str(), "MainKernel"));
 		
-		if (m_pRenderThread->Renderer())
-		{// update lights
-			BBox bbox = m_pBVH->BoundingBox();
-			OmniLight * pLight = new OmniLight();
-			pLight->SetOrigin(Vec3::Lerp3(bbox.vMins, bbox.vMaxs, Vec3(0.f, 0.f, 2.f)));
-			pLight->SetRadius(bbox.Size().Length() * 0.04f);
-			pLight->SetIntensity(Vec3(0.3f) * bbox.Size().LengthSquared());
-			RemoveAllLights();
-			m_lights.push_back(pLight);
-			m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-		}
-		
 		ResetCamera();
 	}
 	else
+	{
 		SAFE_DELETE(pSceneModel);
+
+		ResumeRenderThread();
+	}
+}
+
+void SceneView::DeleteObject(ITransformable *pObject)
+{
+	StopRenderThread();
+
+	if (m_pGizmoObject == pObject)
+		m_pGizmoObject = NULL;
+
+	auto itModel = std::find(m_models.begin(), m_models.end(), pObject);
+	if (itModel != m_models.end())
+		m_models.erase(itModel);
+	else
+	{
+		auto itLight = std::find(m_lights.begin(), m_lights.end(), pObject);
+		if (itLight != m_lights.end())
+			m_lights.erase(itLight);
+	}
+
+	delete pObject;
 
 	ResumeRenderThread();
 }
 
 void SceneView::DeleteSelection()
 {
-	for (auto it = m_models.begin(); it != m_models.end(); ++it)
-	{
-		if ((*it) == m_pGizmoObject)
-		{
-			m_models.erase(it);
-			SAFE_DELETE(m_pGizmoObject);
-			StopRenderThread();
-			ResumeRenderThread();
-			return;
-		}
-	}
-
-	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
-	{
-		if ((*it) == m_pGizmoObject)
-		{
-			m_lights.erase(it);
-			SAFE_DELETE(m_pGizmoObject);
-			if (m_pRenderThread->Renderer())
-				m_pRenderThread->Renderer()->SetLights(m_lights.size(), (ILight **)m_lights.data());
-			StopRenderThread();
-			ResumeRenderThread();
-			return;
-		}
-	}
+	DeleteObject(m_pGizmoObject);
 }
 
-void SceneView::RemoveModel(SceneModel * pModel)
+bool SceneView::RemoveModel(ITransformable * pObject)
 {
-	auto it = std::find(m_models.begin(), m_models.end(), pModel);
-	if (it != m_models.end())
-		m_models.erase(it);
+	auto it = std::find(m_models.begin(), m_models.end(), pObject);
+	if (it == m_models.end())
+		return false;
 
-	delete pModel;
+	delete (*it);
+	m_models.erase(it);
+	return true;
 }
 
 void SceneView::RemoveAllModels()
@@ -334,8 +365,6 @@ void SceneView::RemoveAllModels()
 void SceneView::RemoveAllLights()
 {
 	m_pGizmoObject = NULL;
-	if (m_pRenderThread->Renderer())
-		m_pRenderThread->Renderer()->SetLights(0, NULL);
 
 	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
 		delete (*it);
@@ -346,7 +375,6 @@ void SceneView::RemoveAllLights()
 bool SceneView::SetEnvironmentImage(const char * pFilename)
 {
 	StopRenderThread();
-	SAFE_RELEASE(m_pEnvironmentMap);
 	m_pEnvironmentMap = m_pImageManager->Load(pFilename);
 	ResumeRenderThread();
 	return m_pEnvironmentMap != NULL;
@@ -354,7 +382,10 @@ bool SceneView::SetEnvironmentImage(const char * pFilename)
 
 bool SceneView::SaveImage(const char * pFilename) const
 {
-	return m_pRenderMap ? m_pImageManager->Save(pFilename, *m_pRenderMap) : false;
+	if (!m_pRenderMap)
+		return false;
+
+	return m_pImageManager->Save(pFilename, *m_pRenderMap, m_pEnvironmentMap == NULL);
 }
 
 // ------------------------------------------------------------------------ //
@@ -368,16 +399,39 @@ Vec3 SceneView::GetFrustumPosition(float x, float y, float z) const
 	return Vec3(v.x, v.y, v.z) / v.w;
 }
 
+Vec2 TraceBumpMap(Vec2 & tc, const Vec3 & dir,
+				  const IMaterialLayer * pMaterial, const MaterialContext & mc,
+				  int numLinearSearchSteps, int numBinarySearchSteps);
+
 bool SceneView::GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal)
 {
 	TraceResult tr;
 	if (m_pBVH->TraceRay(m_matCamera.Pos(), GetFrustumPosition(x, y, 1.f), tr))
 	{
-		vPos = tr.pos;
-		vNormal = tr.pTriangle->GetNormal(tr.pc);
+		if (tr.pTriangle && tr.pTriangle->Material() && tr.pTriangle->Material()->Layer(0)->HasBumpMap())
+		{// bump mapping
+			const IMaterialLayer *pMaterial = tr.pTriangle->Material()->Layer(0);
+
+			MaterialContext mc;
+			mc.tc = tr.pTriangle->GetTexCoord(tr.pc);
+			mc.dir = Vec3::Normalize(tr.pos - m_matCamera.Pos());
+			mc.normal = tr.pTriangle->GetNormal(tr.pc);
+			tr.pTriangle->GetTangents(mc.tangent, mc.binormal, mc.normal, pMaterial->BumpDepth());
+
+			Vec2 res = TraceBumpMap(mc.tc, mc.dir, pMaterial, mc, 32, 5);
+			vPos = tr.pos + mc.dir * (pMaterial->BumpDepth() * (res.x - 1.f) / res.y);
+			vNormal = pMaterial->BumpMapNormal(mc);
+		}
+		else
+		{
+			vPos = tr.pos;
+			vNormal = tr.pTriangle->GetNormal(tr.pc);
+		}
+		
 		if (tr.pVolume)
-			vNormal = vNormal.TransformedNormal(tr.pVolume->Transformation());
+			vNormal.TTransformNormal(tr.pVolume->InverseTransformation());
 		vNormal.Normalize();
+
 		return true;
 	}
 
@@ -385,31 +439,6 @@ bool SceneView::GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal)
 	vPos = bbox.IsEmpty() ? Vec3::Null : bbox.Center();
 	vNormal = Vec3::Null;
 	return false;
-}
-
-bool SceneView::GetRayTranslationAxisDist(const Vec3 & rayTarget, int axis, bool checkIntersection, Vec3 & vIntersectionDir)
-{
-	const Vec3 & vPos = m_matGizmo.Pos();
-	const Vec3 & vAxis = Vec3::Normalize(m_matGizmo.Axis(axis));
-	Vec3 vRayDir = rayTarget - m_matCamera.Pos();
-	Vec3 vNormal = Vec3::Cross(vRayDir, vAxis);
-	if (vNormal.Normalize() == 0.f)
-		return false;
-
-	if (checkIntersection)
-	{
-		float d = Vec3::Dot(vNormal, vPos - m_matCamera.Pos());
-		if (fabsf(d) > m_vAxisSize.y)
-			return false;
-	}
-
-	Vec3 vDir = Vec3::Cross(vNormal, vRayDir);
-	float fDist = Vec3::Dot(vDir, m_matCamera.Pos() - vPos) / Vec3::Dot(vDir, vAxis);
-	if (checkIntersection && (fDist < 0.f || fDist > m_vAxisSize.x))
-		return false;
-
-	vIntersectionDir = vAxis * fDist;
-	return true;
 }
 
 // ------------------------------------------------------------------------ //
@@ -427,8 +456,11 @@ void SceneView::ResetCamera(int i)
 	m_fNearZ = l * 0.001f;
 	m_fFarZ = l * 10.f;
 
+	float dist = l / powf(2.f, (float)i);
+	m_fFocalDistance = dist;
+
 	m_nFrameCount = 0;
-	CalculateCameraMatrix(m_matCamera, vCenter, l / powf(2.f, (float)i), -90.f, 10.f);
+	CalculateCameraMatrix(m_matCamera, vCenter, dist, -90.f, 10.f);
 	
 	UpdateMatrices();
 }
@@ -442,14 +474,14 @@ void SceneView::RotateCamera(float dx, float dy)
 	float dPitch = clamp(pitch - dy * 0.5f, -89.99f, 89.99f) - pitch;
 	matRotation.RotationAxis(m_matCamera.AxisX(), DEG2RAD(dPitch), m_vTargetPos);
 	m_matCamera = m_matCamera * matRotation;
-	
+
 	// normalize camera matrix
 	CalculateCameraMatrix(m_matCamera, m_matCamera.Pos(), 0.f,
 						  RAD2DEG(m_matCamera.AxisZ().Yaw()), RAD2DEG(m_matCamera.AxisZ().Pitch()));
 	UpdateMatrices();
 }
 
-void SceneView::TranslateCamera(float dx, float dy)
+void SceneView::MoveCamera(float dx, float dy)
 {
 	float fDistance = Vec3::Dot(m_matCamera.AxisZ(), (m_matCamera.Pos() - m_vTargetPos));
 	m_matCamera.Pos() -= m_matCamera.Axis(0) * ((dx * 2.f / m_fRWidth) * fDistance / m_matProj.m11);
@@ -467,7 +499,7 @@ void SceneView::Zoom(float x, float y, float d)
 	GetTarget(x, y, vTarget, vNormal);
 	Vec3 vDir = m_matCamera.Pos() - vTarget;
 	float fDist = vDir.Normalize() * fMul;
-	fDist = clamp(fDist, m_fNearZ, m_fFarZ * 0.9f);
+	fDist = clamp(fDist, m_fNearZ, m_fFarZ * 0.75f);
 	m_matCamera.Pos() = vTarget + vDir * fDist;
 	
 	UpdateMatrices();
@@ -478,7 +510,8 @@ void SceneView::UpdateMatrices()
 	CalculateProjectionMatrix(m_matProj, m_fFOV, m_fWidth / m_fHeight, m_fNearZ, m_fFarZ);
 	m_matView.Inverse(m_matCamera);
 	m_matViewProj = m_matView * m_matProj;
-	
+	UpdateGizmoSize();
+
 	StopRenderThread();
 	ResumeRenderThread();
 }
@@ -488,38 +521,92 @@ void SceneView::UpdateMatrices()
 void SceneView::OnMouseDown(float x, float y, eMouseButton button)
 {
 	m_iMouseDown |= button;
-	m_bTransformation = (m_iAxis >= 0);
-	if (m_bTransformation)
+	m_bGizmoTransformation = (m_iGizmoAxis >= 0);
+	if (m_bGizmoTransformation)
 	{
 		m_matGizmoStart = m_matGizmo;
-		m_vGizmoStartDelta = m_vAxisDelta;
+		m_vGizmoStartDelta = m_vGizmoDelta;
+		m_vGizmoStartMousePos = Vec2(x, y);
 	}
 	else
 		GetTarget(x, y, m_vTargetPos, m_vTargetNormal);
 }
 
-void SceneView::OnMouseUp(eMouseButton button)
+void SceneView::OnMouseUp(float x, float y, eMouseButton button)
 {
 	m_iMouseDown &= ~button;
+	m_bGizmoTransformation = (m_iGizmoAxis >= 0) && (m_iMouseDown != 0);
 	m_vTargetPos = Vec3::Null;
+	m_bShouldRedraw = true;
+	OnMouseMove(x, y, 0.f, 0.f, (eMouseButton)m_iMouseDown);
 }
 
 void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton button)
 {
 	m_nFrameCount = 0;
+	m_vMousePos = Vec2(x, y);
 	switch (button)
 	{
 		case MOUSE_LEFT:
 		{
-			if (m_bTransformation)
+			if (m_bGizmoTransformation)
 			{
 				m_matGizmo = m_matGizmoStart;
-				if (GetRayTranslationAxisDist(GetFrustumPosition(x, y, 1.f), m_iAxis, false, m_vAxisDelta))
+				const Vec3 & rayStart = m_matCamera.Pos();
+				Vec3 rayEnd = GetFrustumPosition(x, y, 1.f);
+				const Vec3 axisDir(Vec3::Normalize(m_matGizmoStart.Axis(m_iGizmoAxis)));
+				const Vec3 & axisPos = m_matGizmoStart.Pos();
+
+				switch (m_gizmo)
 				{
-					m_matGizmo.Pos() += m_vAxisDelta - m_vGizmoStartDelta;
-					m_pGizmoObject->SetTransformation(m_matGizmo);
-					UpdateMatrices();
+					case GIZMO_MOVE:
+						if (GetRayAxisIntersectionDelta(rayStart, rayEnd, axisPos, Matrix::Identity.Axis(m_iGizmoAxis), 0.f, 0.f, m_vGizmoDelta))
+							m_matGizmo.Pos() += m_vGizmoDelta - m_vGizmoStartDelta;
+						break;
+						
+					case GIZMO_ROTATE:
+						if (GetRayPlaneIntersectionDelta(rayStart, rayEnd, axisPos, axisDir, m_vGizmoDelta))
+						{
+							m_vGizmoDelta.Normalize();
+							float dAngle = acosf(Vec3::Dot(m_vGizmoStartDelta, m_vGizmoDelta));
+							if (Vec3::Dot(m_vGizmoDelta, Vec3::Cross(axisDir, m_vGizmoStartDelta)) < 0.f)
+								dAngle = -dAngle;
+
+							//dAngle = DEG2RAD( (int) (RAD2DEG(dAngle) / 5.f) * 5.f );
+
+							Matrix matRotation;
+							matRotation.RotationAxis(axisDir, dAngle, axisPos);
+							m_matGizmo = m_matGizmo * matRotation;
+						}
+						break;
+						
+					case GIZMO_SCALE:
+					{
+						Vec3 vScale(1.f);
+						if (m_iGizmoAxis < 3)
+						{
+							if (GetRayAxisIntersectionDelta(rayStart, rayEnd, axisPos, axisDir, 0.f, 0.f, m_vGizmoDelta))
+								vScale[m_iGizmoAxis] = std::max(1.f + Vec3::Dot(m_vGizmoDelta - m_vGizmoStartDelta, axisDir) / m_fGizmoLength, GIZMO_MIN_SCALE);
+						}
+						else if (m_iGizmoAxis == 3)
+						{
+							float f = (m_vGizmoStartMousePos.y - m_vMousePos.y) * 2.f / GIZMO_ARROW_LENGTH;
+							vScale = Vec3(f >= 0.f ? 1.f + f : 1.f / (1.f - f));
+						}
+						Matrix matScale;
+						matScale.Scale(vScale);
+						m_matGizmo = matScale * m_matGizmo;
+						break;
+					}
+
+					default:
+						return;
 				}
+
+				StopRenderThread();
+				m_pGizmoObject->SetTransformation(m_matGizmo);
+				UpdateGizmoSize();
+				ResumeRenderThread();
 			}
 			else
 				RotateCamera(dx, dy);
@@ -527,31 +614,94 @@ void SceneView::OnMouseMove(float x, float y, float dx, float dy, eMouseButton b
 		}
 		case MOUSE_RIGHT:
 		{
-			TranslateCamera(dx, dy);
+			MoveCamera(dx, dy);
 			break;
 		}
 		default:
 		{
-			m_iAxis = -1;
+			int axis = m_iGizmoAxis;
+			m_iGizmoAxis = -1;
 			if (m_pGizmoObject)
 			{
-				Vec4 vCenter(m_matGizmo.Pos(), 1.f);
-				vCenter.Transform(m_matViewProj);
-				m_vAxisSize.x = 300.f * vCenter.w / (m_fWidth * m_matProj.m11);
-				m_vAxisSize.y = m_vAxisSize.x * 0.05f;
-				Vec3 vTargetPos = GetFrustumPosition(x, y, 1.f);
-				for (int i = 0; i < 3; i++)
+				const Vec3 & rayStart = m_matCamera.Pos();
+				Vec3 rayEnd = GetFrustumPosition(x, y, 1.f);
+				const Vec3 & pos = m_matGizmo.Pos();
+
+				switch (m_gizmo)
 				{
-					if (GetRayTranslationAxisDist(vTargetPos, i, true, m_vAxisDelta))
-						m_iAxis = i;
+					case GIZMO_MOVE:
+						for (int i = 0; i < 3; i++)
+						{
+							if (GetRayAxisIntersectionDelta(rayStart, rayEnd, pos, Vec3::Normalize(Matrix::Identity.Axis(i)),
+															m_fGizmoLength, m_fGizmoLength * 0.05f, m_vGizmoDelta))
+							{
+								rayEnd = pos + m_vGizmoDelta;
+								m_iGizmoAxis = i;
+							}
+						}
+						break;
+
+					case GIZMO_ROTATE:
+					{
+						const float r1 = GIZMO_CIRCLE_RADIUS * m_fGizmoScale;
+						const float r2 = (GIZMO_CIRCLE_RADIUS - GIZMO_CIRCLE_THICKNESS) * m_fGizmoScale;
+						for (int i = 0; i < 3; i++)
+						{
+							Vec3 vDelta;
+							if (GetRayPlaneIntersectionDelta(rayStart, rayEnd, pos, Vec3::Normalize(m_matGizmo.Axis(i)), vDelta))
+							{
+								float l = vDelta.Length();
+								if (l > r2 && l < r1)
+								{
+									rayEnd = pos + vDelta;
+									m_vGizmoDelta = vDelta / l;
+									m_iGizmoAxis = i;
+								}
+							}
+						}
+						break;
+					}
+						
+					case GIZMO_SCALE:
+					{
+						Matrix matNormalized = m_matGizmo;
+						matNormalized.AxisX().Normalize();
+						matNormalized.AxisY().Normalize();
+						matNormalized.AxisZ().Normalize();
+
+						Matrix matGizmoInv;
+						matGizmoInv.Inverse(matNormalized);
+						Vec3 rayStartLocal = rayStart.GetTransformedCoord(matGizmoInv);
+						Vec3 rayEndLocal = rayEnd.GetTransformedCoord(matGizmoInv);
+
+						Vec3 ds(0.5f * GIZMO_BOX_SIZE * m_fGizmoScale);
+						for (int i = 0; i < 4; i++)
+						{
+							Vec3 p = i < 3 ? Matrix::Identity.Axis(i) * (m_fGizmoLength - ds.x) : Vec3::Null;
+							float f = GetRayBoxIntersection(rayStartLocal, rayEndLocal, BBox(p - ds, p + ds));
+							if (f < 1.f)
+							{
+								m_iGizmoAxis = i;
+								rayEndLocal = Vec3::Lerp(rayStart, rayEndLocal, f);
+							}
+						}
+
+						if (m_iGizmoAxis >= 0 && m_iGizmoAxis < 3)
+							GetRayAxisIntersectionDelta(rayStart, rayEnd, pos, Vec3::Normalize(m_matGizmo.Axis(m_iGizmoAxis)), 0.f, 0.f, m_vGizmoDelta);
+						break;
+					}
+
+					default:
+						break;
 				}
 			}
+			m_bShouldRedraw |= (axis != m_iGizmoAxis);
 			break;
 		}
 	}
 }
 
-void SceneView::OnMouseClick(float x, float y, eMouseButton button)
+bool SceneView::SetSelection(float x, float y, Vec3 * pPos)
 {
 	m_pGizmoObject = NULL;
 
@@ -564,7 +714,87 @@ void SceneView::OnMouseClick(float x, float y, eMouseButton button)
 			if ((*it)->GetVolume() == tr.pVolume)
 			{
 				m_pGizmoObject = (*it);
+				m_pSelectedMaterial = const_cast<IMaterial *>(tr.pTriangle->Material());
 				break;
+			}
+		}
+	}
+	
+	for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
+	{
+		if ((*it)->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+			m_pGizmoObject = (*it);
+	}
+	
+	m_bShouldRedraw = true;
+
+	if (!m_pGizmoObject)
+		return false;
+
+	m_matGizmo = m_pGizmoObject->Transformation();
+	UpdateGizmoSize();
+	if (pPos)
+		*pPos = tr.pos;
+
+	return true;
+}
+
+bool SceneView::SetSelectionMaterial(const char *material)
+{
+	SceneModel *pModel = dynamic_cast<SceneModel *>(m_pGizmoObject);
+	if (!pModel)
+		return false;
+
+	MaterialResource *pMaterial = dynamic_cast<MaterialResource *>(m_pSelectedMaterial);
+	if (!pMaterial)
+		return false;
+
+	pugi::xml_document doc;
+	if (doc.load_file(material).status != pugi::status_ok)
+		return false;
+	
+	pugi::xml_node node = doc.child("material");
+	if (node.empty())
+		return false;
+
+	StopRenderThread();
+
+	pMaterial->Load(node);
+
+	ResumeRenderThread();
+
+	return true;
+}
+
+Vec3 SceneView::WorldToView(const Vec3 &pos) const
+{
+	return pos.GetTransformedCoord(m_matView);
+}
+
+void SceneView::OnMouseClick(float x, float y, eMouseButton button)
+{
+	m_pGizmoObject = NULL;
+
+	TraceResult tr;
+	tr.pos = GetFrustumPosition(x, y, 1.f);
+	if (m_pBVH->TraceRay(m_matCamera.Pos(), tr.pos, tr))
+	{
+		if (button == MOUSE_MIDDLE)
+		{
+			m_fFocalDistance = -tr.pos.GetTransformedCoord(m_matView).z;
+			printf("dist=%f\n", m_fFocalDistance);
+			StopRenderThread();
+			ResumeRenderThread();
+		}
+		else
+		{
+			for (auto it = m_models.begin(); it != m_models.end(); ++it)
+			{
+				if ((*it)->GetVolume() == tr.pVolume)
+				{
+					m_pGizmoObject = (*it);
+					break;
+				}
 			}
 		}
 	}
@@ -576,7 +806,10 @@ void SceneView::OnMouseClick(float x, float y, eMouseButton button)
 	}
 
 	if (m_pGizmoObject)
+	{
 		m_matGizmo = m_pGizmoObject->Transformation();
+		UpdateGizmoSize();
+	}
 
 }
 
@@ -612,19 +845,17 @@ void SceneView::OnMouseClick(float x, float y, eMouseButton button)
 //	printf("Render scene time: %dx%d (%d threads) %f ms\n", width, height, numCPU, (tm2 - tm1) * 1000.0);
 //}
 
-void SceneView::DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float size) const
+float SceneView::PosScale(const Vec3 &p) const
 {
-	Vec4 vCenter(pos, 1.f);
+	Vec4 vCenter(p, 1.f);
 	vCenter.Transform(m_matViewProj);
-	float l = size * vCenter.w / (m_fWidth * m_matProj.m11);
-	float r1 = l * 0.02f;
-	float r2 = l * 0.04f;
+	return vCenter.w / (m_fRWidth * m_matProj.m11);
+}
 
-	Vec3 p1 = pos + dir * (l * 0.7f);
-	Vec3 p2 = pos + dir * l;
-//	DrawLine(pos, p1, c, 1.f);
-	DrawCylinder(pos, p1, r1, c, 8);
-	DrawCone(p1, p2, r2, c, 16);
+void SceneView::UpdateGizmoSize()
+{
+	m_fGizmoScale = m_pGizmoObject ? PosScale(m_matGizmo.Pos()) : 0.f;
+	m_fGizmoLength = GIZMO_ARROW_LENGTH * m_fGizmoScale;
 }
 
 void SceneView::DrawGizmo(const Matrix & mat, const BBox & bbox) const
@@ -638,13 +869,99 @@ void SceneView::DrawGizmo(const Matrix & mat, const BBox & bbox) const
 	if (m_renderMode == RM_OPENGL)
 		glClear(GL_DEPTH_BUFFER_BIT);
 
-	static const Color axisColor[] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)};
-	for (int i = 0; i < 3; i++)
-		DrawArrow(mat.Pos(), mat.Axis(i), m_iAxis == i ? Color(255, 255, 0) : axisColor[i], 300.f);
+	glEnable(GL_BLEND);
+
+	const Color activeColor(255, 255, 0);
+	const Color axisColor[] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255), Color::White};
+	const Vec3 & pos = mat.Pos();
+
+	switch (m_gizmo)
+	{
+		case GIZMO_MOVE:
+			for (int i = 0; i < 3; i++)
+				DrawArrow(pos, Matrix::Identity.Axis(i), m_iGizmoAxis == i ? activeColor : axisColor[i], m_fGizmoLength);
+			break;
+
+		case GIZMO_ROTATE:
+		{
+			const float r1 = GIZMO_CIRCLE_RADIUS * m_fGizmoScale;
+			const float r2 = (GIZMO_CIRCLE_RADIUS - GIZMO_CIRCLE_THICKNESS) * m_fGizmoScale;
+
+			for (int i = 0; i < 3; i++)
+			{
+				Vec3 axis = Vec3::Normalize(mat.Axis(i));
+				Color c1 = m_iGizmoAxis == i ? activeColor : axisColor[i];
+				Color c2(c1.r, c1.g, c1.b, 128);
+				if (i != m_iGizmoAxis)
+					DrawLine(pos - axis * r2, pos + axis * r2, axisColor[i], 1.f);
+				else
+					DrawArrow(pos, axis, axisColor[i], m_fGizmoLength);
+
+				if (m_iGizmoAxis >= 0 && i != m_iGizmoAxis)
+					DrawCircle(pos, axis, r1, r1, c1, c2, 1.f);
+				else
+					DrawCircle(pos, axis, r2, r1, c1, c2, 2.f);
+			}
+			break;
+		}
+		case GIZMO_SCALE:
+		{
+			Vec3 s(m_fGizmoLength);
+			Vec3 ds(0.5f * GIZMO_BOX_SIZE * m_fGizmoScale);
+			float r = s.x * 0.02f;
+			if (m_bGizmoTransformation && m_iGizmoAxis >= 0 && m_iGizmoAxis < 3)
+				s[m_iGizmoAxis] *= mat.Axis(m_iGizmoAxis).Length() / m_matGizmoStart.Axis(m_iGizmoAxis).Length();
+
+			for (int i = 0; i < 3; i++)
+			{
+				Vec3 vAxis = Vec3::Normalize(mat.Axis(i));
+				DrawCylinder(pos, pos + vAxis * (s[i] - ds[i] * 2.f), r,  i != m_iGizmoAxis ? axisColor[i] : activeColor, 16);
+			}
+			
+			Matrix matNormalized = mat;
+			matNormalized.AxisX().Normalize();
+			matNormalized.AxisY().Normalize();
+			matNormalized.AxisZ().Normalize();
+
+			glPushMatrix();
+			glMatrixMode(GL_MODELVIEW);
+			glMultMatrixf(matNormalized);
+			for (int i = 0; i < 4; i++)
+			{
+				Vec3 p = i < 3 ? Matrix::Identity.Axis(i) * (s[i] - ds[i]) : Vec3::Null;
+				DrawBox(BBox(p - ds, p + ds), i != m_iGizmoAxis ? axisColor[i] : activeColor);
+			}
+			glPopMatrix();
+
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	glDisable(GL_BLEND);
+}
+
+bool SceneView::ShouldRedraw() const
+{
+	if (m_bShouldRedraw)
+		return true;
+
+	return (m_renderMode != RM_OPENGL) ? (m_pRenderMap && m_pRenderThread->IsRenderMapUpdated()) : false;
+}
+
+void SceneView::Set3DMode()
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadMatrixf(m_matProj);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixf(m_matView);
 }
 
 void SceneView::Draw()
 {
+	m_bShouldRedraw = false;
     glViewport(0, 0, (int)m_fWidth, (int)m_fHeight);
 	glClearColor(m_bgColor.r, m_bgColor.g, m_bgColor.b, m_bgColor.a);
 	glClearDepth(1.f);
@@ -652,10 +969,7 @@ void SceneView::Draw()
 
 	if (m_renderMode == RM_OPENGL/* || m_renderMode == RM_MIXED*/)
 	{
-		glMatrixMode(GL_PROJECTION);
-		glLoadMatrixf(m_matProj);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(m_matView);
+		Set3DMode();
 
 	//	glEnable(GL_CULL_FACE);
 	//	glFrontFace(GL_CW);
@@ -663,7 +977,7 @@ void SceneView::Draw()
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 
-		if (m_bShowGrid)
+		if (m_showGrid)
 			DrawGrid();
 
 		for (auto it = m_models.begin(); it != m_models.end(); ++it)
@@ -674,38 +988,52 @@ void SceneView::Draw()
 			glMatrixMode(GL_MODELVIEW);
 			glMultMatrixf(pVolume->Transformation());
 
-			if (m_bShowWireframe)
+			if (m_showWireframe)
 				(*it)->DrawWireframe();
 			else
 				(*it)->Draw();
 
-			if (m_bShowNormals)
+			if (m_showNormals)
 				(*it)->DrawNormals(m_fNearZ);
 
-			if (m_bShowBVH)
+			if (m_showBVH)
 				DrawCollisionNode(pVolume->Root(), 0);
 
 			glPopMatrix();
 		}
 	}
 
-	DrawRenderMap();
+	DrawRenderMap(false);
+	
+	if (m_renderMode == RM_SOFTWARE && m_pGizmoObject && m_showGrid)
+	{
+		Set3DMode();
 
+		DrawGrid();
+
+		DrawRenderMap(true);
+	}
+	
 //	if (m_pModel)
 	{
-		glMatrixMode(GL_PROJECTION);
-		glLoadMatrixf(m_matProj);
-		glMatrixMode(GL_MODELVIEW);
-		glLoadMatrixf(m_matView);
+		Set3DMode();
 
-		if (m_iMouseDown && !m_bTransformation)
-			DrawArrow(m_vTargetPos, m_vTargetNormal, Color(255, 255, 0), 200.f);
+		if (m_iMouseDown && !m_bGizmoTransformation)
+			DrawArrow(m_vTargetPos, m_vTargetNormal, Color(255, 255, 0),  GIZMO_ARROW_LENGTH * PosScale(m_vTargetPos));
+
+		if (m_pGizmoObject)
+			DrawGizmo(m_matGizmo, m_pGizmoObject->OOBB());
+
+		glEnable(GL_CULL_FACE);
+		glFrontFace(GL_CW);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		for (auto it = m_lights.begin(); it != m_lights.end(); ++it)
 			(*it)->Draw();
 
-		if (m_pGizmoObject)
-			DrawGizmo(m_matGizmo, m_pGizmoObject->OOBB());
+		glDisable(GL_BLEND);
+		glDisable(GL_CULL_FACE);
 	}
 }
 
@@ -750,7 +1078,7 @@ void SceneView::UpdateRenderMapTexture()
 	}
 }
 
-void SceneView::DrawRenderMap()
+void SceneView::DrawRenderMap(bool blend)
 {
 	if (!m_pRenderMap || m_renderMode == RM_OPENGL)
 		return;
@@ -761,6 +1089,7 @@ void SceneView::DrawRenderMap()
 	if (!m_texture)
 		return;
 
+	// set 2D mode
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glMatrixMode(GL_MODELVIEW);
@@ -772,19 +1101,16 @@ void SceneView::DrawRenderMap()
 
 	float u = (float)m_rcRenderMap.Width() / (float)m_pRenderMap->Width();
 	float v = (float)m_rcRenderMap.Height() / (float)m_pRenderMap->Height();
-//	if (m_renderMode == RM_MIXED)
-//	{
-//		glEnable(GL_BLEND);
-//		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-//		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-//		glColor4ub(255, 255, 255, 128);
-//	}
-//	else
+	if (blend)
 	{
-		glDisable(GL_BLEND);
-		glColor4ub(255, 255, 255, 255);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	}
+	else
+		glDisable(GL_BLEND);
 
+	glColor4ub(255, 255, 255, 255);
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.f, v);
 	glVertex2f(-1.f, -1.f);
@@ -809,9 +1135,24 @@ void SceneView::StopRenderThread()
 
 void SceneView::ResumeRenderThread()
 {
+	m_bShouldRedraw = true;
 	if (m_renderMode != RM_OPENGL)
 	{
+		if (SoftwareRenderer *pRenderer = m_pRenderThread->Renderer())
+		{
+			pRenderer->SetBackgroundColor(m_bgColor);
+			pRenderer->SetEnvironmentColor(m_bgColor);
+			pRenderer->SetEnvironmentMap(m_pEnvironmentMap.get());
+			pRenderer->SetShowFloor(m_showFloor);
+			pRenderer->SetFloorIOR(m_floorIOR);
+			pRenderer->SetFloorShadow(m_floorShadow);
+			pRenderer->SetFocalDistance(m_fFocalDistance);
+			pRenderer->SetDepthOfField(m_fDepthOfField);
+			pRenderer->SetLights(m_lights.size(), (ILight **)m_lights.data());
+		}
+
 		m_pRenderThread->Start(m_renderMode == RM_SOFTWARE ? 0 : 1,
-							   *m_pRenderMap, *m_pBuffer, m_bgColor, m_pEnvironmentMap, m_matCamera, m_matViewProj);
+							   *m_pRenderMap.get(), *m_pBuffer.get(),
+							   m_matCamera, m_matViewProj);
 	}
 }

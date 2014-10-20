@@ -10,8 +10,9 @@
 
 using namespace mr;
 
-Model::Model(ModelManager & owner, const char * strName)
-	: IResource(owner, strName)
+Model::Model(ModelManager & owner, const char * name)
+	: m_owner(owner)
+	, m_name(name)
 	, m_pMaterialManager(new MaterialManager())
 {
 	m_bbox.ClearBounds();
@@ -25,7 +26,7 @@ Model::~Model()
 		m_meshes.pop_back();
 	}
 
-	SAFE_DELETE(m_pMaterialManager);
+	m_owner.Release(m_name);
 }
 
 // ------------------------------------------------------------------------ //
@@ -60,5 +61,4 @@ Model::Geometry::Geometry() : m_pMaterial(NULL)
 
 Model::Geometry::~Geometry()
 {
-	SAFE_RELEASE(m_pMaterial);
 }

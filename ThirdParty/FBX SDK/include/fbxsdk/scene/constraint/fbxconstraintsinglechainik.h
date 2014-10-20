@@ -27,7 +27,7 @@ class FBXSDK_DLL FbxConstraintSingleChainIK : public FbxConstraint
     FBXSDK_OBJECT_DECLARE(FbxConstraintSingleChainIK, FbxConstraint);
 
 public:
-    /** \enum Solver pole vector mode.
+    /** Solver pole vector mode.
       */
     enum ESolverMode
     {
@@ -35,7 +35,7 @@ public:
         eSingleChain	//! Single chain solver.
     };
 
-    /** \enum EPoleVectorMode Pole vector mode.
+    /** Pole vector mode.
       */
     enum EPoleVectorMode
     {
@@ -43,7 +43,7 @@ public:
         eObject		//! Pole vector type is object.
     };
 
-	/** \enum EEvaluationMode If the constraints read its animation on Translation and Scale for the nodes it constraints.
+	/** If the constraints read its animation on Translation and Scale for the nodes it constraints.
 	  */
 	enum EEvaluationMode
 	{

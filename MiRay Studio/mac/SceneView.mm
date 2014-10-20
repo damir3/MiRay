@@ -10,23 +10,15 @@
 
 @interface SceneView()
 
-@property () mr::SceneView *pSceneView;
-@property () NSPoint ptPrevMouse;
-@property () NSArray *modelFileTypes;
-@property () NSArray *imageFileTypes;
-@property () NSString *filename;
+@property NSPoint ptPrevMouse;
+@property NSMenu *materialsSubMenu;
 
 @end
 
 @implementation SceneView
 
-@synthesize pSceneView, ptPrevMouse, modelFileTypes, imageFileTypes;
-
 - (void)awakeFromNib
 {
-	self.modelFileTypes = [NSArray arrayWithObjects: @"mrs", @"fbx", @"dae", @"dxf", @"obj", @"3ds", nil];
-	self.imageFileTypes = [NSArray arrayWithObjects: @"jpg", @"jpeg", @"png", @"tga", @"hdr", @"exr", @"tif", @"tiff", @"psd", @"dds", @"bmp", @"raw", @"gif", @"ico", @"pcx", @"pict", @"crw", @"cr2", @"nef", @"raf", @"dng", @"mos", @"kdc", @"dcr", nil];
-
 	NSOpenGLPixelFormatAttribute attrs[] =
 	{
 		NSOpenGLPFAWindow,
@@ -48,7 +40,33 @@
 
 	[[self window] setAcceptsMouseMovedEvents:YES];
 
+	self.materialsSubMenu = [[NSMenu alloc] init];
+	[self createMetarialsMenuRecursive:self.materialsSubMenu atPath:[[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Materials"]];
+
 	self.pSceneView = new mr::SceneView([[[NSBundle mainBundle] resourcePath] UTF8String]);
+}
+
+- (void)createMetarialsMenuRecursive: (NSMenu *)menu atPath:(NSString *)path
+{
+	NSFileManager *fileManager = [[NSFileManager alloc] init];
+	NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:path error:nil];
+	int index = 0;
+	for (NSString *file : dirContents)
+	{
+		NSString *filePath = [path stringByAppendingPathComponent:file];
+		BOOL isDirectory = NO;
+		BOOL isFileExists = [fileManager fileExistsAtPath:filePath isDirectory:&isDirectory];
+		if (isDirectory)
+		{
+			NSMenuItem *item = [menu insertItemWithTitle:file action:nil keyEquivalent:@"" atIndex:index++];
+			item.submenu = [[NSMenu alloc] init];
+			[self createMetarialsMenuRecursive:item.submenu atPath:filePath];
+		}
+		else if (isFileExists && [[file pathExtension] caseInsensitiveCompare:@"xml"] == NSOrderedSame)
+		{
+			[menu insertItemWithTitle:[file stringByDeletingPathExtension] action:@selector(onSetMaterial:) keyEquivalent:filePath atIndex:index++];
+		}
+	}
 }
 
 - (void)dealloc
@@ -67,21 +85,9 @@
 }
 
 - (void)prepareOpenGL
-
 {
 	self.pSceneView->Init();
 //	glEnable(GL_MULTISAMPLE);
-
-	self.pSceneView->LoadScene([[[NSBundle mainBundle] pathForResource:@"cup" ofType:@"mrs"] UTF8String]);
-
-	NSTimer *timer = [NSTimer timerWithTimeInterval:1.0/10.0 target:self selector:@selector(idle:) userInfo:nil repeats:YES];
-	[[NSRunLoop currentRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
-}
-
-- (void)idle:(NSTimer *)timer
-{
-    if(![[NSApplication sharedApplication] isHidden])
-        [self setNeedsDisplay:YES];
 }
 
 - (void)reshape
@@ -109,65 +115,72 @@
 			default: return;
 		}
 	}
-	else
-	{
-		switch (theEvent.keyCode)
-		{
-			case kVK_Delete: self.pSceneView->DeleteSelection(); break;
-			default: return;
-		}
-	}
-
-	//	if (theEvent.keyCode == kVK_Space)
-	//	{
-	//		float tm = self.pSceneView->RenderScene();
-	//		NSLog(@"%f", tm);
-	//	}
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
 	self.ptPrevMouse = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(self.ptPrevMouse.x, self.bounds.size.height - self.ptPrevMouse.y, mr::MOUSE_LEFT);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseUp:(NSEvent *)theEvent
 {
-	self.pSceneView->OnMouseUp(mr::MOUSE_LEFT);
+	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+	self.pSceneView->OnMouseUp(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_LEFT);
 	if (theEvent.clickCount == 1)
-	{
-		NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_LEFT);
-	}
-	[self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseDown:(NSEvent *)theEvent
 {
 	self.ptPrevMouse = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(self.ptPrevMouse.x, self.bounds.size.height - self.ptPrevMouse.y, mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseUp:(NSEvent *)theEvent
 {
-	self.pSceneView->OnMouseUp(mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
+	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+	self.pSceneView->OnMouseUp(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_RIGHT);
+	if (theEvent.clickCount == 1)
+	{
+		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_RIGHT);
+
+		if (self.pSceneView->SetSelection(pt.x, self.bounds.size.height - pt.y, nullptr))
+		{
+			[self setNeedsDisplay:YES];
+			NSMenu *menu = [[NSMenu alloc] init];
+			NSMenuItem *menuItem = [menu insertItemWithTitle:@"Material" action:nil keyEquivalent:@"" atIndex:0];
+			menuItem.submenu = self.materialsSubMenu;
+			[menu insertItem:[NSMenuItem separatorItem] atIndex:1];
+			[menu insertItemWithTitle:@"Delete Object" action:@selector(onDeleteObject:) keyEquivalent:@"" atIndex:2];
+			[NSMenu popUpContextMenu:menu withEvent:theEvent forView:self];
+		}
+	}
+}
+
+- (void)onSetMaterial:(NSMenuItem *) sender
+{
+	NSLog(@"%@", sender.keyEquivalent);
+	self.pSceneView->SetSelectionMaterial(sender.keyEquivalent.UTF8String);
+}
+
+- (void)onDeleteObject:(id) sender
+{
+	self.pSceneView->DeleteSelection();
 }
 
 - (void)otherMouseDown:(NSEvent *)theEvent
 {
 	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->OnMouseDown(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)otherMouseUp:(NSEvent *)theEvent
 {
-	self.pSceneView->OnMouseUp(mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
+	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
+	self.pSceneView->OnMouseUp(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_MIDDLE);
+	if (theEvent.clickCount == 1)
+		self.pSceneView->OnMouseClick(pt.x, self.bounds.size.height - pt.y, mr::MOUSE_MIDDLE);
 }
 
 - (void)mouseMoved:(NSEvent *)theEvent
@@ -177,7 +190,6 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_NONE);
-	[self setNeedsDisplay:YES];
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent
@@ -187,7 +199,8 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_LEFT);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)rightMouseDragged:(NSEvent *)theEvent
@@ -197,7 +210,8 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_RIGHT);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)otherMouseDragged:(NSEvent *)theEvent
@@ -207,21 +221,22 @@
 	float dy = pt.y - self.ptPrevMouse.y;
 	self.ptPrevMouse = pt;
 	self.pSceneView->OnMouseMove(pt.x, self.bounds.size.height - pt.y, dx, -dy, mr::MOUSE_MIDDLE);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)scrollWheel:(NSEvent *)theEvent
 {
 	NSPoint pt = [self convertPoint:[theEvent locationInWindow] fromView:nil];
 	self.pSceneView->Zoom(pt.x, self.bounds.size.height - pt.y, theEvent.deltaY);
-	[self setNeedsDisplay:YES];
+	if (self.pSceneView->ShouldRedraw())
+        [self setNeedsDisplay:YES];
 }
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-	pSceneView->Draw();
-	
-	glFlush();
+	self.pSceneView->Draw();
+
 	[self.openGLContext flushBuffer];
 }
 
@@ -248,183 +263,17 @@
 		NSString * extension = [[filename pathExtension] lowercaseString];
 		if ([self.modelFileTypes containsObject:extension])
 		{
-			pSceneView->AppendModel([filename UTF8String]);
+			self.pSceneView->AppendModel([filename UTF8String]);
 			return YES;
 		}
 		if ([self.imageFileTypes containsObject:extension])
 		{
-			pSceneView->SetEnvironmentImage([filename UTF8String]);
+			self.pSceneView->SetEnvironmentImage([filename UTF8String]);
 			return YES;
 		}
 	}
 
 	return NO;
-}
-
-- (IBAction)onFileNew:(id)sender
-{
-	self.filename = nil;
-	pSceneView->ResetScene();
-}
-
-- (IBAction)onFileOpen:(id)sender
-{
-	pSceneView->StopRenderThread();
-
-	NSOpenPanel* panel = [NSOpenPanel openPanel];
-	[panel setTitle:@"Open"];
-	[panel setCanChooseFiles:YES];
-	[panel setCanChooseDirectories:NO];
-	[panel setAllowedFileTypes:self.modelFileTypes];
-
-	if ([panel runModal] == NSOKButton)
-	{
-		for (NSURL* url in [panel URLs])
-		{
-			if ([[url pathExtension] compare:@"mrs"] == NSOrderedSame)
-			{
-				self.filename = [url path];
-				self.pSceneView->LoadScene([self.filename UTF8String]);
-			}
-			else
-				self.pSceneView->AppendModel([[url path] UTF8String]);
-			[self setNeedsDisplay:YES];
-			break;
-		}
-	}
-}
-
-- (IBAction)onSave:(id)sender
-{
-	if (self.filename != nil)
-		self.pSceneView->SaveScene([self.filename UTF8String]);
-	else
-		[self onSaveAs:sender];
-}
-
-- (IBAction)onSaveAs:(id)sender
-{
-	pSceneView->StopRenderThread();
-
-	NSSavePanel* panel = [NSSavePanel savePanel];
-	[panel setTitle:@"Save As..."];
-	[panel setNameFieldStringValue:@"untitled"];
-	[panel setAllowedFileTypes:[NSArray arrayWithObjects: @"mrs", nil]];
-
-	if ([panel runModal] == NSOKButton)
-	{
-		self.filename = [[panel URL] path];
-		self.pSceneView->SaveScene([self.filename UTF8String]);
-	}
-
-	pSceneView->ResumeRenderThread();
-}
-
-- (IBAction)onEnvironmentImage:(id)sender
-{
-	pSceneView->StopRenderThread();
-
-	NSOpenPanel* panel = [NSOpenPanel openPanel];
-	[panel setTitle:@"Environment Image"];
-	[panel setCanChooseFiles:YES];
-	[panel setCanChooseDirectories:NO];
-	[panel setAllowedFileTypes:self.imageFileTypes];
-
-	if ([panel runModal] == NSOKButton)
-	{
-		for (NSURL* url in [panel URLs])
-		{
-			self.pSceneView->SetEnvironmentImage([[url path] UTF8String]);
-			[self setNeedsDisplay:YES];
-			break;
-		}
-	}
-}
-
-- (IBAction)onSaveImage:(id)sender
-{
-	pSceneView->StopRenderThread();
-	
-	NSSavePanel* panel = [NSSavePanel savePanel];
-	[panel setTitle:@"Save Image"];
-	[panel setNameFieldStringValue:@"untitled.png"];
-	[panel setAllowedFileTypes:self.imageFileTypes];
-	
-	if ([panel runModal] == NSOKButton)
-		self.pSceneView->SaveImage([[[panel URL] path] UTF8String]);
-
-	pSceneView->ResumeRenderThread();
-}
-
-- (IBAction)onResetCamera:(id)sender
-{
-	self.pSceneView->ResetCamera();
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onShowGrid:(id)sender
-{
-	self.pSceneView->SetShowGrid(!self.pSceneView->ShowGrid());
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onShowWireframe:(id)sender
-{
-	self.pSceneView->SetShowWireframe(!self.pSceneView->ShowWireframe());
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onShowNormals:(id)sender
-{
-	self.pSceneView->SetShowNormals(!self.pSceneView->ShowNormals());
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onShowBVH:(id)sender
-{
-	self.pSceneView->SetShowBVH(!self.pSceneView->ShowBVH());
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onOpenGLMode:(id)sender
-{
-	self.pSceneView->SetRenderMode(mr::SceneView::RM_OPENGL);
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onSoftwareMode:(id)sender
-{
-	self.pSceneView->SetRenderMode(mr::SceneView::RM_SOFTWARE);
-	[self setNeedsDisplay:YES];
-}
-
-- (IBAction)onOpenCLMode:(id)sender
-{
-	self.pSceneView->SetRenderMode(mr::SceneView::RM_OPENCL);
-	[self setNeedsDisplay:YES];
-}
-
-- (BOOL)validateUserInterfaceItem:(id <NSValidatedUserInterfaceItem>)item
-{
-	NSMenuItem *it = (id)item;
-	
-	SEL s = item.action;
-	if (s == @selector(onShowGrid:))
-		it.state = self.pSceneView->ShowGrid() ? NSOnState : NSOffState;
-	else if (s == @selector(onShowWireframe:))
-		it.state = self.pSceneView->ShowWireframe() ? NSOnState : NSOffState;
-	else if (s == @selector(onShowNormals:))
-		it.state = self.pSceneView->ShowNormals() ? NSOnState : NSOffState;
-	else if (s == @selector(onShowBVH:))
-		it.state = self.pSceneView->ShowBVH() ? NSOnState : NSOffState;
-	else if (s == @selector(onOpenGLMode:))
-		it.state = self.pSceneView->RenderMode() == mr::SceneView::RM_OPENGL ? NSOnState : NSOffState;
-	else if (s == @selector(onSoftwareMode:))
-		it.state = self.pSceneView->RenderMode() == mr::SceneView::RM_SOFTWARE ? NSOnState : NSOffState;
-	else if (s == @selector(onOpenCLMode:))
-		it.state = self.pSceneView->RenderMode() == mr::SceneView::RM_OPENCL ? NSOnState : NSOffState;
-	
-	return YES;
 }
 
 @end

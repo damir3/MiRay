@@ -1,0 +1,9 @@
+<material name="Dark Green Glass">
+	<layer>
+		<opacity>0</opacity>
+		<ior>1.5</ior>
+		<fresnel-reflection>1</fresnel-reflection>
+		<absorption>0.2 0.5 0.2</absorption>
+		<absorption-depth>0.2</absorption-depth>
+	</layer>
+</material>

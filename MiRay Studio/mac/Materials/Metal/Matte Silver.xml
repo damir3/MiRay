@@ -1,0 +1,6 @@
+<material name="Silver">
+	<layer>
+		<reflection>1</reflection>
+		<reflection-roughness>0.2</reflection-roughness>
+	</layer>
+</material>

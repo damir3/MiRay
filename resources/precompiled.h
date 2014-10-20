@@ -18,8 +18,9 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <set>
 #include <map>
+#include <sstream>
+#include <memory>
 
 #define FBXSDK_NEW_API
 #define FBXSDK_SHARED

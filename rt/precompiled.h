@@ -19,12 +19,10 @@
 #include <cfloat>
 #include <string>
 #include <vector>
-#include <set>
 #include <map>
 #include <algorithm>
 
 #include "../common/all.h"
-#include "../resources/Image.h"
 
 #include "BVH.h"
 

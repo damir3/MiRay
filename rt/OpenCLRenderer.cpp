@@ -7,6 +7,7 @@
 //
 
 #include "OpenCLRenderer.h"
+#include "Image.h"
 
 using namespace mr;
 
@@ -503,10 +504,9 @@ void OpenCLRenderer::UpdateResultBuffer(cl_uint width, cl_uint height)
 	clEnqueueWriteBuffer(m_commands, m_result, CL_TRUE, 0, 4 * 4 * width * height, data.data(), 0, NULL, NULL);
 }
 
-void OpenCLRenderer::Render(Image & image, const RectI * pViewportRect,
+void OpenCLRenderer::Render(IImage & image, const RectI * pViewportRect,
 							const Matrix & matCamera, const Matrix & matViewProj,
-							const ColorF & bgColor, const Image * pEnvironmentMap,
-							int numThreads, int nFrameNumber)
+							int nFrameNumber)
 {
 	if (!m_bInitialized)
 		return;

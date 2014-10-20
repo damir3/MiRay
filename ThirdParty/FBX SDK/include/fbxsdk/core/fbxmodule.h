@@ -15,14 +15,14 @@
 
 #include <fbxsdk/fbxsdk_def.h>
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
 typedef void* FbxModule;
 
 /** Loads the specified module into the address space of the calling process.
-  * \param pLibFilePath The full file path name of the module to load.
+  * \param pFilePath The full file path name of the module to load.
   * \return The module handle if it successfully loaded, otherwise NULL.
   * \remark The specified module may cause other modules to be loaded.
   */
@@ -44,6 +44,6 @@ FBXSDK_DLL bool FbxModuleFree(FbxModule pModuleHandle);
 
 #include <fbxsdk/fbxsdk_nsend.h>
 
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 #endif /* _FBXSDK_CORE_MODULE_H_ */

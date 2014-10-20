@@ -112,7 +112,7 @@ public:
 	};
 
 	/** Set the skinning type.
-	* \param pMode     The skinning type.
+	* \param pType     The skinning type.
 	*/
 	void SetSkinningType(EType pType);
 
@@ -170,9 +170,10 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     virtual FbxObject& Copy(const FbxObject& pObject);
+    virtual FbxObject* Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL) const;
 
 protected:
-	virtual void Construct(const FbxSkin* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual FbxStringList GetTypeFlags() const;
 
     // Skin deformer

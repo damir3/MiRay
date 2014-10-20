@@ -22,6 +22,7 @@ class CollisionTriangle;
 struct TraceResult;
 
 class ITransformable;
+class IMaterial;
 class ISceneLight;
 
 class SceneModel;
@@ -32,6 +33,14 @@ enum eMouseButton
 	MOUSE_LEFT		= 1,
 	MOUSE_RIGHT		= 2,
 	MOUSE_MIDDLE	= 4,
+};
+
+enum eGizmo
+{
+	GIZMO_NONE = 0,
+	GIZMO_MOVE,
+	GIZMO_ROTATE,
+	GIZMO_SCALE,
 };
 
 class SceneView
@@ -49,68 +58,73 @@ private:
 	float	m_fWidth, m_fHeight;
 	float	m_fRWidth, m_fRHeight;
 	float	m_fFOV, m_fNearZ, m_fFarZ;
+	float	m_fFocalDistance;
+	float	m_fDepthOfField;
 	Matrix	m_matCamera;
 	Matrix	m_matView;
 	Matrix	m_matProj;
 	Matrix	m_matViewProj;
 	ColorF	m_bgColor;
-	bool	m_bShowGrid;
-	bool	m_bShowWireframe;
-	bool	m_bShowNormals;
-	bool	m_bShowBVH;
+	float	m_floorIOR;
+	float	m_floorShadow;
+	bool	m_showFloor;
+	bool	m_showGrid;
+	bool	m_showWireframe;
+	bool	m_showNormals;
+	bool	m_showBVH;
+	bool	m_bShouldRedraw;
 	GLint	m_width, m_height;
 	GLuint	m_texture;
 	int		m_nFrameCount;
 	eRenderMode		m_renderMode;
-	BVH				*m_pBVH;
-	ImageManager	*m_pImageManager;
-	ModelManager	*m_pModelManager;
-	Image			*m_pEnvironmentMap;
+	std::unique_ptr<BVH>			m_pBVH;
+	std::shared_ptr<ImageManager>	m_pImageManager;
+	std::shared_ptr<ModelManager>	m_pModelManager;
+	std::shared_ptr<Image>			m_pEnvironmentMap;
 	RectI			m_rcRenderMap;
-	Image			*m_pRenderMap;
-	Image			*m_pBuffer;
-	RenderThread	*m_pRenderThread;
-	ITransformable	*m_pGizmoObject;
+	std::shared_ptr<Image>			m_pRenderMap;
+	std::shared_ptr<Image>			m_pBuffer;
+	std::unique_ptr<RenderThread>	m_pRenderThread;
 	int				m_iMouseDown;
-	Vec3			m_vTargetPos;
-	Vec3			m_vTargetNormal;
+	Vec2			m_vMousePos;
+	eGizmo			m_gizmo;
+	ITransformable	*m_pGizmoObject;
+	IMaterial		*m_pSelectedMaterial;
 	Matrix			m_matGizmo;
 	Matrix			m_matGizmoStart;
 	Vec3			m_vGizmoStartDelta;
-	Vec2			m_vAxisSize;
-	int				m_iAxis;
-	Vec3			m_vAxisDelta;
-
-//	enum eTransformationType
-//	{
-//		TT_NONE,
-//		TT_MOVE,
-//		TT_ROTATE,
-//		TT_SCALE,
-//	};
-//	eTransformationType	m_transformation;
-	bool			m_bTransformation;
+	float			m_fGizmoScale;
+	float			m_fGizmoLength;
+	int				m_iGizmoAxis;
+	Vec2			m_vGizmoStartMousePos;
+	Vec3			m_vGizmoDelta;
+	bool			m_bGizmoTransformation;
+	Vec3			m_vTargetPos;
+	Vec3			m_vTargetNormal;
 
 	std::vector<ISceneLight *>	m_lights;
 	std::vector<SceneModel *>	m_models;
 
 	void RemoveAllModels();
-	void RemoveModel(SceneModel * pModel);
+	bool RemoveModel(ITransformable * pObject);
 
 	void RemoveAllLights();
 
+	void DeleteObject(ITransformable *pObject);
+
 	Vec3 GetFrustumPosition(float x, float y, float z) const;
 	bool GetTarget(float x, float y, Vec3 & vPos, Vec3 & vNormal);
-	bool GetRayTranslationAxisDist(const Vec3 & rayTarget, int axis, bool checkIntersection, Vec3 & vIntersectionDir);
-	void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float size) const;
+	float PosScale(const Vec3 & p) const;
+	void UpdateGizmoSize();
 	void DrawGizmo(const Matrix & mat, const BBox & bbox) const;
 
 	void UpdateRenderMapTexture();
-	void DrawRenderMap();
+	void DrawRenderMap(bool blend);
 
 	void RotateCamera(float dx, float dy);
-	void TranslateCamera(float dx, float dy);
+	void MoveCamera(float dx, float dy);
 	void UpdateMatrices();
+	void Set3DMode();
 
 public:
 	SceneView(const char * pResourcesPath);
@@ -119,19 +133,28 @@ public:
 	eRenderMode RenderMode() const { return m_renderMode; }
 	void SetRenderMode(eRenderMode rm);
 
-	bool ShowGrid() const { return m_bShowGrid; }
-	void SetShowGrid(bool b) { m_bShowGrid = b; }
+	void SetGizmo(eGizmo gizmo);
+	eGizmo Gizmo() const { return m_gizmo; }
 
-	bool ShowWireframe() const { return m_bShowWireframe; }
-	void SetShowWireframe(bool b) { m_bShowWireframe = b; }
+	bool ShowFloor() const { return m_showFloor; }
+	void SetShowFloor(bool b);
 
-	bool ShowNormals() const { return m_bShowNormals; }
-	void SetShowNormals(bool b) { m_bShowNormals = b; }
+	bool ShowGrid() const { return m_showGrid; }
+	void SetShowGrid(bool b) { m_showGrid = b; m_bShouldRedraw = true; }
 
-	bool ShowBVH() const { return m_bShowBVH; }
-	void SetShowBVH(bool b) { m_bShowBVH = b; }
+	bool ShowWireframe() const { return m_showWireframe; }
+	void SetShowWireframe(bool b) { m_showWireframe = b; m_bShouldRedraw = true; }
 
-	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; }
+	bool ShowNormals() const { return m_showNormals; }
+	void SetShowNormals(bool b) { m_showNormals = b; m_bShouldRedraw = true; }
+
+	bool ShowBVH() const { return m_showBVH; }
+	void SetShowBVH(bool b) { m_showBVH = b; m_bShouldRedraw = true; }
+
+	void SetBackgroundColor(const ColorF & bgColor) { m_bgColor = bgColor; m_bShouldRedraw = true; }
+
+	int FramesCount() const;
+	double FramesRenderTime() const;
 
 	bool Init();
 	void Done();
@@ -149,8 +172,12 @@ public:
 	bool SetEnvironmentImage(const char * pFilename);
 	bool SaveImage(const char * pFilename) const;
 
+	bool SetSelection(float x, float y, Vec3 * pPos);
+	Vec3 WorldToView(const Vec3 &pos) const;
+	bool SetSelectionMaterial(const char *material);
+
 	void OnMouseDown(float x, float y, eMouseButton button);
-	void OnMouseUp(eMouseButton button);
+	void OnMouseUp(float x, float y, eMouseButton button);
 	void OnMouseClick(float x, float y, eMouseButton button);
 	void OnMouseMove(float x, float y, float dx, float dy, eMouseButton button);
 
@@ -159,6 +186,7 @@ public:
 
 //	void RenderScene(int width, int height, int samples);
 
+	bool ShouldRedraw() const;
 	void Draw();
 
 	void StopRenderThread();

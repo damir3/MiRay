@@ -708,36 +708,21 @@ public:
       */
     //@{
 		/** Evaluate the camera (or eye) position.
-		  * \param pIndex	The index of the camera node in the evaluation state table.
 		  * \param pTime	The time at which the camera should be evaluated.
-		  * \return			The camera position evaluated from property value and animation.
-		  * \remark			The first time you call this function, pIndex should be set to -1. Upon return, pIndex will
-		  *					be set to a new value, which can be re-used for fast data access. Note that this must be reset
-		  *					to -1 if the scene change configuration.
-		  */
-		FbxVector4 EvaluatePosition(int& pIndex, const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
+		  * \return			The camera position evaluated from property value and animation. */
+		FbxVector4 EvaluatePosition(const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
 
 		/** Evaluate the camera target (or lookat) position.
-		  * \param pIndex	The index of the camera node in the evaluation state table.
 		  * \param pTime	The time at which the camera should be evaluated.
-		  * \return			The camera target position evaluated from property value and animation.
-		  * \remark			The first time you call this function, pIndex should be set to -1. Upon return, pIndex will
-		  *					be set to a new value, which can be re-used for fast data access. Note that this must be reset
-		  *					to -1 if the scene change configuration.
-		  */
-		FbxVector4 EvaluateLookAtPosition(int& pIndex, const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
+		  * \return			The camera target position evaluated from property value and animation. */
+		FbxVector4 EvaluateLookAtPosition(const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
 
 		/** Evaluate the camera up direction, taking target up objects into consideration.
-		  * \param pIndex			The index of the camera node in the evaluation state table.
 		  * \param pCameraPosition	The camera current position. You can retrieve this with FbxCamera::EvaluatePosition().
 		  * \param pLookAtPosition	The camera target position. you can retrieve this with FbxCamera::EvaluateLookAtPosition().
 		  * \param pTime			The time at which the camera should be evaluated.
-		  * \return					The camera up direction vector based on provided information.
-		  * \remark					The first time you call this function, pIndex should be set to -1. Upon return, pIndex will
-		  *							be set to a new value, which can be re-used for fast data access. Note that this must be reset
-		  *							to -1 if the scene change configuration.
-		  */
-		FbxVector4 EvaluateUpDirection(int& pIndex, const FbxVector4& pCameraPosition, const FbxVector4& pLookAtPosition, const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
+		  * \return					The camera up direction vector based on provided information. */
+		FbxVector4 EvaluateUpDirection(const FbxVector4& pCameraPosition, const FbxVector4& pLookAtPosition, const FbxTime& pTime=FBXSDK_TIME_ZERO) const;
 
 		/** Compute the camera projection matrix.
 		  * \param pWidth	The width of the output frame.
@@ -769,8 +754,8 @@ public:
 		  * The input points do not need to be ordered in any particular way.
 		  * \param pWorldToScreen The world to screen transformation. Please refer to FbxCamera::ComputeWorldToScreen.
 		  * \param pWorldToCamera The world to camera transformation. 
-				   Inverse of the matrix returned from FbxAnimEvaluator::GetNodeGlobalTransform or FbxAnimEvaluator::GetNodeGlobalTransformFast is suitable.
-				   Please refer to FbxScene::GetEvaluator and FbxAnimEvaluator::GetNodeGlobalTransform or FbxAnimEvaluator::GetNodeGlobalTransformFast.
+				   Inverse of the matrix returned from FbxAnimEvaluator::GetNodeGlobalTransform is suitable.
+				   Please refer to FbxScene::GetEvaluator and FbxAnimEvaluator::GetNodeGlobalTransform.
 		  * \param pPoints 8 corners of the bounding box.
 		  * \return \c true if any of the given points are in the camera's view, \c false otherwise.
 		  */
@@ -779,8 +764,8 @@ public:
 		/** Determine if the given 3d point is in the camera's view. 
 		  * \param pWorldToScreen The world to screen transformation. Please refer to FbxCamera::ComputeWorldToScreen.
 		  * \param pWorldToCamera The world to camera transformation. 
-				   Inverse of the matrix returned from FbxAnimEvaluator::GetNodeGlobalTransform or FbxAnimEvaluator::GetNodeGlobalTransformFast is suitable.
-				   Please refer to FbxScene::GetEvaluator and FbxAnimEvaluator::GetNodeGlobalTransform or FbxAnimEvaluator::GetNodeGlobalTransformFast.
+				   Inverse of the matrix returned from FbxAnimEvaluator::GetNodeGlobalTransform is suitable.
+				   Please refer to FbxScene::GetEvaluator and FbxAnimEvaluator::GetNodeGlobalTransform.
 		  * \param pPoint World-space point to test.
 		  * \return \c true if the given point is in the camera's view, \c false otherwise.
 		  */

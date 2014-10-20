@@ -192,18 +192,16 @@ struct TVec2
 		return TVec2::Null;
 	}
 
-	static TVec2 Reflect(const TVec2 &v, const TVec2 &n)
+	static TVec2 Reflect(const TVec2 &i, const TVec2 &n)
 	{
-		return v - 2 * Dot(v, n) * n;
+		return i - n * ((T)2.0 * Dot(i, n));
 	}
 
-	static TVec2 Refract(const TVec2 &v, const TVec2 &n, float fRatio)
+	static TVec2 Refract(const TVec2 &i, const TVec2 &n, float eta)
 	{
-		// based on http://http.developer.nvidia.com/Cg/refract.html
-		float cosi = TVec2::Dot(-v, n);
-		float cost2 = 1.0f - fRatio * fRatio * (1.0f - cosi*cosi);
-		if (cost2 <= 0) return TVec2::Null;
-		return fRatio * v + (fRatio * cosi - sqrtf(fabs(cost2))) * n;
+		T IdotN = TVec2::Dot(i, n);
+		T cost2 = (T)1.0 - eta * eta * ((T)1.0 - IdotN * IdotN);
+		return cost2 >= (T)0.0 ? (i * eta - n * (eta * IdotN + (T)sqrt(cost2))) : TVec2::Null;
 	}
 };
 

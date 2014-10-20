@@ -38,6 +38,7 @@
   * layers can be used. More information can be found in the FbxLayerContainer and FbxLayer classes description.
   * \nosubgrouping
   */
+class FbxStatus;
 class FBXSDK_DLL FbxGeometryBase : public FbxLayerContainer
 {
     FBXSDK_OBJECT_DECLARE(FbxGeometryBase, FbxLayerContainer);
@@ -154,10 +155,11 @@ public:
 
 
     /** Returns a pointer to the array of control points.
-      * \return      Pointer to the array of control points, or \c NULL if the array has not been allocated.
-      * \remarks     Use the function FbxGeometryBase::InitControlPoints() to allocate the array.
+      * \param pStatus  Not used in the implementation of this class.
+      * \return         Pointer to the array of control points, or \c NULL if the array has not been allocated.
+      * \remarks        Use the function FbxGeometryBase::InitControlPoints() to allocate the array.
       */
-    virtual FbxVector4* GetControlPoints() const;
+    virtual FbxVector4* GetControlPoints(FbxStatus* pStatus=NULL) const;
 
     /** Allocates memory space for the array of control points.
       * \param pCount     The number of control points.

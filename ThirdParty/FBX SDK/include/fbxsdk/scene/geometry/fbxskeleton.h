@@ -178,7 +178,7 @@ public:
     virtual FbxObject& Copy(const FbxObject& pObject);
 
 protected:
-	virtual void Construct(const FbxSkeleton* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 
 	void Reset( bool pResetProperties );

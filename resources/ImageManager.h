@@ -12,16 +12,23 @@
 namespace mr
 {
 
-class ImageManager : public IResourceManager
+typedef std::shared_ptr<Image> ImagePtr;
+
+class ImageManager
 {
+	std::map<std::string, std::weak_ptr<Image>> m_resources;
+
+	friend Image;
+	void Release(const std::string & name);
+
 public:
 	ImageManager();
 	~ImageManager();
 
-	Image * Create(int w, int h, Image::eType t);
-	Image * Load(const char * strFilename);
-	Image * CreateCopy(const Image * pSrcImage, Image::eType t);
-	Image * LoadNormalmap(const char * strFilename);
+	ImagePtr Create(int w, int h, Image::eType t, const char * name = nullptr);
+	ImagePtr Load(const char * strFilename);
+	ImagePtr CreateCopy(const Image * pSrcImage, Image::eType t, const char * name = nullptr);
+	ImagePtr LoadNormalmap(const char * strFilename);
 
 	enum eFileFormat
 	{
@@ -33,7 +40,7 @@ public:
 		FILE_FORMAT_DDS,
 	};
 
-	bool Save(const char * strFilename, const Image & image, eFileFormat ff = FILE_FORMAT_AUTO);
+	bool Save(const char * strFilename, const Image & image, bool saveAlpha, eFileFormat ff = FILE_FORMAT_AUTO);
 };
 
 }

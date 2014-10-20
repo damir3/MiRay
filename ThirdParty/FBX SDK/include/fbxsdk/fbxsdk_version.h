@@ -21,32 +21,32 @@
 
 //FBX SDK version defines
 #define FBXSDK_VERSION_MAJOR	2014		//<! Integer, version major number
-#define FBXSDK_VERSION_MINOR	1			//<! Integer, version minor number
+#define FBXSDK_VERSION_MINOR	2			//<! Integer, version minor number
 #define FBXSDK_VERSION_POINT	0			//<! Integer, version point number
 #define FBXSDK_VERSION_NAME		"Release"	//<! String, version name, example: Alpha, Beta, RC, Release
 
 #define FBXSDK_VERSION_YEAR     2013		//<! Integer, release date year
-#define FBXSDK_VERSION_MONTH	04			//<! Integer, release date month
-#define FBXSDK_VERSION_DAY		02			//<! Integer, release date day
+#define FBXSDK_VERSION_MONTH	10			//<! Integer, release date month
+#define FBXSDK_VERSION_DAY		15			//<! Integer, release date day
 
 #ifndef FBXSDK_VERSION_REVISION
 	#define FBXSDK_VERSION_REVISION	0		//<! Integer, version revision number, set by build environment. Do not edit here!
 #endif
 
 //FBX SDK version string macros
-#define FBXSDK_DEF_TO_STR(x)	#x
-#define FBXSDK_STRINGIFY(x)		FBXSDK_DEF_TO_STR(x)
+#define FBX_STRING(x)		#x
+#define FBX_STRINGIFY(x)	FBX_STRING(x)
 
 #if FBXSDK_VERSION_POINT == 0
-	#define FBXSDK_VER_TO_STR(a, b, c)	FBXSDK_DEF_TO_STR(a.b)
+	#define FBXSDK_VER_TO_STR(a, b, c)	FBX_STRING(a.b)
 #else
-	#define FBXSDK_VER_TO_STR(a, b, c)	FBXSDK_DEF_TO_STR(a.b.c)
+	#define FBXSDK_VER_TO_STR(a, b, c)	FBX_STRING(a.b.c)
 #endif
 
 //FBX SDK version strings
 #define FBXSDK_VERSION_STRING		FBXSDK_VER_TO_STR(FBXSDK_VERSION_MAJOR, FBXSDK_VERSION_MINOR, FBXSDK_VERSION_POINT)
-#define FBXSDK_VERSION_STRING_FULL	FBXSDK_VERSION_STRING" " FBXSDK_VERSION_NAME" (" FBXSDK_STRINGIFY(FBXSDK_VERSION_REVISION)")"
-#define FBXSDK_VERSION_DATE			FBXSDK_STRINGIFY(FBXSDK_VERSION_YEAR)"" FBXSDK_STRINGIFY(FBXSDK_VERSION_MONTH)"" FBXSDK_STRINGIFY(FBXSDK_VERSION_DAY)
+#define FBXSDK_VERSION_STRING_FULL	FBXSDK_VERSION_STRING " " FBXSDK_VERSION_NAME " (" FBX_STRINGIFY(FBXSDK_VERSION_REVISION) ")"
+#define FBXSDK_VERSION_DATE			FBX_STRINGIFY(FBXSDK_VERSION_YEAR) "" FBX_STRINGIFY(FBXSDK_VERSION_MONTH) "" FBX_STRINGIFY(FBXSDK_VERSION_DAY)
 
 //FBX SDK namespace definition
 #ifndef FBXSDK_DEFINE_NAMESPACE
@@ -54,7 +54,7 @@
 #endif
 
 #if FBXSDK_DEFINE_NAMESPACE == 1
-	#define FBXSDK_NAMESPACE fbxsdk_2014_1
+	#define FBXSDK_NAMESPACE fbxsdk_2014_2
 #else
 	#define FBXSDK_NAMESPACE
 #endif

@@ -125,7 +125,7 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxProcessorXRefCopy* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 
 	PropertyUpdateMap mUpdatedProperties;

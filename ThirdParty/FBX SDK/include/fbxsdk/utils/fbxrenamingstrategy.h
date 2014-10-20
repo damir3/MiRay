@@ -228,7 +228,7 @@ public:
      /** Recursively replace the namespace starting from this node to its children.
      * \param pNode        Current node.
      * \param OldNS        The old namespace to be replaced with the NewNs.
-     * \param NewNs        The new namespace to replace OldNs.
+     * \param NewNS        The new namespace to replace OldNs.
      */
     virtual bool PropagateNameSpaceChange(FbxNode* pNode, FbxString OldNS, FbxString NewNS);
 

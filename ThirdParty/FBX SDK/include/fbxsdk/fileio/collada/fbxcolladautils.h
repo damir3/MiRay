@@ -112,13 +112,13 @@ struct ColladaLayerTraits
 };
 
 /** Emit error message.
-  * \param pSdkManager The SDK manager used to access user notification object.
+  * \param pSdkManger The SDK manager used to access user notification object.
   * \param pErrorMessage The message to be presented.
   */
 void DAE_AddNotificationError(const FbxManager * pSdkManger, const FbxString & pErrorMessage);
 
 /** Emit warning message.
-  * \param pSdkManager The SDK manager used to access user notification object.
+  * \param pSdkManger The SDK manager used to access user notification object.
   * \param pWarningMessage The message to be presented.
   */
 void DAE_AddNotificationWarning(const FbxManager * pSdkManger, const FbxString & pWarningMessage);
@@ -182,7 +182,7 @@ void findChildrenByType(xmlNode* pParentElement, const std::set<FbxString>& pTyp
 
 /** Find children elements of a specific type.
   * \param pParentElement The parent element.
-  * \param pTypes The type.
+  * \param pType The type.
   * \param pChildrenElements The found children elements.
   */
 void findChildrenByType(xmlNode* pParentElement, const char * pType, CNodeList& pChildrenElements);
@@ -191,11 +191,11 @@ xmlNode* getSourceAccessor(xmlNode* sourceNode);
 xmlNode* getTechniqueNode(xmlNode* parent, const char * profile);
 
 // Conversions
-inline double inchesToCentimeters(double val) { return floor(val / CENTIMETERS_TO_INCHES * 100000) / 100000; }
-inline double centimetersToInches(double val) { return floor(val * CENTIMETERS_TO_INCHES * 100000) / 100000; }
+inline double inchesToCentimeters(double val) { return FbxFloor(val / CENTIMETERS_TO_INCHES * 100000) / 100000; }
+inline double centimetersToInches(double val) { return FbxFloor(val * CENTIMETERS_TO_INCHES * 100000) / 100000; }
 
-inline double degreesToRadians(double val) { return floor(val / RADIANS_TO_DEGREES * 100000) / 100000; }
-inline double radiansToDegrees(double val) { return floor(val * RADIANS_TO_DEGREES * 100000) / 100000; }
+inline double degreesToRadians(double val) { return FbxFloor(val / RADIANS_TO_DEGREES * 100000) / 100000; }
+inline double radiansToDegrees(double val) { return FbxFloor(val * RADIANS_TO_DEGREES * 100000) / 100000; }
 
 /** Find a child element with a given attribute value.
   * \param pParentElement The parent element.
@@ -218,7 +218,6 @@ xmlNode* DAE_FindChildElementByTag(xmlNode* pParentElement, const char * pTag, x
 /** Get the content of a XML element.
   * \param pElement The element whose content is returned.
   * \param pData The returned data.
-  * \param pIgnoreWhiteSpace If an array delimited by whitespace is input, the value should be set to true.
   */
 template <typename TYPE>
 void DAE_GetElementContent(xmlNode * pElement, TYPE & pData)
@@ -331,6 +330,7 @@ void DAE_SetName(FbxObject * pObject, const FbxString & pName, const FbxString &
   * document. To use the data, a consumer declares a connection to it with the desired semantic information.
   * \param pConsumerElement A consumer element, like sampler element in animation system or joints element in controller system.
   * \param pSemantic A semantic meaning, like "INPUT", "OUTPUT" or "INTERPOLATION" in animation system.
+  * \param pSourceElements The container of raw data.
   * \return Return \c NULL is failed.
   */
 xmlNode * DAE_GetSourceWithSemantic(xmlNode * pConsumerElement, const char * pSemantic,

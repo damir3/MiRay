@@ -79,7 +79,7 @@ public:
 		FBX_DEPRECATED FbxMesh* TriangulateMeshAdvance(const FbxMesh* pMesh);
 
 		/** Triangulate a patch.
-		* \param pPatchPointer to the patch to triangulate.
+		* \param pPatch Pointer to the patch to triangulate.
 		* \return Pointer to the new triangulated mesh.
 		* \remark The current deformations (skins & shapes) on the patch are also converted and applied to the resulting mesh. This function is deprecated, please use Triangulate instead. */
 		FBX_DEPRECATED FbxMesh* TriangulatePatch(const FbxPatch* pPatch);
@@ -250,6 +250,15 @@ public:
 		* be regenerated on the new meshes. */
 		bool SplitMeshPerMaterial(FbxMesh* pMesh, bool pReplace);
 	//@}
+
+	/** Reset meshes geometry center to be at world center, if delta between the two is greater than threshold.
+	* Basically, this function calculates the scene bounding box in world coordinates, and test if the center of that bounding box distance from the world center is larger than the threshold.
+	* If this happen to be true, this function goes ahead and substracts the center's delta to the mesh's control points directly.
+	* \param pScene The scene to iterate through meshes to reset their world center.
+	* \param pThreshold If the scene center distance from world center is greater than the threshold, apply center offset to all meshes to reset them to world center.
+	* \return \c true only if any meshes were modified, otherwise \c false.
+	* \remark This function does not work on deformed geometry. */
+	bool ResetMeshesCenterToWorld(FbxScene* pScene, FbxDouble pThreshold);
 
 	/**
 	* Merge multiple meshes to one mesh.

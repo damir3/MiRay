@@ -154,7 +154,7 @@ public:
 	void SetMaxActive(const bool pXActive, const bool pYActive, const bool pZActive);
 
 	/** Set the maximum limits.
-	  * \param pMin The X, Y and Z values for the maximum limits.
+	  * \param pMax The X, Y and Z values for the maximum limits.
 	  */
 	void SetMax(const FbxDouble3& pMax);
 

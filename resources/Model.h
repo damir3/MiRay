@@ -7,8 +7,6 @@
 //
 #pragma once
 
-#include "IResource.h"
-
 namespace mr
 {
 
@@ -20,12 +18,12 @@ class MaterialResource;
 class ModelManager;
 class MaterialManager;
 
-class Model : public IResource
+class Model
 {
 public:
 	struct Geometry
 	{
-		MaterialResource *m_pMaterial;
+		MaterialPtr		m_pMaterial;
 		VertexArray		m_vertices;
 		IndexArray		m_indices;
 		BBox			m_bbox;
@@ -55,22 +53,29 @@ public:
 		
 		const Matrix & LocalTransform() const { return m_matLocalTransform; }
 	};
-	
+
+	virtual ~Model();
+
+	const std::string & Name() const { return m_name; }
+
 	const BBox & BoundingBox() const { return m_bbox; }
 	const MeshArray & Meshes() const { return m_meshes; }
-	MaterialManager * MaterialManagerPtr() const { return m_pMaterialManager; }
+	MaterialManager * MaterialManagerPtr() const { return m_pMaterialManager.get(); }
 
 	void Save(pugi::xml_node node) const;
 
 protected:
+
+	Model(ModelManager & owner, const char * name);
+
 	friend ModelManager;
+	ModelManager & m_owner;
 	
-	Model(ModelManager & owner, const char * strName);
-	~Model();
-	
+	const std::string m_name;
+		
 	BBox			m_bbox;
 	MeshArray		m_meshes;
-	MaterialManager	*m_pMaterialManager;
+	std::unique_ptr<MaterialManager>	m_pMaterialManager;
 };
 	
 }

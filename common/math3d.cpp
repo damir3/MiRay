@@ -283,4 +283,32 @@ Color mr::VertexColor(const Color & c, const Vec3 & vNormal)
 	return result;
 }
 
+// ------------------------------------------------------------------------ //
 
+float mr::FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2)
+{
+	const float	n = n1 / n2;
+	const float cosI = fabsf(Vec3::Dot(N, I));
+	const float sinT2 = n * n * (1.f - cosI * cosI);
+	if (sinT2 > 1.f) return 1.f;
+	const float cosT = sqrtf(1.f - sinT2);
+	const float rO = (n1 * cosI - n2 * cosT) / (n1 * cosI + n2 * cosT);
+	const float rP = (n2 * cosI - n1 * cosT) / (n2 * cosI + n1 * cosT);
+	return (rO * rO + rP * rP) * 0.5f;
+}
+
+//float FresnelReflection(const Vec3 & I,const Vec3 & N, float eta)
+//{
+//	const float	e = 1.f / eta;
+//	const float	c = -Vec3::Dot(I, N);
+//	const float	t = e * e + c * c - 1.f;
+//	const float	g = sqrtf(fmaxf(t, 0.f));
+//	const float	a = (g - c) / (g + c);
+//	const float	b = (c * (g + c) - 1.f) / (c * (g - c) + 1.f);
+//
+//	return clamp(0.5f * a * a * (1.f + b * b), 0.f, 1.f);
+//
+////	float R0 = powf((eta - 1.f) / (eta + 1.f), 2.f);
+////	float ca = Vec3::Dot(I, N);
+////	return lerp(powf(1.f + ca, 5.f), 1.f, R0);
+//}

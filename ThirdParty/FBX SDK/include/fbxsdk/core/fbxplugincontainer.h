@@ -15,7 +15,7 @@
 
 #include <fbxsdk/fbxsdk_def.h>
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 
 #include <fbxsdk/core/fbxplugin.h>
 #include <fbxsdk/core/fbxemitter.h>
@@ -69,6 +69,6 @@ protected:
 
 #include <fbxsdk/fbxsdk_nsend.h>
 
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 #endif /* _FBXSDK_CORE_PLUGIN_CONTAINER_H_ */

@@ -46,7 +46,7 @@ public:
       */
 	virtual ~FbxIOPluginRegistry();
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Registers a Reader from a plug-in path.
 	  *	\param pPluginPath          The plug-in path.
 	  * \param pFirstPluginID       Contains the ID of the first plug-in found.
@@ -57,7 +57,7 @@ public:
 						int& pFirstPluginID,
 						int& pRegisteredCount,
 						bool pOverride = false);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 	/** Registers a Reader.
 	  *	\param pCreateF             The function that creates the Reader to be registered.
@@ -74,7 +74,7 @@ public:
 						FbxReader::IOSettingsFillerFuncType pIOSettingsFillerF = NULL,
 						bool pOverride = false);
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Registers a Writer from a plug-in path
 	  *	\param pPluginPath          The plug-in path.
 	  * \param pFirstPluginID       Contains the ID of the first plug-in found.
@@ -85,7 +85,7 @@ public:
 						int& pFirstPluginID,
 						int& pRegisteredCount,
 						bool pOverride = false);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 	/** Registers a Writer.
 	  *	\param pCreateF             The function that creates the Writer to be registered. 

@@ -31,7 +31,7 @@ SceneModel::~SceneModel()
 		m_meshes.pop_back();
 	}
 
-	SAFE_RELEASE(m_pModel);
+	m_pModel.reset();
 }
 
 // ------------------------------------------------------------------------ //
@@ -71,16 +71,27 @@ bool SceneModel::Init(const char *pFilename, const Matrix &mat, ModelManager *pM
 	
 	for (auto itMesh = m_pModel->Meshes().begin(); itMesh != m_pModel->Meshes().end(); ++itMesh)
 	{
+//		size_t numTriangles = 0;
+//		for (auto itGeom = (*itMesh)->m_geometries.begin(); itGeom != (*itMesh)->m_geometries.end(); ++itGeom)
+//			numTriangles += (*itGeom)->m_indices.size() / 3;
+//
+//		printf("%s\n", itMesh->);
+//
+//		m_pVolume = m_bvh.CreateVolume(numTriangles);
+//		m_pVolume->SetTransformation(mat);
+
 		for (auto itGeom = (*itMesh)->m_geometries.begin(); itGeom != (*itMesh)->m_geometries.end(); ++itGeom)
 		{
 			Model::Geometry & geom = *(*itGeom);
 			for (const uint32 *pInd = &geom.m_indices[0], *pIndEnd = pInd + geom.m_indices.size(); pInd < pIndEnd; pInd += 3)
 			{
 				CollisionTriangle t(geom.m_vertices[pInd[0]], geom.m_vertices[pInd[1]], geom.m_vertices[pInd[2]],
-									geom.m_pMaterial);
+									geom.m_pMaterial.get());
 				m_pVolume->AddTriangle(t);
 			}
 		}
+
+//		m_pVolume->Build(30);
 	}
 	
 	m_pVolume->Build(30);
@@ -114,7 +125,7 @@ bool SceneModel::Load(pugi::xml_node node, ModelManager *pModelManager)
 		ReadVec3(scale, "scale", transformation);
 	}
 
-	mat = MatrixBuilder().AddScale(scale).AddRotation(rotation).AddPosition(position);
+	mat = MatrixBuilder().AddRotation(rotation).AddScale(scale).AddPosition(position);
 
 	std::string strFilename = filename.text().get();
 	return Init(strFilename.c_str(), mat, pModelManager, node);
@@ -123,7 +134,7 @@ bool SceneModel::Load(pugi::xml_node node, ModelManager *pModelManager)
 void SceneModel::Save(pugi::xml_node node) const
 {
 	node = node.append_child("model");
-	node.append_child("filename").text().set(m_pModel->Name());
+	node.append_child("filename").text().set(m_pModel->Name().c_str());
 	pugi::xml_node transformation = node.append_child("transformation");
 	const Matrix & mat = m_pVolume->Transformation();
 	SaveVec3(mat.Pos(), "position", transformation);
@@ -197,7 +208,7 @@ void SceneModel::RenderMesh::DrawNormals(float l)
 
 // ------------------------------------------------------------------------ //
 
-struct sArrayBufferVertex
+struct ArrayBufferVertex
 {
 	Vec3 pos;
 	Color color;
@@ -213,14 +224,14 @@ SceneModel::RenderGeometry::RenderGeometry(Model::Geometry & geom)
 	glGenBuffers(1, &m_vertexBuffer);
 	if (m_vertexBuffer > 0)
 	{
-		std::vector<sArrayBufferVertex> vertices(geom.m_vertices.size());
+		std::vector<ArrayBufferVertex> vertices(geom.m_vertices.size());
 		for (size_t i = 0; i < vertices.size(); i++)
 		{
 			vertices[i].pos = geom.m_vertices[i].pos;
 			vertices[i].color = VertexColor(Color::White, geom.m_vertices[i].normal);
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
-		glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(sArrayBufferVertex), vertices.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, m_vertexCount * sizeof(ArrayBufferVertex), vertices.data(), GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	
@@ -254,13 +265,13 @@ void SceneModel::RenderGeometry::Draw()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(sArrayBufferVertex), (void*)0);
+	glVertexPointer(3, GL_FLOAT, sizeof(ArrayBufferVertex), (void*)0);
 	glEnableClientState(GL_COLOR_ARRAY);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(sArrayBufferVertex), (void*)12);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(ArrayBufferVertex), (void*)12);
 //	glEnableClientState(GL_NORMAL_ARRAY);
-//	glNormalPointer(GL_FLOAT, sizeof(sArrayBufferVertex), (void*)12);
+//	glNormalPointer(GL_FLOAT, sizeof(ArrayBufferVertex), (void*)12);
 //	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-//	glTexCoordPointer(2, GL_FLAT, sizeof(sArrayBufferVertex), (void*)48);
+//	glTexCoordPointer(2, GL_FLAT, sizeof(ArrayBufferVertex), (void*)48);
 	
 	glDrawElements(GL_TRIANGLES, m_indexCount, GL_UNSIGNED_INT, 0);
 	
@@ -278,7 +289,7 @@ void SceneModel::RenderGeometry::DrawWireframe()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(sArrayBufferVertex), (void*)0);
+	glVertexPointer(3, GL_FLOAT, sizeof(ArrayBufferVertex), (void*)0);
 	
 //	glEnable(GL_BLEND);
 //	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

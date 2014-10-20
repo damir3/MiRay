@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		2643DA41176F0D3D008A0D0E /* all.h in Headers */ = {isa = PBXBuildFile; fileRef = 2643DA27176F0D3D008A0D0E /* all.h */; };
-		2643DA42176F0D3D008A0D0E /* baserc.h in Headers */ = {isa = PBXBuildFile; fileRef = 2643DA28176F0D3D008A0D0E /* baserc.h */; };
 		2643DA43176F0D3D008A0D0E /* bbox.h in Headers */ = {isa = PBXBuildFile; fileRef = 2643DA29176F0D3D008A0D0E /* bbox.h */; };
 		2643DA44176F0D3D008A0D0E /* color.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2643DA2A176F0D3D008A0D0E /* color.cpp */; };
 		2643DA45176F0D3D008A0D0E /* color.h in Headers */ = {isa = PBXBuildFile; fileRef = 2643DA2B176F0D3D008A0D0E /* color.h */; };
@@ -37,7 +36,6 @@
 
 /* Begin PBXFileReference section */
 		2643DA27176F0D3D008A0D0E /* all.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = all.h; path = ../../common/all.h; sourceTree = "<group>"; };
-		2643DA28176F0D3D008A0D0E /* baserc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = baserc.h; path = ../../common/baserc.h; sourceTree = "<group>"; };
 		2643DA29176F0D3D008A0D0E /* bbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bbox.h; path = ../../common/bbox.h; sourceTree = "<group>"; };
 		2643DA2A176F0D3D008A0D0E /* color.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = color.cpp; path = ../../common/color.cpp; sourceTree = "<group>"; };
 		2643DA2B176F0D3D008A0D0E /* color.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = color.h; path = ../../common/color.h; sourceTree = "<group>"; };
@@ -80,7 +78,6 @@
 			isa = PBXGroup;
 			children = (
 				2643DA27176F0D3D008A0D0E /* all.h */,
-				2643DA28176F0D3D008A0D0E /* baserc.h */,
 				2643DA29176F0D3D008A0D0E /* bbox.h */,
 				2643DA2A176F0D3D008A0D0E /* color.cpp */,
 				2643DA2B176F0D3D008A0D0E /* color.h */,
@@ -125,7 +122,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2643DA41176F0D3D008A0D0E /* all.h in Headers */,
-				2643DA42176F0D3D008A0D0E /* baserc.h in Headers */,
 				2643DA43176F0D3D008A0D0E /* bbox.h in Headers */,
 				2643DA45176F0D3D008A0D0E /* color.h in Headers */,
 				2643DA47176F0D3D008A0D0E /* frustum.h in Headers */,

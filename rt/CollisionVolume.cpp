@@ -51,11 +51,11 @@ void CollisionVolume::Build(byte nMaxNodesLevel)
 	
 	if (nMaxNodesLevel > 0)
 	{
-		CollisionNode::sPolygonArray polygons;
+		CollisionNode::PolygonArray polygons;
 		polygons.reserve(m_triangles.size());
 		for (CollisionTriangleArray::iterator it = m_triangles.begin(), itEnd = m_triangles.end(); it != itEnd; ++it)
 		{
-			polygons.push_back(CollisionNode::sPolygon(&(*it)));
+			polygons.push_back(CollisionNode::Polygon(&(*it)));
 			polygons.back().AddVertex(it->Vertex(0).pos);
 			polygons.back().AddVertex(it->Vertex(1).pos);
 			polygons.back().AddVertex(it->Vertex(2).pos);
@@ -74,7 +74,7 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 	m_nTraceCount++;
 	const CollisionTriangle * pSkipTriangle = tr.pTriangle;
 
-	CollisionRay ray(vFrom.TransformedCoord(m_matInvTransformation), vTo.TransformedCoord(m_matInvTransformation));
+	CollisionRay ray(vFrom.GetTransformedCoord(m_matInvTransformation), vTo.GetTransformedCoord(m_matInvTransformation), tr);
 
 	const CollisionNode * pStackNodes[64]; // nMaxNodesLevel must be less than 64
 	const CollisionNode ** ppTopNode = pStackNodes;
@@ -102,9 +102,11 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 		}
 		else
 		{
-			for (std::vector<CollisionTriangle *>::const_iterator it = pNode->Triangles().begin(), itEnd = pNode->Triangles().end(); it != itEnd; ++it)
+//			for (std::vector<CollisionTriangle *>::const_iterator it = pNode->Triangles().begin(), itEnd = pNode->Triangles().end(); it != itEnd; ++it)
+//			{
+//				CollisionTriangle * pTriangle = *it;
+			for (CollisionTriangle * pTriangle : pNode->Triangles())
 			{
-				CollisionTriangle * pTriangle = *it;
 //				if (pTriangle->CheckTraceCount(m_nTraceCount) && pTriangle->TraceRay(ray, tr))
 				if (tr.pTriangle != pTriangle && pTriangle->TraceRay(ray, tr))
 				{
@@ -122,7 +124,9 @@ bool CollisionVolume::TraceRay(const Vec3 & vFrom, const Vec3 & vTo, TraceResult
 		return false;
 
 	tr.pVolume = this;
-	tr.pos = ray.End().TransformedCoord(m_matTransformation);
+	tr.pos = ray.End().GetTransformedCoord(m_matTransformation);
+	tr.localPos = ray.End();
+	tr.localDir = ray.Direction();
 
 	return true;
 }

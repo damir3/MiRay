@@ -68,4 +68,6 @@ void CalculateCameraMatrix(Matrix & matCamera, const Vec3 & vCenter, float fDist
 float VertexLight(const Vec3 & vNormal);
 Color VertexColor(const Color & c, const Vec3 & vNormal);
 
+float FresnelReflection(const Vec3 & I,const Vec3 & N, float n1, float n2);
+
 }

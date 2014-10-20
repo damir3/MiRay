@@ -38,7 +38,7 @@
 typedef void (*FbxAssertProc)(const char* pFileName, const char* pFunctionName, const unsigned int pLineNumber, const char* pMessage);
 
 //! The assertion function caller. This function is called by most of the assertion macros and should not be called directly.
-FBXSDK_DLL void FbxAssert(const char* pFileName, const char* pFunctionName, const unsigned int pLineNumber, const char* pMessage);
+FBXSDK_DLL void FbxAssert(const char* pFileName, const char* pFunctionName, const unsigned int pLineNumber, bool pFormat, const char* pMessage, ...);
 
 /** Change the procedure used when assertion occurs.
   * \param pAssertProc The procedure to be called when assertions occurs.
@@ -51,17 +51,17 @@ FBXSDK_DLL void FbxAssertSetDefaultProc();
 #ifdef _DEBUG
     template <bool x> struct FbxStaticAssertType;
     template<> struct FbxStaticAssertType<true>			{enum{value=1};};
-    template<> struct FbxStaticAssertType<false>		{enum{value=-1};};   
-	#define FBX_ASSERT_MSG(Condition, Message)			if(!(Condition)){FbxAssert(__FILE__,__FUNCTION__,__LINE__,Message);}
-	#define FBX_ASSERT(Condition)						FBX_ASSERT_MSG(Condition, #Condition);
-	#define FBX_ASSERT_NOW(Message)						FbxAssert(__FILE__,__FUNCTION__,__LINE__,Message);
+    template<> struct FbxStaticAssertType<false>		{enum{value=-1};};
+	#define FBX_ASSERT(Condition)						if(!(Condition)){FbxAssert(__FILE__,__FUNCTION__,__LINE__,false,#Condition);}
+	#define FBX_ASSERT_MSG(Condition, Message, ...)		if(!(Condition)){FbxAssert(__FILE__,__FUNCTION__,__LINE__,true,Message,##__VA_ARGS__);}
+	#define FBX_ASSERT_NOW(Message, ...)				FbxAssert(__FILE__,__FUNCTION__,__LINE__,true,Message,##__VA_ARGS__);
 	#define FBX_ASSERT_RETURN(Condition)				if(!(Condition)){FBX_ASSERT_NOW(#Condition); return;}
 	#define FBX_ASSERT_RETURN_VALUE(Condition, Value)	if(!(Condition)){FBX_ASSERT_NOW(#Condition); return Value;}
 	#define FBX_ASSERT_STATIC(Condition)				typedef char FbxBuildBreakIfFalse[FbxStaticAssertType<(bool)(Condition)>::value];
 #else
 	#define FBX_ASSERT(Condition)						((void)0)
-	#define FBX_ASSERT_MSG(Condition, Message)			((void)0)
-	#define FBX_ASSERT_NOW(Message)						((void)0)
+	#define FBX_ASSERT_MSG(Condition, Message, ...)		((void)0)
+	#define FBX_ASSERT_NOW(Message, ...)				((void)0)
 	#define FBX_ASSERT_RETURN(Condition)				if(!(Condition)){return;}
 	#define FBX_ASSERT_RETURN_VALUE(Condition, Value)	if(!(Condition)){return Value;}
     #define FBX_ASSERT_STATIC(Condition)

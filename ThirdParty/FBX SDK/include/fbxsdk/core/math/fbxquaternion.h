@@ -298,8 +298,7 @@ public:
 	  */
 	//@{
 		/** Comparison method.
-		  * \param pQ1 First quaternion to compare
-		  * \param pQ2 Second quaternion to compare
+		  * \param pQ2 Quaternion to compare with this
 		  * \param pThreshold Epsilon for small number comparison
 		  * \return 0 if quaternions are equal, non-zero value otherwise.
 		  */

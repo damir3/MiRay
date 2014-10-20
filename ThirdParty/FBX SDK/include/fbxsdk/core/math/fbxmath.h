@@ -39,31 +39,34 @@
 
 //---------------------------------------------------------------------------------------
 //Common Constants
-#define FBXSDK_PI			3.1415926535897932384626433832795028841971693993751
-#define FBXSDK_PI_DIV_2		1.5707963267948966192313216916397514420985846996875
-#define FBXSDK_PI_DIV_180	0.017453292519943295769236907684886127134428718885417
-#define FBXSDK_180_DIV_PI	57.295779513082320876798154814105170332405472466565
-#define FBXSDK_1_DIV_LN2	1.4426950408889634073599246810018921374266459541530
+#define FBXSDK_PI				3.1415926535897932384626433832795028841971693993751		//!< PI mathematic constant
+#define FBXSDK_PI_DIV_2			1.5707963267948966192313216916397514420985846996875		//!< PI divided by 2
+#define FBXSDK_PI_DIV_180		0.017453292519943295769236907684886127134428718885417	//!< PI divived by 180
+#define FBXSDK_180_DIV_PI		57.295779513082320876798154814105170332405472466565		//!< 180 divided by PI
+#define FBXSDK_1_DIV_LN2		1.4426950408889634073599246810018921374266459541530		//!< 1 divided by LogN2
 
 //---------------------------------------------------------------------------------------
 //Unit Convertion Ratio
-#define FBXSDK_DEG_TO_RAD	FBXSDK_PI_DIV_180	//!< Degree to Radian
-#define FBXSDK_RAD_TO_DEG	FBXSDK_180_DIV_PI	//!< Radian to Degree
-#define FBXSDK_IN_TO_CM		2.54				//!< Inch to Centimeter
-#define FBXSDK_CM_TO_IN		0.393700787			//!< Centimeter to Inch
-#define	FBXSDK_IN_TO_MM		25.4				//!< Inch to Millimeter
-#define FBXSDK_MM_TO_IN		0.0393700787		//!< Millimeter to Inch
-#define FBXSDK_FT_TO_M		0.3048				//!< Feet to Meter
-#define FBXSDK_M_TO_FT		3.2808399			//!< Meter to Feet
-#define FBXSDK_YD_TO_FT		3					//!< Yard to Feet
-#define FBXSDK_FT_TO_YD		0.333333333			//!< Feet to Yard
-#define FBXSDK_KM_TO_MILE	0.621371192			//!< Kilometer to Mile
-#define FBXSDK_MILE_TO_KM	1.609344			//!< Mile to Kilometer
-#define FBXSDK_YD_TO_M		0.9144				//!< Yard to Meter
-#define FBXSDK_M_TO_YD		1.0936133			//!< Meter to Yard
+#define FBXSDK_DEG_TO_RAD		FBXSDK_PI_DIV_180	//!< Degree to Radian
+#define FBXSDK_RAD_TO_DEG		FBXSDK_180_DIV_PI	//!< Radian to Degree
+#define FBXSDK_IN_TO_CM			2.54				//!< Inch to Centimeter
+#define FBXSDK_MM_TO_CM			0.1					//!< Millimeter to Centimeter
+#define FBXSDK_CM_TO_IN			0.393700787			//!< Centimeter to Inch
+#define	FBXSDK_IN_TO_MM			25.4				//!< Inch to Millimeter
+#define FBXSDK_MM_TO_IN			0.0393700787		//!< Millimeter to Inch
+#define FBXSDK_FT_TO_M			0.3048				//!< Feet to Meter
+#define FBXSDK_M_TO_FT			3.2808399			//!< Meter to Feet
+#define FBXSDK_YD_TO_FT			3					//!< Yard to Feet
+#define FBXSDK_FT_TO_YD			0.333333333			//!< Feet to Yard
+#define FBXSDK_KM_TO_MILE		0.621371192			//!< Kilometer to Mile
+#define FBXSDK_MILE_TO_KM		1.609344			//!< Mile to Kilometer
+#define FBXSDK_YD_TO_M			0.9144				//!< Yard to Meter
+#define FBXSDK_M_TO_YD			1.0936133			//!< Meter to Yard
 
 //---------------------------------------------------------------------------------------
 //Euler Definition
+#define FBXSDK_EULER_DEGENERATE	(16.0*FBXSDK_FLOAT_EPSILON)	//!< Euler degenerate threshold
+
 class FBXSDK_DLL FbxEuler
 {
 public:
@@ -119,7 +122,7 @@ enum EFbxQuatInterpMode
     eQuatInterpCount				//!< Number of quaternion interpolation modes. Mark the end of this enum.
 };
 
-extern FBXSDK_DLL const double FbxIdentityMatrix[4][4];
+extern FBXSDK_DLL const FbxDouble FbxIdentityMatrix[4][4];
 extern FBXSDK_DLL const FbxVector4 FbxZeroVector4;
 
 inline float FbxFloor(const float x)
@@ -265,6 +268,28 @@ inline bool FbxEqual(const FbxAMatrix& x, const FbxAMatrix& y, const double e=FB
 	return ( FbxEqual(x[0], y[0], e) && FbxEqual(x[1], y[1], e) && FbxEqual(x[2], y[2], e) && FbxEqual(x[3], y[3], e) );
 }
 
+inline FbxDouble FbxMod(const FbxFloat x, FbxFloat& i)
+{
+	return modff(x, &i);
+}
+
+inline FbxDouble FbxMod(const FbxDouble x, FbxDouble& i)
+{
+	return modf(x, &i);
+}
+
+inline FbxDouble FbxMod(const FbxFloat x)
+{
+	FbxFloat i;
+	return modff(x, &i);
+}
+
+inline FbxDouble FbxMod(const FbxDouble x)
+{
+	FbxDouble i;
+	return modf(x, &i);
+}
+
 template<class T> inline T FbxReciprocal(const T x)
 {
 	return T(1) / x;
@@ -310,11 +335,6 @@ inline double FbxExp(const double x)
 	return exp(x);
 }
 
-template<class T> inline T FbxPow(const T x, const T y)
-{
-	return FbxExp(y * FbxLog(x));
-}
-
 inline float FbxLog(const float x)
 {
 	return float(log(x));
@@ -323,6 +343,11 @@ inline float FbxLog(const float x)
 inline double FbxLog(const double x)
 {
 	return log(x);
+}
+
+template<class T> inline T FbxPow(const T x, const T y)
+{
+	return FbxExp(y * FbxLog(x));
 }
 
 template<class T> inline T FbxLog2(const T x)
@@ -447,6 +472,11 @@ template<class T> inline T FbxHypot(const T x, const T y, const T z)
 template<class T> inline T FbxHypot(const T w, const T x, const T y, const T z)
 {
 	return FbxSqrt(w * w + x * x + y * y + z * z);
+}
+
+inline FbxVector4 FbxRejection(const FbxVector4& a, const FbxVector4& b)
+{
+    return a - b * (a.DotProduct(b) / b.DotProduct(b));
 }
 
 inline float FbxASin(const float x)

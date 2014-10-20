@@ -108,8 +108,8 @@ public:
     bool AddEndPoint(int pPointIndex);
 
     /** Gets the point index(an index to the point index array) at the specified index.
-    * \param pIndex The specified index to the end points array(mEndPointArray). Its range is from 0 to size of mEndPointArray.
-    * \return Return the index to the point index array(mPointArray). If pIndex is out of range, it will return -1.
+    * \param pEndPointIndex The specified index to the end points array(mEndPointArray). Its range is from 0 to size of mEndPointArray.
+    * \return Return the index to the point index array(mPointArray). If pEndPointIndex is out of range, it will return -1.
     * \remarks Below is the code sample:
     * \code
     * int lEndPointsCount = lLine->GetEndPointCount();
@@ -141,7 +141,7 @@ public:
     virtual FbxObject& Copy(const FbxObject& pObject);
 
 protected:
-	virtual void Construct(const FbxLine* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
     virtual void Destruct(bool pRecursive);
 

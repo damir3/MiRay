@@ -128,7 +128,7 @@ public:
       */
     virtual bool					PostprocessScene(FbxScene &pScene) = 0;
 
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
 	/** Writes extension plug-ins name, version and parameters, so that we can remember if a plug-in was used during export.
 	  * This is especially useful for extension plug-ins that modify the scene and also to warn users during import if an
 	  * extension plug-in was used that could be missing.
@@ -138,7 +138,7 @@ public:
 	  * FBX 6 and FBX 7 does implement it.
       */
 	virtual void					PluginWriteParameters(FbxObject& pParams);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 	/** Finds the selected root node in the specified scene.
       * \param pScene	The scene in which the selected root node is found.
@@ -196,7 +196,7 @@ public:
 	virtual bool SupportsStreams() const;
 
 protected:
-#ifndef FBXSDK_ENV_WINRT
+#ifndef FBXSDK_ENV_WINSTORE
     //! Function called by FBX before writing out the scene (FbxScene).
 	void							PluginsWriteBegin(FbxScene& pScene);
     /**
@@ -207,7 +207,7 @@ protected:
     void							PluginsWrite(FbxIO& pFbx, bool pWriteObjectId);
     //! Function called by FBX after writing out the scene (FbxScene).
     void							PluginsWriteEnd(FbxScene& pScene);
-#endif /* !FBXSDK_ENV_WINRT */
+#endif /* !FBXSDK_ENV_WINSTORE */
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **

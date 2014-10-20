@@ -8,6 +8,10 @@
 
 #include "SceneUtils.h"
 #include "../rt/CollisionNode.h"
+#ifdef _WIN32
+#define	sscanf		sscanf_s
+#endif // _WIN32
+
 
 namespace mr
 {
@@ -246,28 +250,28 @@ void DrawGeosphere(const Vec3 & pos, float r, const Color & c, int lod)
 
 void DrawCylinder(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, int num)
 {
-	Vec3 vDirZ = Vec3::Normalize(p2 - p1);
-	Vec3 vDirX = vDirZ.Perpendicular();
-	Vec3 vDirY = Vec3::Cross(vDirZ, vDirX);
+	Vec3 dirZ = Vec3::Normalize(p2 - p1);
+	Vec3 dirX = dirZ.GetPerpendicular();
+	Vec3 dirY = Vec3::Cross(dirZ, dirX);
 	float da = M_2PIf / num;
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < num; i++)
 	{
 		float a1 = i * da;
-		Vec3 d1 = vDirX * cosf(a1) + vDirY * sinf(a1);
+		Vec3 d1 = dirX * cosf(a1) + dirY * sinf(a1);
 		Vec3 p11 = p1 + d1 * radius;
 		Vec3 p21 = p2 + d1 * radius;
 		float a2 = (i+1) * da;
-		Vec3 d2 = vDirX * cosf(a2) + vDirY * sinf(a2);
+		Vec3 d2 = dirX * cosf(a2) + dirY * sinf(a2);
 		Vec3 p12 = p1 + d2 * radius;
 		Vec3 p22 = p2 + d2 * radius;
 		
-		glColor4ubv(VertexColor(c, -vDirZ));
+		glColor4ubv(VertexColor(c, -dirZ));
 		glVertex3fv(p1);
 		glVertex3fv(p11);
 		glVertex3fv(p12);
 		
-		glColor4ubv(VertexColor(c, vDirZ));
+		glColor4ubv(VertexColor(c, dirZ));
 		glVertex3fv(p2);
 		glVertex3fv(p22);
 		glVertex3fv(p21);
@@ -289,31 +293,32 @@ void DrawCylinder(const Vec3 & p1, const Vec3 & p2, float radius, const Color & 
 
 void DrawCone(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, int num)
 {
-	Vec3 vDirZ = p2 - p1;
-	float length = vDirZ.Normalize();
-	Vec3 vDirX = vDirZ.Perpendicular();
-	Vec3 vDirY = Vec3::Cross(vDirZ, vDirX);
+	Vec3 dirZ = p2 - p1;
+	float length = dirZ.Normalize();
+	Vec3 dirX = dirZ.GetPerpendicular();
+	Vec3 dirY = Vec3::Cross(dirZ, dirX);
 	float g = sqrtf(radius * radius + length * length);
 	float f1 = radius / g;
 	float f2 = length / g;
 	float da = M_2PIf / num;
+
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < num; i++)
 	{
 		float a1 = i * da;
-		Vec3 d1 = vDirX * cosf(a1) + vDirY * sinf(a1);
+		Vec3 d1 = dirX * cosf(a1) + dirY * sinf(a1);
 		Vec3 pa1 = p1 + d1 * radius;
 		float a2 = (i+1) * da;
-		Vec3 d2 = vDirX * cosf(a2) + vDirY * sinf(a2);
+		Vec3 d2 = dirX * cosf(a2) + dirY * sinf(a2);
 		Vec3 pa2 = p1 + d2 * radius;
 		
-		glColor4ubv(VertexColor(c, -vDirZ));
+		glColor4ubv(VertexColor(c, -dirZ));
 		glVertex3fv(p1);
 		glVertex3fv(pa1);
 		glVertex3fv(pa2);
 		
-		Vec3 na1 = vDirZ * f1 + d1 * f2;
-		Vec3 na2 = vDirZ * f1 + d2 * f2;
+		Vec3 na1 = dirZ * f1 + d1 * f2;
+		Vec3 na2 = dirZ * f1 + d2 * f2;
 		glColor4ubv(VertexColor(c, Vec3::Normalize(na1 + na2)));
 		glVertex3fv(p2);
 		glColor4ubv(VertexColor(c, na2));
@@ -324,7 +329,76 @@ void DrawCone(const Vec3 & p1, const Vec3 & p2, float radius, const Color & c, i
 	glEnd();
 }
 
+void DrawArrow(const Vec3 & pos, const Vec3 & dir, const Color & c, float l)
+{
+	float r1 = l * 0.02f;
+	float r2 = l * 0.04f;
 	
+	Vec3 p1 = pos + dir * (l * 0.7f);
+	Vec3 p2 = pos + dir * l;
+	//DrawLine(pos, p1, c, 1.f);
+	DrawCylinder(pos, p1, r1, c, 8);
+	DrawCone(p1, p2, r2, c, 16);
+}
+
+void DrawCircle(const Vec3 & p, const Vec3 & normal, float r1, float r2, const Color & c1, const Color & c2, float borderLineWidth)
+{
+	enum {NUM_SEGMENTS = 64};
+	Vec3 points[2][NUM_SEGMENTS];
+	Vec3 dirX = normal.GetPerpendicular();
+	Vec3 dirY = Vec3::Cross(normal, dirX);
+	for (int i = 0; i < NUM_SEGMENTS; i++)
+	{
+		float a = i * (M_2PIf / NUM_SEGMENTS);
+		float ca = cosf(a), sa = sinf(a);
+		points[0][i] = p + dirX * (r1 * ca) + dirY * (r1 * sa);
+		points[1][i] = p + dirX * (r2 * ca) + dirY * (r2 * sa);
+	}
+	
+	if (c2.a > 0 && r1 != r2)
+	{
+		glColor4ubv(c2);
+		glDisable(GL_CULL_FACE);
+		glBegin(GL_TRIANGLE_STRIP);
+		for (int i = 0; i < NUM_SEGMENTS; i++)
+		{
+			glVertex3fv(points[0][i]);
+			glVertex3fv(points[1][i]);
+		}
+		glVertex3fv(points[0][0]);
+		glVertex3fv(points[1][0]);
+		glEnd();
+		glEnable(GL_CULL_FACE);
+		
+	}
+	
+	if (c1.a > 0 && borderLineWidth > 0.f)
+	{
+		glEnable(GL_LINE_SMOOTH);
+		glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+		glLineWidth(borderLineWidth);
+		
+		glColor4ubv(c1);
+		glBegin(GL_LINE_LOOP);
+		for (int i = 0; i < NUM_SEGMENTS; i++)
+			glVertex3fv(points[0][i]);
+
+		glVertex3fv(points[0][0]);
+		glEnd();
+		if (r1 != r2)
+		{
+			glBegin(GL_LINE_LOOP);
+			for (int i = 0; i < NUM_SEGMENTS; i++)
+				glVertex3fv(points[1][i]);
+
+			glVertex3fv(points[1][0]);
+			glEnd();
+		}
+		
+		glDisable(GL_LINE_SMOOTH);
+	}
+}
+
 void DrawCollisionNode(const CollisionNode * pCN, byte level)
 {
 	if (!pCN)
@@ -371,6 +445,82 @@ void DrawCollisionNode(const CollisionNode * pCN, byte level)
 
 	DrawCollisionNode(pCN->Child(0), level + 1);
 	DrawCollisionNode(pCN->Child(1), level + 1);
+}
+
+// ------------------------------------------------------------------------ //
+
+bool GetRayAxisIntersectionDelta(const Vec3 & rayStart, const Vec3 & rayEnd, const Vec3 & axisPos, const Vec3 & axisDir, float l, float t, Vec3 & delta)
+{
+	Vec3 rayDir = rayEnd - rayStart;
+	Vec3 normal = Vec3::Cross(rayDir, axisDir);
+	if (normal.Normalize() == 0.f)
+		return false;
+
+	Vec3 deltaPos = rayStart - axisPos;
+	if (t > 0.f)
+	{
+		float d = Vec3::Dot(normal, deltaPos);
+		if (fabsf(d) > t)
+			return false;
+	}
+	
+	Vec3 dir = Vec3::Cross(normal, rayDir);
+	float dist = Vec3::Dot(dir, deltaPos) / Vec3::Dot(dir, axisDir);
+	if (l > 0.f)
+	{
+		if (dist < 0.f || dist > l)
+			return false;
+		
+		if ((deltaPos - axisDir * dist).LengthSquared() > rayDir.LengthSquared())
+			return false;
+	}
+
+	delta = axisDir * dist;
+	return true;
+}
+	
+bool GetRayPlaneIntersectionDelta(const Vec3 & rayStart, const Vec3 & rayEnd, const Vec3 & axisPos, const Vec3 & axisDir, Vec3 & delta)
+{
+	float d1 = Vec3::Dot(axisPos - rayStart, axisDir);
+	float d2 = Vec3::Dot(axisPos - rayEnd, axisDir);
+	if ((d1 > 0.f) ^ (d2 <= 0.f))
+		return false;
+
+	Vec3 rayDir = rayEnd - rayStart;
+	delta = rayStart + rayDir * (d1 / Vec3::Dot(rayDir, axisDir)) - axisPos;
+	return true;
+}
+
+float GetRayBoxIntersection(const Vec3 & rayStart, const Vec3 & rayEnd, const BBox & box)
+{
+	float tmin = 0.f;
+	float tmax = 1.f;
+	for (int i = 0; i < 3; i++)
+	{
+		float delta = rayEnd[i] - rayStart[i];
+		if (delta == 0.f)
+			continue;
+
+		float invDelta = 1.f / delta;
+		float t1, t2;
+		if (delta > 0.f)
+		{
+			t1 = (box.vMins[i] - rayStart[i]) * invDelta;
+			t2 = (box.vMaxs[i] - rayStart[i]) * invDelta;
+		}
+		else
+		{
+			t1 = (box.vMaxs[i] - rayStart[i]) * invDelta;
+			t2 = (box.vMins[i] - rayStart[i]) * invDelta;
+		}
+		if ((tmin > t2) || (t1 > tmax))
+			return 1.f;
+
+		tmin = std::max(tmin, t1);
+		tmax = std::min(tmax, t2);
+	}
+
+	return tmin;
 }
 
 // ------------------------------------------------------------------------ //

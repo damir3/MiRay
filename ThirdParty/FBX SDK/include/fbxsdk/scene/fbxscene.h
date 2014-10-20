@@ -289,16 +289,13 @@ public:
       * \name Global Settings
       */
     //@{
+		/** Access global settings.
+		* \return Reference to the Global Settings. */
+		FbxGlobalSettings& GetGlobalSettings();
 
-    /** Access global settings.
-      * \return Reference to the Global Settings.
-      */
-    FbxGlobalSettings& GetGlobalSettings();
-
-    /** Const access to global settings.
-      * \return Const reference to the Global Settings.
-      */
-    const FbxGlobalSettings& GetGlobalSettings() const;
+		/** Const access to global settings.
+		* \return Const reference to the Global Settings. */
+		const FbxGlobalSettings& GetGlobalSettings() const;
     //@}
 
     /**
@@ -321,19 +318,15 @@ public:
 	  * an evaluator is created with default values.
       */
     //@{
+		/** Set the global evaluator used by this scene evaluation engine. Deprecated function, please use FbxManager::SetEvaluator instead.
+		* \param pEvaluator The evaluator to be used for evaluation processing of this scene. */
+		FBX_DEPRECATED void SetEvaluator(FbxAnimEvaluator* pEvaluator);
 
-		/** Set the global evaluator used by this scene evaluation engine.
-		  * \param pEvaluator The evaluator to be used for evaluation processing of this scene.
-		  */
-		void SetEvaluator(FbxAnimEvaluator* pEvaluator);
-
-		/** Get the global evaluator used by this scene evaluation engine.
-		  * If no evaluator were previously set, this function will return either the
-		  * first evaluator found attached to this scene, or a new default evaluator.
-		  * \return The evaluator to be used for evaluation processing of this scene.
-		  */
-		FbxAnimEvaluator* GetEvaluator();
-
+		/** Get the global evaluator used by this scene evaluation engine. Deprecated function, please use FbxManager::GetEvaluator instead.
+		* If no evaluator were previously set, this function will return either the
+		* first evaluator found attached to this scene, or a new default evaluator.
+		* \return The evaluator to be used for evaluation processing of this scene. */
+		FBX_DEPRECATED FbxAnimEvaluator* GetEvaluator();
     //@}
 
     /** Clear then fill a pose array with all existing pose included in the scene.
@@ -534,38 +527,33 @@ public:
 
     //@}
 
-    /**
-      * \name Utilities
-      */
-    //@{
-    /** Synchronize all the Show properties of node instances.
-      * Walks all the node attributes defined in the scene and synchronize the Show property
-      * of all the nodes that reference the node attribute so that they all contain the same
-      * value. This method should be called after the FBX scene is completely created (typically
-      * right after the calls to the FbxImporter::Import() or just before the calls to the 
-      * FbxExporter::Export().
-      *
-      * \remarks Applications only need to call this method if their interpretation of the Show
-      *          property implies that setting the Show state on one instance affect all of them.
-      *         
-      * \see FbxNode::Visibility property, FbxNode::Show property
-      */
-    void SyncShowPropertyForInstance();
-    //@}
+	/** \name Utilities */
+	//@{
+		/** Synchronize all the Show properties of node instances.
+		* Walks all the node attributes defined in the scene and synchronize the Show property of all the nodes that reference the node attribute so that they all contain the same value.
+		* This method should be called after the FBX scene is completely created, typically right after the calls to the FbxImporter::Import() or just before the calls to the FbxExporter::Export().
+		* \remarks Applications only need to call this method if their interpretation of the Show property implies that setting the Show state on one instance affect all of them.
+		* \see FbxNode::Visibility property, FbxNode::Show property */
+		void SyncShowPropertyForInstance();
+
+		/** Compute the bounding box and its center for all (or selected) nodes.
+		* \param pBBoxMin The minimum value of the bounding box upon successful return.
+		* \param pBBoxMax The maximum value of the bounding box upon successful return.
+		* \param pBBoxCenter The center value of the bounding box upon successful return.
+		* \param pSelected If \c true, only take into account selected geometry, otherwise take all geometry into account.
+		* \param pTime If different from FBXSDK_TIME_INFINITE, time used to compute the bounding box for deformed geometry.
+		* \param pAnimLayerId The animation layer used to compute the bounding box for deformed geometry.
+		* \return \c true if successful, otherwise \c false.
+		* \remark If geometry have been unloaded from memory, their bounding box cannot be calculated and will use any value set previously. */
+		bool ComputeBoundingBoxMinMaxCenter(FbxVector4& pBBoxMin, FbxVector4& pBBoxMax, FbxVector4& pBBoxCenter, bool pSelected=false, const FbxTime& pTime=FBXSDK_TIME_INFINITE, int pAnimLayerId=0);
+	//@}
 
 /*****************************************************************************************************************************
 ** WARNING! Anything beyond these lines is for internal use, may not be documented and is subject to change without notice! **
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-    /** Clone this scene object (and everything else it contains if clone type is eDeepClone)
-		* \param pCloneType	The type of clone to be created. By default, the clone type is eDeepClone.
-		* \param pContainer	An optional parameter to specify which object will "contain" the new object. By contain, we mean the new object
-		*					will become a source to the container, connection-wise.
-		* \return			The new clone, or NULL (if the specified clone type is not supported).
-		* \remark			This method overwrites the FbxObject::Clone() method. When the clone type is "deep", the whole scene network is cloned. With the "reference"
-        *                   clone type, this method is simply calling the parent's Clone() method
-        */
-	virtual FbxObject* Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL) const;    
+    //  Clone this scene object (and everything else it contains if clone type is eDeepClone)
+	virtual FbxObject* Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL) const;    
 
     virtual FbxObject& Copy(const FbxObject& pObject);
 
@@ -583,7 +571,7 @@ public:
 	void ForceKill();
 
 private:
-    virtual void Construct(const FbxScene* pFrom);
+    virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
     void ConnectTextureLayerElement(FbxLayerContainer* pLayerContainer,
@@ -614,7 +602,6 @@ private:
     FbxNode*					mRootNode;
     FbxGlobalLightSettings*		mGlobalLightSettings;
     FbxGlobalCameraSettings*	mGlobalCameraSettings;
-	FbxAnimEvaluator*			mEvaluator;
     FbxCharPtrSet				mTakeTimeWarpSet;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };

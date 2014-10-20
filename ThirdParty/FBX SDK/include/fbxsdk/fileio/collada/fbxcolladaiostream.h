@@ -17,6 +17,27 @@
 
 #include <fbxsdk/fbxsdk_nsbegin.h>
 
+//----------------------------------------------------------------------------//
+
+/** Convert part of the source string into destination type.
+  * \param pDest The destination with a specific type.
+  * \param pSourceBegin The begin of the source string.
+  * \param pSourceEnd Return the end of the part of the source string.
+  * \return Return \c true on success and \c false if else.
+  */
+template <typename T> bool FromString(T * pDest, const char * pSourceBegin, const char ** pSourceEnd = NULL);
+template <> bool FromString(int * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(double * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxString * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxDouble2 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxDouble3 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxDouble4 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxVector4 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxAMatrix * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+template <> bool FromString(FbxAMatrix * pDest, const char * pSourceBegin, const char ** pSourceEnd);
+
+
+
 /** Parse the string into an array.
   * The source string is made up with many groups and each group contains pSourceGroupSize units separated by spaces;
   * The destination array is also made up with many groups and each unit contains pDestGroupSize units.
@@ -79,25 +100,6 @@ template <typename TYPE> int FromStringToArray(const char * pString, TYPE * pArr
     }
     return lReadCount;
 }
-
-//----------------------------------------------------------------------------//
-
-/** Convert part of the source string into destination type.
-  * \param pDest The destination with a specific type.
-  * \param pSourceBegin The begin of the source string.
-  * \param pSourceEnd Return the end of the part of the source string.
-  * \return Return \c true on success and \c false if else.
-  */
-template <typename T> bool FromString(T * pDest, const char * pSourceBegin, const char ** pSourceEnd = NULL);
-template <> bool FromString(int * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(double * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxString * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxDouble2 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxDouble3 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxDouble4 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxVector4 * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxAMatrix * pDest, const char * pSourceBegin, const char ** pSourceEnd);
-template <> bool FromString(FbxAMatrix * pDest, const char * pSourceBegin, const char ** pSourceEnd);
 
 //----------------------------------------------------------------------------//
 

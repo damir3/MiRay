@@ -8,8 +8,13 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface SceneView : NSOpenGLView<NSUserInterfaceValidations>
+@interface SceneView : NSOpenGLView
 {
 }
+
+@property (assign) mr::SceneView *pSceneView;
+@property NSArray *modelFileTypes;
+@property NSArray *imageFileTypes;
+@property NSString *filename;
 
 @end

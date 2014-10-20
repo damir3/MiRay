@@ -15,16 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../../common/stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="../../common/targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="../../common/all.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="../../common/baserc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="../../common/bbox.h">
@@ -43,9 +34,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="../../common/mutex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="../../common/precompiled.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="../../common/quaternion.h">
@@ -68,9 +56,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../../common/stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="../../common/color.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -103,6 +88,9 @@
     </ClCompile>
     <ClCompile Include="../../common/vec4.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="../../common/precompiled.h">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

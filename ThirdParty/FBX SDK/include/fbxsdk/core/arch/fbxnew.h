@@ -368,7 +368,9 @@ template<typename T> T* FbxNewArray(const int n)
 		T* p = (T*)((int*)pTmp+1);
 		*((int*)pTmp) = n;
 		for( int i = 0; i < n; ++i )
+		{
 			new((T*)p+i)T;	//in-place new, not allocating memory so it is safe.
+		}
 		return p;
 	}
 }
@@ -379,8 +381,10 @@ template<typename T> void FbxDeleteArray(T* p)
 	{
 		if( !FBXSDK_IS_SIMPLE_TYPE(T) )
 		{
-			for(int i=0;i<((int*)p)[-1];++i)
+			for( int i = 0; i < ((int*)p)[-1]; ++i )
+			{
 				((T*)p)[i].~T();
+			}
 			FbxFree((int*)p-1);
 		}
 		else

@@ -124,7 +124,7 @@ public:
 	/** Delete a key-value pair.
 	* \param pKey The key.
 	* \return \c true if success, \c false if key is not found. */
-	inline int Remove(const KeyType& pKey)
+	inline bool Remove(const KeyType& pKey)
 	{
 		return mTree.Remove(pKey);
 	}
@@ -305,7 +305,7 @@ public:
 	}
 
 	/** Get the next element of a given element.
-	* \param The given element.
+	* \param pIterator The given element.
 	* \return The next element. */
 	inline Iterator GetNext(Iterator pIterator) const
 	{
@@ -369,6 +369,36 @@ public:
     //! Constructor
     inline FbxObjectStringMap(){}
 };
+
+//! Call FbxFree on each element of the map, and then clear it.
+template <typename K, typename V, typename C, typename A> inline void FbxMapFree(FbxMap<K, V, C, A>& pMap)
+{
+	for( typename FbxMap<K, V, C, A>::Iterator i = pMap.Begin(); i != pMap.End(); ++i )
+	{
+		FbxFree(i->GetValue());
+	}
+	pMap.Clear();
+}
+
+//! Call FbxDelete on each element of the map, and then clear it.
+template <typename K, typename V, typename C, typename A> inline void FbxMapDelete(FbxMap<K, V, C, A>& pMap)
+{
+	for( typename FbxMap<K, V, C, A>::Iterator i = pMap.Begin(); i != pMap.End(); ++i )
+	{
+		FbxDelete(i->GetValue());
+	}
+	pMap.Clear();
+}
+
+//! Call Destroy on each element of the map, and then clear it.
+template <typename K, typename V, typename C, typename A> inline void FbxMapDestroy(FbxMap<K, V, C, A>& pMap)
+{
+	for( typename FbxMap<K, V, C, A>::Iterator i = pMap.Begin(); i != pMap.End(); ++i )
+	{
+		i->GetValue()->Destroy();
+	}
+	pMap.Clear();
+}
 
 #include <fbxsdk/fbxsdk_nsend.h>
 

@@ -803,10 +803,10 @@ public:
     
     FbxCharacterLink*	GetCharacterLinkPtr(ENodeId pCharacterNodeId);
 
-    virtual FbxObject*	Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL) const;    
+    virtual FbxObject*	Clone(FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL) const;    
 
 protected:
-	virtual void Construct(const FbxCharacter* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 	virtual void Destruct(bool pRecursive);
 

@@ -58,10 +58,6 @@ protected:
     FbxQuery();
     virtual ~FbxQuery();
 
-	static void				InitializeMemoryPool();
-	static void				ReleaseMemoryPool();
-	static FbxMemoryPool*	GetMemoryPool();
-
 private:
     class InternalFilter : public FbxConnectionPointFilter
 	{
@@ -79,13 +75,11 @@ private:
 		FbxQuery*					mQuery;
     };
 
-    InternalFilter			mFilter;
-    int						mRefCount;
-	static FbxMemoryPool*	mMemPool;
+    InternalFilter	mFilter;
+    int				mRefCount;
 
     FBXSDK_FRIEND_NEW();
     friend class FbxProperty;
-	friend class FbxManager;
 #endif /* !DOXYGEN_SHOULD_SKIP_THIS *****************************************************************************************/
 };
 
@@ -110,10 +104,6 @@ private:
 class FBXSDK_DLL FbxCriteria
 {
 public:
-	/** Copy constructor.
-	* \param pCriteria The criteria to be copied. */
-	FbxCriteria(const FbxCriteria& pCriteria);
-
 	/** Creates a new query criteria that only selects objects which have a specific
 	* class ID or derive from a class with a specific class ID.
 	* \param pClassId The base type class ID */
@@ -125,10 +115,6 @@ public:
 
 	//! Creates a new query criteria that only selects properties.
 	static FbxCriteria IsProperty();
-
-	/** Assignment operator.
-	* \param pCriteria The criteria to be copied */
-	FbxCriteria& operator=(const FbxCriteria& pCriteria);
 
 	/** Gets a logical conjunction (and) criteria from this and the specified criteria.
 	* \param pCriteria The specified criteria */
@@ -150,40 +136,16 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 	FbxCriteria();
-	FbxCriteria(FbxQuery* pQuery) : mQuery(pQuery) {}
+	FbxCriteria(const FbxCriteria& pCriteria);
+	FbxCriteria(FbxQuery* pQuery);
 	~FbxCriteria();
+
+	FbxCriteria& operator=(const FbxCriteria& pCriteria);
 
 private:
     FbxQuery* mQuery;
 
 	static void FreeGlobalCache();
-
-    class ClassIdCompare
-    {
-    public:
-        inline int operator() (const FbxClassId& pKeyA, const FbxClassId& pKeyB) const
-        {
-            const FbxClassIdInfo* lKeyA = pKeyA.GetClassIdInfo();
-            const FbxClassIdInfo* lKeyB = pKeyB.GetClassIdInfo();
-            return (lKeyA > lKeyB) ? 1 : (lKeyA < lKeyB) ? -1 : 0;
-        }
-    };
-
-    class ClassIdCache
-    {
-    public:
-        ClassIdCache();
-        ~ClassIdCache();
-
-        FbxCriteria* GetObjectType(const FbxClassId& pClassId);
-		static ClassIdCache* Get();
-		static void Destroy();
-		static FbxCriteria::ClassIdCache* mCache;
-
-    private:
-        typedef FbxMap<FbxClassId, FbxCriteria*, ClassIdCompare> CriteriaCacheMap;
-        CriteriaCacheMap mObjectTypeCriteria;
-    };
 
     FBXSDK_FRIEND_NEW();
 	friend class FbxManager;

@@ -26,7 +26,7 @@
 class FBXSDK_DLL FbxStream
 {
 public:
-	/** \enum Current stream state. */
+	/** Current stream state. */
 	enum EState
 	{
 		eClosed,	//!< The stream is closed.
@@ -66,7 +66,7 @@ public:
 	/** Read a string from the stream.
 	* The default implementation is written in terms of Read() but does not cope with DOS line endings.
 	* Subclasses may need to override this if DOS line endings are to be supported.
-	* \param pData Pointer to the memory block where the read bytes are stored.
+	* \param pBuffer Pointer to the memory block where the read bytes are stored.
 	* \param pMaxSize Maximum number of bytes to be read from the stream.
 	* \param pStopAtFirstWhiteSpace Stop reading when any whitespace is encountered. Otherwise read to end of line (like fgets()).
 	* \return pBuffer, if successful, else NULL.

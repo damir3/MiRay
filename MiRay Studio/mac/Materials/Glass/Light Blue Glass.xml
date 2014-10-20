@@ -1,0 +1,9 @@
+<material name="Light Blue Glass">
+	<layer>
+		<opacity>0</opacity>
+		<ior>1.5</ior>
+		<fresnel-reflection>1</fresnel-reflection>
+		<absorption>0.03 0.25 0.5</absorption>
+		<absorption-depth>3.0</absorption-depth>
+	</layer>
+</material>

@@ -115,8 +115,8 @@ public:
 
 		/** Get the translation part from the dual quaternion.
 		* \return FbxVector4 object to represent translation.
-		* \remarks A dual quaternion can represent rotation first then translation or translation first then rotation.
-		* \Since in most DCC,rotation first then translation, so we extract translation in this order.
+		* \remarks A dual quaternion can represent rotation followed by translation, or translation followed by rotation.
+		* This method assumes that the rotation is expressed first, followed by translation, as is done by most DCC tools.
 		*/
 		FbxVector4 GetTranslation() const;
 	//@}

@@ -45,7 +45,7 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
 	*  The translation, rotation and scaling limits are taken into consideration.
 	*  Only LclTranslation, LclRotation and LclScaling are taken into accounts, no other transform, such as pivot, offset are calculated here.
 	*/
-	void ComputeTRSLocal(FbxNodeEvalState* pResult, FbxNode* pNode, FbxTime pTime, FbxAnimStack* pStack);
+	void ComputeTRSLocal(FbxNodeEvalState* pResult, FbxNode* pNode, const FbxTime& pTime, FbxAnimStack* pStack);
 	
 	/** Calculate global transform of a node at the specified time and update the mGX field of the node's NodeEvalState.
 	* \param pResult The NodeEvalState to update.
@@ -60,7 +60,7 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
 	* Transform = Translation * RotationOffset* RotationPivot* PreRotation * LocalRotation* PostRotation * RotationPivotInverse* ScalingOffset* ScalingPivot* LocalScaling* ScalingPivotInverse
 	* Also,the translation, rotation and scaling limits are taken into consideration.
 	*/
-	void ComputeGlobalTransform(FbxNodeEvalState* pResult, FbxNode* pNode, FbxTime pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
+	void ComputeGlobalTransform(FbxNodeEvalState* pResult, FbxNode* pNode, const FbxTime& pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
 	
 	/** Calculate local transform of a node at the specified time and update the mLX field of the node's NodeEvalState.
 	* \param pResult The NodeEvalState to update.
@@ -75,7 +75,7 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
 	* To get values of properties LclTranslation, LclRotaion and LclScaling at the specified time, please use ComputeTRSLocal.
 	* Also,the translation, rotation and scaling limits are taken into consideration.
 	*/
-	void ComputeLocalTransform(FbxNodeEvalState* pResult, FbxNode* pNode, FbxTime pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
+	void ComputeLocalTransform(FbxNodeEvalState* pResult, FbxNode* pNode, const FbxTime& pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
 	
 	/** Check if the property has corresponding animation curve node on the specified animation layer.
 	* \param pProperty  The property to check.
@@ -97,7 +97,7 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
     * \remarks The usual usage of this function is to call it on the first animation layer with out blending, then call it repeatedly on other 
 	*  animation layers with blending to get the blended value of pLT, pLR and pLS of all animation layers.
 	*/
-	void ComputeTRSAnimationLayer(FbxNodeEvalState* pResult, FbxNode* pNode, FbxVector4& pLT, FbxVector4& pLR, FbxVector4& pLS, FbxTime pTime, FbxAnimLayer* pLayer, bool pBlend);
+	void ComputeTRSAnimationLayer(FbxNodeEvalState* pResult, FbxNode* pNode, FbxVector4& pLT, FbxVector4& pLR, FbxVector4& pLS, const FbxTime& pTime, FbxAnimLayer* pLayer, bool pBlend);
 	
 	/** Blend value of a property on certain animation layer to pResult.
 	* \param pResult The blended value of the property.
@@ -109,7 +109,7 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
 	* \param pType There are three blend types, eSimple, eRotation, eScaling
 	* \remarks The blended value will be kept in pResult.
 	*/
-	void BlendPropertyEvalWithLayer(double* pResult, int pResultSize, FbxProperty& pProperty, FbxNodeEvalState* pEvalState, FbxTime pTime, FbxAnimLayer* pLayer, EBlendType pType);
+	void BlendPropertyEvalWithLayer(double* pResult, int pResultSize, FbxProperty& pProperty, FbxNodeEvalState* pEvalState, const FbxTime& pTime, FbxAnimLayer* pLayer, EBlendType pType);
 	
 	/** Blends two arrays of values in a simple weighted linear blending way.
 	* \param pResult The first array of values to be blended.
@@ -155,11 +155,11 @@ class FBXSDK_DLL FbxAnimEvalClassic : public FbxAnimEvaluator
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-	virtual void Construct(const FbxAnimEvalClassic* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void Destruct(bool pRecursive);
 
-	virtual void EvaluateNodeTransform(FbxNodeEvalState* pResult, FbxNode* pNode, FbxTime pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
-    virtual void EvaluatePropertyValue(FbxAnimCurveNode* pResult, FbxProperty& pProperty, FbxTime pTime, FbxAnimStack* pStack);
+	virtual void EvaluateNodeTransform(FbxNodeEvalState* pResult, FbxNode* pNode, const FbxTime& pTime, FbxAnimStack* pStack, FbxNode::EPivotSet pPivotSet, bool pApplyTarget);
+	virtual void EvaluatePropertyValue(FbxPropertyEvalState* pResult, FbxProperty& pProperty, const FbxTime& pTime, FbxAnimStack* pStack);
 
 private:
 	double* mPropertyValues;

@@ -1,19 +1,28 @@
 <?xml version="1.0"?>
 <scene>
+	<background>
+		<color>1 1 1</color>
+	</background>
 	<environment>
 		<map>studio.hdr</map>
 		<color>1 1 1</color>
 	</environment>
+	<floor>
+		<ior>1.0</ior>
+		<shadow>0.4</shadow>
+	</floor>
 	<camera>
 		<position>1.12941e-07 -19.2337 6.14566</position>
 		<yaw>-90</yaw>
 		<pitch>10</pitch>
 		<fov>60</fov>
+		<focal-distance>15</focal-distance>
+		<depth-of-field>0</depth-of-field>
 	</camera>
 	<omni-light>
 		<position>-6.64534 -6.6454 10.7128</position>
-		<radius>0.781218</radius>
-		<intensity>114.431 114.431 114.431</intensity>
+		<radius>0.5</radius>
+		<intensity>50 50 50</intensity>
 	</omni-light>
 	<model>
 		<filename>cup.fbx</filename>
@@ -23,13 +32,22 @@
 			<scale>1 1 1</scale>
 		</transformation>
 		<materials>
-			<material name="/GlassDark">
+			<material name="dinnerware/GlassDark">
 				<layer>
-					<diffuse>0.4 0.35 0.3</diffuse>
-					<opacity>1</opacity>
-					<ior>1.5</ior>
-					<fresnel-reflection>0</fresnel-reflection>
-					<refraction-tint>0.8 0.75 0.7</refraction-tint>
+					<opacity>0</opacity>
+					<fresnel-reflection>1</fresnel-reflection>
+					<ior>1.45</ior>
+					<absorption>0.03 0.25 0.5</absorption>
+					<absorption-depth>3</absorption-depth>
+				</layer>
+			</material>
+			<material name="dinnerwar0/GlassDark">
+				<layer>
+					<opacity>0</opacity>
+					<fresnel-reflection>1</fresnel-reflection>
+					<ior>1.45</ior>
+					<absorption>0.03 0.25 0.5</absorption>
+					<absorption-depth>3</absorption-depth>
 				</layer>
 			</material>
 		</materials>

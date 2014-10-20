@@ -1,0 +1,5 @@
+<material name="Frosted Blue Glass">
+	<layer>
+		<reflection>1</reflection>
+	</layer>
+</material>

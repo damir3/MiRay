@@ -95,9 +95,11 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     virtual FbxObject& Copy(const FbxObject& pObject);
+    virtual FbxObject* Clone(                          FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL) const;    
+            void       Clone(FbxScene* pPoseScene,     FbxObject::ECloneType pCloneType=eDeepClone, FbxObject* pContainer=NULL, void* pSet = NULL);
 
 protected:
-	virtual void Construct(const FbxCharacterPose* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
 private:

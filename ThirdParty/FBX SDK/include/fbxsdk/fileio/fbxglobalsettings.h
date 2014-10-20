@@ -287,7 +287,7 @@ protected:
     FbxPropertyT<FbxDouble>     CustomFrameRate;
 
 protected:
-	virtual void Construct(const FbxGlobalSettings* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
 	virtual void ConstructProperties(bool pForceSet);
 	
 private:

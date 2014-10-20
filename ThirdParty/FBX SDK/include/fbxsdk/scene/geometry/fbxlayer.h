@@ -259,7 +259,7 @@ protected:
 	FbxLayerContainer* mOwner;
 
 	void Destruct() { FbxDelete(this); }
-	virtual void SetOwner(FbxLayerContainer* pOwner);
+	virtual void SetOwner(FbxLayerContainer* pOwner, int pInstance = 0);
 
     FBXSDK_FRIEND_NEW();
 
@@ -975,7 +975,7 @@ private:
   * \return return -1 if the layer element is FbxLayerElement::eDirect
   *         0 if layer element or index array is \c NULL and 1 if the remap is successful
   */
-extern int RemapIndexArrayTo(FbxLayerElement* pLayerEl, 
+extern FBXSDK_DLL int RemapIndexArrayTo(FbxLayerElement* pLayerEl, 
 							 FbxLayerElement::EMappingMode pNewMapping, 
 							 FbxLayerElementArrayTemplate<int>* pIndexArray);
 

@@ -290,7 +290,7 @@ void Vec3::Rotate(const Vec3 &axis, float rad)
 }
 
 template<>
-Vec3 Vec3::TransformedCoord(const Matrix &mat) const
+Vec3 Vec3::GetTransformedCoord(const Matrix &mat) const
 {
 	Vec3 tmp;
 	tmp.x = x * mat.m11 + y * mat.m21 + z * mat.m31 + mat.m41;
@@ -300,7 +300,7 @@ Vec3 Vec3::TransformedCoord(const Matrix &mat) const
 }
 
 template<>
-Vec3 Vec3::TransformedNormal(const Matrix &mat) const
+Vec3 Vec3::GetTransformedNormal(const Matrix &mat) const
 {
 	Vec3 tmp;
 	tmp.x = x * mat.m11 + y * mat.m21 + z * mat.m31;
@@ -328,7 +328,7 @@ void Vec3::TTransformCoord(const Matrix &mat)
 }
 
 template<> 
-Vec3 Vec3::Perpendicular() const
+Vec3 Vec3::GetPerpendicular() const
 {
 	Vec3 v;
 	if (fabsf(x) <= fabsf(y) && fabsf(x) <= fabsf(z))

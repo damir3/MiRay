@@ -14,11 +14,18 @@ namespace mr
 
 class ImageManager;
 
-class ModelManager : public IResourceManager
+typedef std::shared_ptr<Model>		ModelPtr;
+
+class ModelManager
 {
+	std::map<std::string, std::weak_ptr<Model>> m_resources;
+
 	ImageManager	*m_pImageManager;
 	FbxManager		*m_pSdkManager;
 	FbxImporter		*m_pImporter;
+
+	friend Model;
+	void Release(const std::string & name);
 
 	void CollectMeshes(Model & model, FbxNode * pFbxNode, FbxAnimLayer * pFbxAnimLayer, FbxTime & time);
 	void AddMesh(Model & model, FbxNode * pFbxNode, FbxAMatrix & pGlobalPosition,
@@ -39,7 +46,13 @@ public:
 	ModelManager(ImageManager * pImageManager);
 	~ModelManager();
 
-	Model * LoadModel(const char * strFilename, pugi::xml_node node);
+	ModelPtr LoadModel(const char * pFilename, pugi::xml_node node);
 };
+
+std::string GetFullPath(const char * pLocalPath);
+std::string GetLocalPath(const char * pFullPath);
+
+std::string PushDirectory(const char * pFilename);
+void PopDirectory(const char * pPrevDirectory);
 
 }

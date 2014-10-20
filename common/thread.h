@@ -7,35 +7,44 @@
 //
 #pragma once
 
+#if __cplusplus < 201103L && !(defined(_MSC_VER) && _MSC_VER >= 1700)
+
 #include "mutex.h"
 
 namespace mr
 {
-	
-class Thread
-{
+	class Thread
+	{
 #ifdef _WIN32
-	static DWORD WINAPI StaticThreadProc(void *);
 
-	HANDLE m_thread;
+		static DWORD WINAPI StaticThreadProc(void *);		
+
+		HANDLE m_thread;
 #else
-	static void * StaticThreadProc(void *);
+		static void * StaticThreadProc(void *);
 
-	pthread_t m_thread;
+		pthread_t m_thread;
 #endif
-	Mutex	m_mutexStartJoin;
-	
-protected:
-	Thread();
-	virtual ~Thread();
-
-	virtual void ThreadProc() = 0;
-
-public:
-	bool Start();
-	void Join();
-
-//	static void Sleep(int ms);
-};
-	
+		typedef void (*ThreadFunction)(void *);
+		ThreadFunction	m_func;
+		void * const 	m_pObj;
+		Mutex			m_mutex;
+		
+	public:
+		Thread(ThreadFunction func, void * pObj);
+		~Thread();
+		
+		void join();
+	};
 }
+
+#else
+
+#include <thread>
+
+namespace mr
+{
+	typedef std::thread		Thread;
+}
+
+#endif

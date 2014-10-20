@@ -11,8 +11,6 @@
 		26873305176F0E64004B4144 /* Image.h in Headers */ = {isa = PBXBuildFile; fileRef = 268732F6176F0E64004B4144 /* Image.h */; };
 		26873306176F0E64004B4144 /* ImageManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 268732F7176F0E64004B4144 /* ImageManager.cpp */; };
 		26873307176F0E64004B4144 /* ImageManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 268732F8176F0E64004B4144 /* ImageManager.h */; };
-		26873308176F0E64004B4144 /* IResource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 268732F9176F0E64004B4144 /* IResource.cpp */; };
-		26873309176F0E64004B4144 /* IResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 268732FA176F0E64004B4144 /* IResource.h */; };
 		2687330A176F0E64004B4144 /* MaterialResource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 268732FB176F0E64004B4144 /* MaterialResource.cpp */; };
 		2687330B176F0E64004B4144 /* MaterialResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 268732FC176F0E64004B4144 /* MaterialResource.h */; };
 		2687330C176F0E64004B4144 /* MaterialManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 268732FD176F0E64004B4144 /* MaterialManager.cpp */; };
@@ -33,8 +31,6 @@
 		268732F6176F0E64004B4144 /* Image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Image.h; path = ../../resources/Image.h; sourceTree = "<group>"; };
 		268732F7176F0E64004B4144 /* ImageManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ImageManager.cpp; path = ../../resources/ImageManager.cpp; sourceTree = "<group>"; };
 		268732F8176F0E64004B4144 /* ImageManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ImageManager.h; path = ../../resources/ImageManager.h; sourceTree = "<group>"; };
-		268732F9176F0E64004B4144 /* IResource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IResource.cpp; path = ../../resources/IResource.cpp; sourceTree = "<group>"; };
-		268732FA176F0E64004B4144 /* IResource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IResource.h; path = ../../resources/IResource.h; sourceTree = "<group>"; };
 		268732FB176F0E64004B4144 /* MaterialResource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MaterialResource.cpp; path = ../../resources/MaterialResource.cpp; sourceTree = "<group>"; };
 		268732FC176F0E64004B4144 /* MaterialResource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MaterialResource.h; path = ../../resources/MaterialResource.h; sourceTree = "<group>"; };
 		268732FD176F0E64004B4144 /* MaterialManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MaterialManager.cpp; path = ../../resources/MaterialManager.cpp; sourceTree = "<group>"; };
@@ -68,8 +64,6 @@
 				268732F6176F0E64004B4144 /* Image.h */,
 				268732F7176F0E64004B4144 /* ImageManager.cpp */,
 				268732F8176F0E64004B4144 /* ImageManager.h */,
-				268732F9176F0E64004B4144 /* IResource.cpp */,
-				268732FA176F0E64004B4144 /* IResource.h */,
 				268732FB176F0E64004B4144 /* MaterialResource.cpp */,
 				268732FC176F0E64004B4144 /* MaterialResource.h */,
 				268732FD176F0E64004B4144 /* MaterialManager.cpp */,
@@ -110,7 +104,6 @@
 			files = (
 				26873305176F0E64004B4144 /* Image.h in Headers */,
 				26873307176F0E64004B4144 /* ImageManager.h in Headers */,
-				26873309176F0E64004B4144 /* IResource.h in Headers */,
 				2687330B176F0E64004B4144 /* MaterialResource.h in Headers */,
 				2687330D176F0E64004B4144 /* MaterialManager.h in Headers */,
 				2687330F176F0E64004B4144 /* Model.h in Headers */,
@@ -174,7 +167,6 @@
 			files = (
 				26873304176F0E64004B4144 /* Image.cpp in Sources */,
 				26873306176F0E64004B4144 /* ImageManager.cpp in Sources */,
-				26873308176F0E64004B4144 /* IResource.cpp in Sources */,
 				2687330A176F0E64004B4144 /* MaterialResource.cpp in Sources */,
 				2687330C176F0E64004B4144 /* MaterialManager.cpp in Sources */,
 				2687330E176F0E64004B4144 /* Model.cpp in Sources */,

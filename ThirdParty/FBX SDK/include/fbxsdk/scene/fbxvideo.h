@@ -248,7 +248,7 @@ public:
 *****************************************************************************************************************************/
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 protected:
-    virtual void Construct(const FbxVideo* pFrom);
+    virtual void Construct(const FbxObject* pFrom);
     virtual void ConstructProperties(bool pForceSet);
     virtual bool ConnectNotify(FbxConnectEvent const &pEvent);
 

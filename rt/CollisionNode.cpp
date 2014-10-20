@@ -98,7 +98,7 @@ size_t CollisionNode::GetChildrenDepth() const
 //	}
 //};
 
-bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
+bool CollisionNode::FindSplitPlane(const PolygonArray & polygons)
 {
 	const Vec3 vBoxSize = m_bbox.Size();
 	m_axis = vBoxSize.x >= vBoxSize.y ? (vBoxSize.x >= vBoxSize.z ? 0 : 2) : (vBoxSize.y >= vBoxSize.z ? 1 : 2);
@@ -129,7 +129,7 @@ bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 //	}
 //	
 //	const Vec3 vScale = Vec3(NUM_SPLIT_VOLUMES / vBoxSize[0], NUM_SPLIT_VOLUMES / vBoxSize[1], NUM_SPLIT_VOLUMES / vBoxSize[2]);
-//	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+//	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 //	{
 //		Vec3 vTriangleCenter = it->bbox.Center() - m_bbox.vMins;
 //		for (int iAxis = 0; iAxis < 3; iAxis++)
@@ -210,7 +210,7 @@ bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 //	SplitVolume volume[2];
 //};
 
-//bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
+//bool CollisionNode::FindSplitPlane(const PolygonArray & polygons)
 //{
 //	const Vec3 vBoxSize = m_bbox.Size();
 //	m_axis = vBoxSize.x >= vBoxSize.y ? (vBoxSize.x >= vBoxSize.z ? 0 : 2) : (vBoxSize.y >= vBoxSize.z ? 1 : 2);
@@ -237,7 +237,7 @@ bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 //	}
 //
 //	const Vec3 vScale = Vec3(NUM_SPLIT_VOLUMES / vBoxSize[0], NUM_SPLIT_VOLUMES / vBoxSize[1], NUM_SPLIT_VOLUMES / vBoxSize[2]);
-//	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+//	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 //	{
 //		for (int iAxis = 0; iAxis < 3; iAxis++)
 //		{
@@ -299,26 +299,27 @@ bool CollisionNode::FindSplitPlane(const sPolygonArray & polygons)
 //	return m_axis >= 0;
 //}
 
-void CollisionNode::FillTriangles(const sPolygonArray & polygons)
+void CollisionNode::FillTriangles(const PolygonArray & polygons)
 {
-	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 		m_triangles.push_back(it->pTriangle);
 }
 
-BBox CollisionNode::CalculateBBox(const sPolygonArray & polygons)
+BBox CollisionNode::CalculateBBox(const PolygonArray & polygons)
 {
 	BBox bbox;
 	bbox.ClearBounds();
-	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 		bbox.AddToBounds(it->bbox);
 	return bbox;
 }
 
-void CollisionNode::Create(byte level, const sPolygonArray & polygons)
+void CollisionNode::Create(byte level, const PolygonArray & polygons)
 {
 	m_bbox = CalculateBBox(polygons);
-	m_center = m_bbox.Center();
-	m_extents = m_center - m_bbox.vMins;
+	Vec3 boxCenter = m_bbox.Center();
+	m_center = boxCenter;
+	m_extents = boxCenter - m_bbox.vMins;
 
 	if (level == 0 || polygons.size() <= MAX_NODE_TRIANGLES || !FindSplitPlane(polygons))
 	{
@@ -327,10 +328,10 @@ void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 	}
 
 	float fMinSize = FLT_MAX;
-	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 	{
 		const BBox & bbox = it->pTriangle->BoundingBox();
-		fMinSize = std::min<float>(fMinSize, bbox.vMaxs[m_axis] - bbox.vMins[m_axis]);
+		fMinSize = fminf(fMinSize, bbox.vMaxs[m_axis] - bbox.vMins[m_axis]);
 	}
 
 	if ((m_bbox.vMaxs[m_axis] - m_bbox.vMins[m_axis]) < (fMinSize * 2.f))
@@ -339,11 +340,11 @@ void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 		return;
 	}
 
-	sPolygonArray childPolygons[2];
+	PolygonArray childPolygons[2];
 	childPolygons[0].reserve(polygons.size());
 	childPolygons[1].reserve(polygons.size());
 
-	for (sPolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
+	for (PolygonArray::const_iterator it = polygons.begin(), itEnd = polygons.end(); it != itEnd; ++it)
 	{
 		if (it->bbox.vMaxs[m_axis] <= m_dist)
 			childPolygons[0].push_back(*it);
@@ -351,8 +352,8 @@ void CollisionNode::Create(byte level, const sPolygonArray & polygons)
 			childPolygons[1].push_back(*it);
 		else
 		{// split polygon
-			sPolygon p1(it->pTriangle);
-			sPolygon p2(it->pTriangle);
+			Polygon p1(it->pTriangle);
+			Polygon p2(it->pTriangle);
 
 			float fDist1 = it->vertices[0][m_axis] - m_dist;
 			for (int i = 0; i < it->numVertices; i++)

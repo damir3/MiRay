@@ -249,13 +249,14 @@ public:
     };
 
     virtual FbxObject& Copy(const FbxObject& pObject);
+    virtual void InitControlPoints(int pCount) { ParentClass::InitControlPoints(pCount); }
 
     void SetFlipNormals(bool pFlipNormals);
     bool GetFlipNormals() const;
     bool IsValidKnots() const;
 
 protected:
-	virtual void Construct(const FbxNurbsSurface* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
 
     FbxUInt mUOrder, mVOrder;

@@ -308,9 +308,10 @@ public:
     static const char* CurveNodeNameFrom(const char* pName);
 
 protected:
-	virtual void Construct(const FbxAnimCurveNode* pFrom);
+	virtual void Construct(const FbxObject* pFrom);
     virtual void Destruct(bool pRecursive);
     virtual void ConstructProperties(bool pForceSet);
+	virtual bool ConnectNotify(const FbxConnectEvent& pEvent);
 
     FbxAnimCurveNode* Find(FbxAnimCurveNode* pRoot, const FbxString& pName);
 
