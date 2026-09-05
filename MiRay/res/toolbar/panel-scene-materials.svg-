@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#a0a0a0">
+  <defs>
+    <clipPath id="inner-circle">
+      <circle cx="12" cy="12" r="8"/>
+    </clipPath>
+  </defs>
+  <circle cx="12" cy="12" r="9" fill="none" stroke="#a0a0a0" stroke-width="2"/>
+  <g clip-path="url(#inner-circle)">
+    <!-- Row 3 Col 3 (Center) -->
+    <rect x="10.3" y="10.3" width="3.4" height="3.4" rx="1"/>
+    
+    <!-- Row 2 Col 2 (Top-Left) -->
+    <rect x="6.1" y="6.1" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 2 Col 4 (Top-Right) -->
+    <rect x="14.5" y="6.1" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 4 Col 2 (Bottom-Left) -->
+    <rect x="6.1" y="14.5" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 4 Col 4 (Bottom-Right) -->
+    <rect x="14.5" y="14.5" width="3.4" height="3.4" rx="1"/>
+    
+    <!-- Row 1 Col 3 (Top-Middle) -->
+    <rect x="10.3" y="1.9" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 5 Col 3 (Bottom-Middle) -->
+    <rect x="10.3" y="18.7" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 3 Col 1 (Left-Middle) -->
+    <rect x="1.9" y="10.3" width="3.4" height="3.4" rx="1"/>
+    <!-- Row 3 Col 5 (Right-Middle) -->
+    <rect x="18.7" y="10.3" width="3.4" height="3.4" rx="1"/>
+  </g>
+</svg>

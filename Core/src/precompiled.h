@@ -1,0 +1,76 @@
+#include <QObject>
+#include <QGlWidget>
+#include <QFuture>
+#include <QDebug>
+#include <QSemaphore>
+#include <QFileInfo>
+#include <QMouseEvent>
+#include <QTimer>
+#include <QPointer>
+#include <QQueue>
+#include <QBuffer>
+#include <QDir>
+#include <QTime>
+#include <QPluginLoader>
+#include <QApplication>
+#include <QSettings>
+#include <QUndoStack>
+#include <QUuid>
+#include <QDomDocument>
+#include <QtCore/qmath.h>
+
+#include <QtConcurrent/QtConcurrent>
+#include <QStandardPaths>
+#include <QWindow>
+
+#include <cmath>
+#include <cstdlib>
+#include <memory>
+#include <algorithm>
+#include <vector>
+#include <set>
+#include <map>
+#include <assert.h>
+#include <sstream>
+#include <iomanip>
+#include <stdexcept>
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <future>
+#include <complex>
+
+#define GLM_USE_SHORT_TYPES
+#include <glm-math.h>
+
+#include "../../Shared/Utils/FileUtils.h"
+#include "../../Shared/Utils/Log.h"
+#include "../../Shared/Interfaces/ApplicationContext.h"
+#include "../../Shared/Interfaces/Log.h"
+#include "../../Shared/Interfaces/CoreInstance.h"
+#include "../../Shared/Interfaces/Image.h"
+#include "../../Shared/Interfaces/Material.h"
+#include "../../Shared/Interfaces/Scene.h"
+#include "../../Shared/Interfaces/MeshNode.h"
+#include "../../Shared/Interfaces/LightNode.h"
+#include "../../Shared/Interfaces/MaterialManager.h"
+#include "../../Shared/Interfaces/Geometry.h"
+#include "../../Shared/Interfaces/Camera.h"
+#include "../../Shared/Interfaces/Snapshot.h"
+#include "../../Shared/Interfaces/SnapshotManager.h"
+#include <embree4/rtcore.h>
+#include <embree4/rtcore_ray.h>
+
+#undef RGB
+
+#include "Scene.h"
+#include "RenderMath.h"
+#include "Ray.h"
+#include "Samplers/Random.h"
+#include "ColorUtils.h"
+#include "Utils.h"
+#include "SceneCommands.h"
+#include "Renderers/BaseRenderer.h"
+#include "Materials/BSDF.h"
+#include "Materials/MaterialImpl.h"
+#include "CoreInstance.h"

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 48 48" width="48px">
+  <!-- Outer Rounded Rectangle Border -->
+  <rect x="2" y="2" width="44" height="44" rx="6" ry="6" stroke="#A0A0A0" stroke-width="4" fill="none"/>
+  
+  <!-- Minus Sign -->
+  <line x1="14" y1="24" x2="34" y2="24" stroke="#A0A0A0" stroke-width="4" stroke-linecap="round"/>
+</svg>

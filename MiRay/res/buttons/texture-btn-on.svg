@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 0 48 48" width="48px" version="1.1" id="svg1">
+	<!-- Outer Rounded Rectangle Border -->
+	<rect x="2" y="2" width="44" height="44" rx="6" ry="6" stroke="#a0a0a0" stroke-width="4" fill="none" id="rect1" />
+	<g id="g1" transform="translate(3.5000156,-1.5)">
+		<!-- Sun -->
+		<circle cx="12" cy="14" r="4.5" fill="#a0a0a0" id="circle1" />
+		<!-- Mountains -->
+		<path d="m 4.5,40 7.5,-15 6,6 7,-9 11.5,18 z" fill="#a0a0a0" stroke="#a0a0a0" stroke-width="3" stroke-linejoin="round" id="path1" />
+	</g>
+</svg>

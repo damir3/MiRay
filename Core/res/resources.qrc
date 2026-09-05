@@ -1,0 +1,14 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource>
+	<file>blend.vs</file>
+	<file>blend.fs</file>
+	<file>object.vs</file>
+	<file>object.fs</file>
+	<file>line.vs</file>
+	<file>line.fs</file>
+	<file>studio.hdr</file>
+	<file>rswop.icm</file>
+	<file>sgray.icm</file>
+</qresource>
+</RCC>

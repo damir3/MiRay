@@ -1,0 +1,217 @@
+name: Release & Packaging
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      skip_signing:
+        description: 'Skip code signing and notarization'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-package:
+    name: Build & Package (${{ matrix.platform.name }})
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macos-arm64
+            os: macos-14
+            arch: arm
+            profile: conan/mac-arm
+            artifact_name: MiRay-arm.dmg
+          - name: windows-x64
+            os: windows-2022
+            arch: 64
+            profile: conan/win-x64
+            artifact_name: MiRaySetup64.exe
+          - name: windows-arm64
+            os: windows-2022
+            arch: arm64
+            profile: conan/win-arm64
+            artifact_name: MiRaySetupArm64.exe
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Conan 2 & Build Tools
+        shell: bash
+        run: |
+          pip install "conan>=2.0"
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            choco install nsis -y
+          fi
+
+      - name: Conan Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.conan2/p
+            C:\Users\runneradmin\.conan2\p
+          key: conan-${{ matrix.platform.name }}-${{ hashFiles('conanfile.py', 'conan/**') }}
+          restore-keys: |
+            conan-${{ matrix.platform.name }}-
+
+      - name: Conan Install
+        shell: bash
+        run: |
+          conan install . \
+            --build=missing \
+            -pr:h=${{ matrix.platform.profile }} \
+            -pr:b=default \
+            -s build_type=RelWithDebInfo \
+            --core-conf="core.package_id:default_non_embed_mode=full_mode"
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            cmake -B tmp -G Xcode \
+              -DCMAKE_TOOLCHAIN_FILE=tmp/conan_toolchain.cmake
+          else
+            VS_ARCH="x64"
+            if [ "${{ matrix.platform.arch }}" == "arm64" ]; then
+              VS_ARCH="ARM64"
+            fi
+            cmake -B tmp -G "Visual Studio 17 2022" -A "$VS_ARCH" \
+              -DCMAKE_TOOLCHAIN_FILE=tmp/conan_toolchain.cmake
+          fi
+
+      - name: Build Targets
+        shell: bash
+        run: |
+          cmake --build tmp --config RelWithDebInfo -j
+
+      - name: Run Unit Tests
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            ./bin/${{ matrix.platform.arch }}/Core.Tests
+          elif [ "${{ matrix.platform.arch }}" == "arm64" ]; then
+            echo "==> Skipping direct test execution on x64 host for Windows ARM64 target."
+          else
+            bin/${{ matrix.platform.arch }}/Core.Tests.exe
+          fi
+
+      # ----------------- macOS Packaging & Notarization ----------------- #
+
+      - name: (macOS) Setup Keychain & Certificate
+        if: runner.os == 'macOS' && env.CAN_SIGN == 'true'
+        env:
+          CAN_SIGN: ${{ secrets.MACOS_CERTIFICATE_P12 != '' && inputs.skip_signing != true }}
+          CERT_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERT_PWD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PWD="temporary_password"
+
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+
+          echo "$CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$CERT_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+      - name: (macOS) Bundle & Sign
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          bash tools/mac/bundle.sh ${{ matrix.platform.arch }}
+          if [ -n "${{ secrets.MACOS_CERTIFICATE_P12 }}" ] && [ "${{ inputs.skip_signing }}" != "true" ]; then
+            bash tools/mac/sign.sh ${{ matrix.platform.arch }}
+          fi
+
+      - name: (macOS) Create DMG & Notarize
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          bash tools/mac/create_dmg.sh ${{ matrix.platform.arch }}
+
+          if [ -n "$APPLE_API_KEY_BASE64" ] && [ "${{ inputs.skip_signing }}" != "true" ]; then
+            mkdir -p ~/.appstoreconnect/private_keys
+            echo "$APPLE_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+            xcrun notarytool submit out/${{ matrix.platform.artifact_name }} \
+              --key ~/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8 \
+              --key-id "${APPLE_API_KEY_ID}" \
+              --issuer "${APPLE_API_ISSUER}" \
+              --wait
+
+            xcrun stapler staple out/${{ matrix.platform.artifact_name }}
+          fi
+
+      # ----------------- Windows Packaging & Signing ----------------- #
+
+      - name: (Windows) Sign Binaries
+        if: runner.os == 'Windows' && env.CAN_SIGN == 'true'
+        shell: cmd
+        env:
+          CAN_SIGN: ${{ secrets.WINDOWS_CERTIFICATE_PFX != '' && inputs.skip_signing != true }}
+          CERT_PFX: ${{ secrets.WINDOWS_CERTIFICATE_PFX }}
+          CERT_PWD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          powershell -Command "[System.IO.File]::WriteAllBytes('$env:RUNNER_TEMP\cert.pfx', [System.Convert]::FromBase64String($env:CERT_PFX))"
+          call tools\win\sign.cmd ${{ matrix.platform.arch }} %RUNNER_TEMP%\cert.pfx %CERT_PWD%
+
+      - name: (Windows) Build NSIS Installer
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call tools\win\build_installer.cmd ${{ matrix.platform.arch }}
+
+      - name: (Windows) Sign Installer
+        if: runner.os == 'Windows' && env.CAN_SIGN == 'true'
+        shell: cmd
+        env:
+          CAN_SIGN: ${{ secrets.WINDOWS_CERTIFICATE_PFX != '' && inputs.skip_signing != true }}
+          CERT_PWD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          signtool sign /f %RUNNER_TEMP%\cert.pfx /p %CERT_PWD% /fd sha256 /tr http://timestamp.digicert.com /td sha256 out\MiRaySetup${{ matrix.platform.arch }}.exe
+
+      # ----------------- Upload Artifacts ----------------- #
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform.name }}
+          path: out/${{ matrix.platform.artifact_name }}
+
+  publish-release:
+    name: Publish GitHub Release
+    needs: build-and-package
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: out-release
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out-release/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false

@@ -1,0 +1,17 @@
+sources:
+  "2.5.0":
+    Windows:
+      x86_64:
+        url: "https://github.com/RenderKit/oidn/releases/download/v2.5.0/oidn-2.5.0.x64.windows.zip"
+        sha256: "6ae0474ef7606d68647c1e2c2842832d6af01128ee84a523d30368a91013b707"
+    Macos:
+      armv8:
+        url: "https://github.com/RenderKit/oidn/releases/download/v2.5.0/oidn-2.5.0.arm64.macos.tar.gz"
+        sha256: "586142ec125de0bf5b01d3cc4c76985d4fafb0fc91e9f6562e32f3b669f86be5"
+      x86_64:
+        url: "https://github.com/RenderKit/oidn/releases/download/v2.5.0/oidn-2.5.0.x86_64.macos.tar.gz"
+        sha256: "afa810e4a184df145659a0ab140c1fd126897a529819f14e083e9c2de191ac31"
+    Linux:
+      x86_64:
+        url: "https://github.com/RenderKit/oidn/releases/download/v2.5.0/oidn-2.5.0.x86_64.linux.tar.gz"
+        sha256: "254a8355856f8cd433edb7dd832b5fb02e7157d073f7d22e331ce06533fb491f"

@@ -1,0 +1,27 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+	<file>4x4.hdr</file>
+	<file>noise.jpg</file>
+	<file>greyscale.exr</file>
+
+	<file>ior-ev-csv.ior</file>
+	<file>ior-ev-garbage-at-the-end.ior</file>
+	<file>ior-ev-space-at-beginning.ior</file>
+	<file>ior-ev-tabs-before-numbers.ior</file>
+	<file>ior-ev.ior</file>
+	<file>ior-nm-newline-at-beginning.ior</file>
+	<file>ior-nm.nk</file>
+	<file>ior-um-mixed.ior</file>
+	<file>ior-um-one-per-line.ior</file>
+	<file>ior-um.nk</file>
+	<file>ior-different-wavelengths-nk.txt</file>
+	<file>ior-different-wavelengths-nk-2.txt</file>
+
+	<file>ior-filmetrics.txt</file>
+	<file>ior-refractiveindex-n.txt</file>
+	<file>ior-refractiveindex-nk.txt</file>
+	<file>ior-refractiveindex-csv.txt</file>
+
+	<file>one-mtl-scene.mirayScene</file>
+</qresource>
+</RCC>
