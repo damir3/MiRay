@@ -102,6 +102,9 @@ struct Isect {
 	bool mEnter = false; // Whether the ray enters geometry at this intersection (cosine of its direction and the normal is negative).
 	bool mFloor = false; // Intersected floor
 
+	Isect() = default;
+	explicit Isect(float dist) : mDist(dist) {}
+
 	// True if this Isect represents a scattering event inside a medium.
 	bool isInMedium() const { return mMedium != nullptr; }
 

@@ -52,9 +52,15 @@ jobs:
         shell: bash
         run: |
           pip install "conan>=2.0"
+          conan profile detect --force
           if [ "$RUNNER_OS" == "Windows" ]; then
             choco install nsis -y
           fi
+
+      - name: Register Local Conan Recipes Remote
+        shell: bash
+        run: |
+          conan remote add shared ./conan -t local-recipes-index -f || conan remote add shared conan -t local-recipes-index -f || true
 
       - name: Conan Cache
         uses: actions/cache@v4

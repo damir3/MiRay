@@ -31,6 +31,7 @@ class MiRayRecipe(ConanFile):
         self.options["qt"].with_mysql = False
         self.options["qt"].with_pq = False
         self.options["qt"].with_odbc = False
+        self.options["qt"].with_zstd = False
         self.options["qt"].qtdeclarative = True
         self.options["qt"].qtquickcontrols = True
         self.options["qt"].qtquickcontrols2 = True

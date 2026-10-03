@@ -6,3 +6,4 @@ compiler.runtime=dynamic
 compiler.version=194
 os=Windows
 build_type=Debug
+freeimage/*:compiler.cppstd=14

@@ -1,0 +1,91 @@
+name: CI (Build & Tests)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: macOS ARM64
+            os: macos-14
+            arch: arm
+            profile: conan/mac-arm
+            test_cmd: ./bin/arm/Core.Tests
+          - name: Windows x64
+            os: windows-2022
+            arch: 64
+            profile: conan/win-x64
+            test_cmd: ./bin/64/Core.Tests.exe
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Conan 2
+        shell: bash
+        run: |
+          pip install "conan>=2.0"
+          conan profile detect --force
+
+      - name: Register Local Conan Recipes Remote
+        shell: bash
+        run: |
+          conan remote add shared ./conan -t local-recipes-index -f || conan remote add shared conan -t local-recipes-index -f || true
+
+      - name: Restore / Save Conan Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.conan2/p
+            C:\Users\runneradmin\.conan2\p
+          key: conan-${{ matrix.platform.name }}-${{ hashFiles('conanfile.py', 'conan/**') }}
+          restore-keys: |
+            conan-${{ matrix.platform.name }}-
+
+      - name: Install Conan Dependencies
+        shell: bash
+        run: |
+          conan install . \
+            --build=missing \
+            -pr:h=${{ matrix.platform.profile }} \
+            -pr:b=default \
+            -s build_type=RelWithDebInfo \
+            --core-conf="core.package_id:default_non_embed_mode=full_mode"
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            cmake -B tmp -G Xcode \
+              -DCMAKE_TOOLCHAIN_FILE=tmp/conan_toolchain.cmake
+          else
+            cmake -B tmp -G "Visual Studio 17 2022" -A x64 \
+              -DCMAKE_TOOLCHAIN_FILE=tmp/conan_toolchain.cmake
+          fi
+
+      - name: Build All Targets
+        shell: bash
+        run: |
+          cmake --build tmp --config RelWithDebInfo -j
+
+      - name: Run Unit Tests
+        shell: bash
+        run: |
+          ${{ matrix.platform.test_cmd }}

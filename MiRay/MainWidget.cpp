@@ -488,13 +488,14 @@ bool MainWidget::openFile(const QString & path, bool async)
 	const auto title = untitled ? "Untitled" : QFileInfo(path).completeBaseName();
 	auto scene = core->getScene();
 
-	m_tabs.emplace_back(std::make_unique<TabContext>(core, s_newRenderer, title, isInternalResource ? "" : path, s_newUuid,
+	m_tabs.push_back(std::unique_ptr<TabContext>(new TabContext{
+		core, s_newRenderer, title, isInternalResource ? "" : path, s_newUuid,
 		std::make_unique<SceneTree>(scene, this),
 		std::make_unique<SceneInfo>(scene->properties()),
 		std::make_unique<CameraInfo>(scene->camera()),
 		std::make_unique<MaterialInfo>(*scene, m_previewRenderer.get()),
 		std::make_unique<SnapshotInfo>(scene->snapshotManager())
-	));
+	}));
 	m_previousTab->setEnabled(m_tabs.size() > 1);
 	m_nextTab->setEnabled(m_tabs.size() > 1);
 
