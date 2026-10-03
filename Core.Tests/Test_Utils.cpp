@@ -552,8 +552,8 @@ TEST(TestUtils, AbsolutePath)
 	EXPECT_EQ(QString(""), absolutePath("", ""));
 
 	// 4. Resources and URI schemes
-	EXPECT_EQ(nativePath(":/textures/wood.png"), absolutePath(":/textures/wood.png", "/Users/someone/Project"));
-	EXPECT_EQ(nativePath("miray:///Library/Textures/wood.png"), absolutePath("miray:///Library/Textures/wood.png", "/Users/someone/Project"));
+	EXPECT_EQ(QString(":/textures/wood.png"), absolutePath(":/textures/wood.png", "/Users/someone/Project"));
+	EXPECT_EQ(QString("miray:///Library/Textures/wood.png"), absolutePath("miray:///Library/Textures/wood.png", "/Users/someone/Project"));
 }
 
 TEST(TestUtils, FindExistingFileAndResolveFilePath)

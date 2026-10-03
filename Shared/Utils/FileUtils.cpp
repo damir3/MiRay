@@ -52,7 +52,7 @@ QString relativePath(const QString &filePath, const QString &dir)
 	QDir d(dir);
 	QString rel = d.relativeFilePath(filePath);
 
-	if (rel.startsWith("../") || rel == "..")
+	if (rel.startsWith("../") || rel == ".." || QDir::isAbsolutePath(rel))
 		return filePath;
 
 	return rel;
@@ -63,10 +63,10 @@ QString absolutePath(const QString &filePath, const QString &dir)
 	if (filePath.isEmpty())
 		return QString();
 
-	if (filePath.contains("://"))
+	if (filePath.contains("://") || filePath.startsWith(':'))
 		return filePath;
 
-	if (dir.isEmpty() || filePath.startsWith(':'))
+	if (dir.isEmpty())
 		return nativePath(filePath);
 
 	if (QDir::isAbsolutePath(filePath) || (filePath.length() >= 2 && filePath[1] == ':' && filePath[0].isLetter()))
@@ -80,6 +80,11 @@ QString absolutePath(const QString &filePath, const QString &dir)
 QString urlToLocalFile(const QString & url)
 {
 	if (url.startsWith("file://")) {
+		if (url.length() >= 9 && url[8] == ':' && url[7].isLetter()) {
+			const auto qurl = QUrl::fromLocalFile(url.mid(7));
+			if (qurl.isLocalFile())
+				return qurl.toLocalFile();
+		}
 		const QUrl qurl(url);
 		if (qurl.isLocalFile())
 			return qurl.toLocalFile();

@@ -460,11 +460,7 @@ TEST_F(TestMaterials, CheckSaveLoad)
 	EXPECT_STREQ("g2l1", pMtl2->group(1)->layer(0)->name().get().toLocal8Bit());
 
 	// group 1 layer 1
-	#ifdef Q_OS_WIN
-	EXPECT_STREQ(":\\test-ior1.txt", l1->indexOfRefraction().fileName().get().toLocal8Bit());
-	#else
 	EXPECT_STREQ(":/test-ior1.txt", l1->indexOfRefraction().fileName().get().toLocal8Bit());
-	#endif
 
 	EXPECT_EQ((int)IORType::COMPLEX, l1->indexOfRefraction().type().getIndex());
 	EXPECT_EQ(2.1f, l1->indexOfRefraction().n().get());
@@ -477,22 +473,14 @@ TEST_F(TestMaterials, CheckSaveLoad)
 
 	EXPECT_EQ(true, l1->thinFilmInterference().get());
 
-	#ifdef Q_OS_WIN
-	EXPECT_STREQ(":\\test-ior3.txt", l1->filmIndexOfRefraction().fileName().get().toLocal8Bit());
-	#else
 	EXPECT_STREQ(":/test-ior3.txt", l1->filmIndexOfRefraction().fileName().get().toLocal8Bit());
-	#endif
 
 	EXPECT_EQ((int)IORType::COMPLEX, l1->filmIndexOfRefraction().type().getIndex());
 	EXPECT_EQ(2.123f, l1->filmIndexOfRefraction().n().get());
 	EXPECT_EQ(1.234f, l1->filmIndexOfRefraction().k().get());
 
 	// group 1 layer 2
-	#ifdef Q_OS_WIN
-	EXPECT_STREQ(":\\test-ior2.txt", l2->indexOfRefraction().fileName().get().toLocal8Bit());
-	#else
 	EXPECT_STREQ(":/test-ior2.txt", l2->indexOfRefraction().fileName().get().toLocal8Bit());
-	#endif
 
 	EXPECT_EQ((int)IORType::MEASURED, l2->indexOfRefraction().type().getIndex());
 	EXPECT_EQ(3.2f, l2->indexOfRefraction().n().get());
@@ -673,11 +661,7 @@ TEST_F(TestMaterials, CheckTextureSaveLoad)
 	auto tex2 = layer->transmission().texture();
 
 	tex1->enabled().set(false);
-#ifdef Q_OS_WIN
-	tex1->fileName().set(":\\4x4.hdr");
-#else
 	tex1->fileName().set(":/4x4.hdr");
-#endif
 	tex1->cropLeft().set(0.123f);
 	tex1->cropTop().set(0.234f);
 	tex1->cropRight().set(0.678f);
@@ -759,8 +743,8 @@ TEST_F(TestMaterials, CheckTexturePathSaveLoad)
 	const char *image2 = "c:\\test\\path\\local\\image2.png";
 	const char *image3 = "c:\\test\\image3.png";
 	const char *res1 = "\"file\": \"image1.png\"";
-	const char *res2 = "\"file\": \"local\\\\image2.png\"";
-	const char *res3 = "\"file\": \"C:\\\\test\\\\image3.png\"";
+	const char *res2 = "\"file\": \"local/image2.png\"";
+	const char *res3 = "\"file\": \"c:\\\\test\\\\image3.png\"";
 #else
 	const char *folder = "/test/path";
 	const char *image1 = "/test/path/image1.png";

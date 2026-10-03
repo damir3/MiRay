@@ -56,22 +56,30 @@ void FileNameParameterImpl::fireChanged(eParamId paramId)
 	m_owner.fireChanged(m_id);
 }
 
+namespace {
+QString normalizeFileName(const QString &fileName, const IApplicationContext &appContext)
+{
+	QString processedFileName = appContext.getShortResourcePath(fileName);
+	if (processedFileName.startsWith("owlet://")) { // owlet:// is a legacy prefix, we need to replace it with miray://
+		processedFileName.replace(0, 8, "miray://");
+	}
+	if (!processedFileName.startsWith("miray://") && !processedFileName.startsWith(':')) {
+		processedFileName = QDir::toNativeSeparators(processedFileName);
+	}
+	return processedFileName;
+}
+}
+
 void FileNameParameterImpl::set(const QString & fileName)
 {
-	const auto processedFileName = m_owner.core().appContext().getShortResourcePath(fileName);
+	const auto processedFileName = normalizeFileName(fileName, m_owner.core().appContext());
 	if (m_fileName.compare(processedFileName))
 		m_owner.pushCommand(new ParamCommand<FileNameParameterImpl, QString>(*this, m_owner.core().scene(), m_fileName, processedFileName, m_id));
 }
 
 void FileNameParameterImpl::_set(const QString & fileName)
 {
-	QString processedFileName = m_owner.core().appContext().getShortResourcePath(fileName);
-	if (processedFileName.startsWith("owlet://")) { // owlet:// is a legacy prefix, we need to replace it with miray://
-		processedFileName.replace(0, 8, "miray://");
-	}
-	if (!processedFileName.startsWith("miray://")) {
-		processedFileName = QDir::toNativeSeparators(processedFileName);
-	}
+	QString processedFileName = normalizeFileName(fileName, m_owner.core().appContext());
 	if (m_fileName.compare(processedFileName)) {
 		m_fileName = processedFileName;
 		emit changed();

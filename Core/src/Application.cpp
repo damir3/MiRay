@@ -178,7 +178,12 @@ QString Application::getShortResourcePath(const QString& fileName) const
 	const auto filePath = urlToLocalFile(fileName);
 	const auto absResPath = getResourcesFolder().absolutePath();
 	const auto absFilePath = QFileInfo(filePath).absoluteFilePath();
-	if (absFilePath.startsWith(absResPath)) {
+#ifdef Q_OS_WIN
+	static const auto cs = Qt::CaseInsensitive;
+#else
+	static const auto cs = Qt::CaseSensitive;
+#endif
+	if (absFilePath.startsWith(absResPath, cs)) {
 		const auto relPath = QDir(absResPath).relativeFilePath(absFilePath).replace('\\', '/');
 		return QString("miray://%1").arg(relPath);
 	}
@@ -204,11 +209,17 @@ QString Application::getFullResourcePath(const QString &fileName) const
 
 bool Application::isInternalResource(const QString &fileName) const
 {
-	const auto path = urlToLocalFile(fileName);
+	auto path = urlToLocalFile(fileName);
+	path.replace('\\', '/');
+#ifdef Q_OS_WIN
+	static const auto cs = Qt::CaseInsensitive;
+#else
+	static const auto cs = Qt::CaseSensitive;
+#endif
 	return
-		path.startsWith(m_resourcesFolderPath) ||
-		path.indexOf("miray://") == 0 || path.indexOf("miray:\\\\") == 0 ||
-		path.indexOf("owlet://") == 0 || path.indexOf("owlet:\\\\") == 0;
+		path.startsWith(m_resourcesFolderPath, cs) ||
+		path.startsWith("miray://", cs) ||
+		path.startsWith("owlet://", cs);
 }
 
 QString Application::checkHardware()
