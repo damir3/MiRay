@@ -115,31 +115,40 @@ void ListModel::delayedInit()
 		item.push_back(fileInfo.completeBaseName());
 
 		QString thumbnail;
-		if (QFile::exists(url + ".thumbnail")) {
-			thumbnail = "data:image/png;base64," + readFile(url + ".thumbnail").toBase64();
-		} else if (QFile::exists(url + ".jpg")) {
-			thumbnail = "data:image/jpg;base64," + readFile(url + ".jpg").toBase64();
-		} else if (QFile::exists(url + ".png")) {
-			thumbnail = "data:image/png;base64," + readFile(url + ".png").toBase64();
-		} else if (!fileInfo.suffix().compare("mirayMaterial", Qt::CaseInsensitive)) {
-			thumbnail = getMaterialThumbnail(url);
-		} else {
-			auto ext = fileInfo.suffix();
-			if (!fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) ||
-				!fileInfo.suffix().compare("png", Qt::CaseInsensitive) ||
-				!fileInfo.suffix().compare("exr", Qt::CaseInsensitive) ||
-				!fileInfo.suffix().compare("hdr", Qt::CaseInsensitive)) {
-				auto imageManager = qApp->imageManager();
-				if (auto image = imageManager->loadImage(url, false, eImageColorSpace::sRGB)) {
-					if (auto thumbnailImage = imageManager->scaleImage(image, 160, 160, eImageFormat::RGBA, eImageDataType::Byte, eScaleFilter::Triangle)) {
-						auto pngData = imageManager->saveImage(thumbnailImage, "png", 1.0f);
-						if (!pngData.isEmpty()) {
-							writeFile(url + ".thumbnail", pngData);
-							thumbnail = "data:image/png;base64," + pngData.toBase64();
+		try {
+			if (QFile::exists(url + ".thumbnail")) {
+				thumbnail = "data:image/png;base64," + readFile(url + ".thumbnail").toBase64();
+			} else if (QFile::exists(url + ".jpg")) {
+				thumbnail = "data:image/jpg;base64," + readFile(url + ".jpg").toBase64();
+			} else if (QFile::exists(url + ".png")) {
+				thumbnail = "data:image/png;base64," + readFile(url + ".png").toBase64();
+			} else if (!fileInfo.suffix().compare("mirayMaterial", Qt::CaseInsensitive)) {
+				thumbnail = getMaterialThumbnail(url);
+			} else {
+				auto ext = fileInfo.suffix();
+				if (!fileInfo.suffix().compare("jpg", Qt::CaseInsensitive) ||
+					!fileInfo.suffix().compare("png", Qt::CaseInsensitive) ||
+					!fileInfo.suffix().compare("exr", Qt::CaseInsensitive) ||
+					!fileInfo.suffix().compare("hdr", Qt::CaseInsensitive)) {
+					auto imageManager = qApp->imageManager();
+					if (auto image = imageManager->loadImage(url, false, eImageColorSpace::sRGB)) {
+						if (auto thumbnailImage = imageManager->scaleImage(image, 160, 160, eImageFormat::RGBA, eImageDataType::Byte, eScaleFilter::Triangle)) {
+							auto pngData = imageManager->saveImage(thumbnailImage, "png", 1.0f);
+							if (!pngData.isEmpty()) {
+								try {
+									writeFile(url + ".thumbnail", pngData);
+								} catch (const std::exception & e) {
+									// Read-only filesystem or application bundle: skip saving cache to disk
+									qDebug() << "Cannot write thumbnail to disk for" << url << ":" << e.what();
+								}
+								thumbnail = "data:image/png;base64," + pngData.toBase64();
+							}
 						}
 					}
 				}
 			}
+		} catch (const std::exception & e) {
+			qWarning() << "Error reading thumbnail for" << url << ":" << e.what();
 		}
 
 		item.push_back(thumbnail);
