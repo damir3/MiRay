@@ -140,7 +140,7 @@ void Application::setVersion()
 	else
 		version = QString("%1.%2").arg(VER_MAJOR).arg(VER_MINOR);
 	setApplicationVersion(version);
-	setOrganizationDomain("github.com/damir3/MiRay2");
+	setOrganizationDomain("github.com/damir3/MiRay");
 }
 
 QDir Application::getResourcesFolder() const

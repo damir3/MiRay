@@ -15,7 +15,7 @@
 #define VER_ORIGINALFILENAME_STR    "@PROJECT_NAME@.dll"
 #define VER_PRODUCTNAME_STR         "MiRay"
 
-#define VER_COMPANYDOMAIN_STR       "github.com/damir3/MiRay2"
+#define VER_COMPANYDOMAIN_STR       "github.com/damir3/MiRay"
 
 VS_VERSION_INFO VERSIONINFO
 FILEVERSION     VER_FILEVERSION

@@ -1,8 +1,25 @@
-# MiRay2
+# MiRay
 
 Physically correct, unbiased rendering engine with advanced layered materials, volumetric transport, and AI-accelerated denoising.
 
+[![Latest Release](https://img.shields.io/github/v/release/damir3/MiRay?style=flat-square&color=blue)](https://github.com/damir3/MiRay/releases)
+[![Download macOS](https://img.shields.io/badge/Download-macOS%20(Apple%20Silicon)-black?logo=apple&style=flat-square)](https://github.com/damir3/MiRay/releases/latest/download/MiRay-macOS-arm.zip)
+[![Download Windows](https://img.shields.io/badge/Download-Windows%20(x64)-0078D6?logo=windows&style=flat-square)](https://github.com/damir3/MiRay/releases/latest/download/MiRay-Windows-64.zip)
+
 ![MiRay Application](docs/screenshot.png)
+
+---
+
+## Downloads
+
+Download the latest standalone portable packages for your operating system:
+
+| Platform | Architecture | Download |
+| :--- | :--- | :--- |
+| **macOS** | Apple Silicon (M1/M2/M3/M4) | [**MiRay-macOS-arm.zip**](https://github.com/damir3/MiRay/releases/latest/download/MiRay-macOS-arm.zip) |
+| **Windows** | x64 (64-bit) | [**MiRay-Windows-64.zip**](https://github.com/damir3/MiRay/releases/latest/download/MiRay-Windows-64.zip) |
+
+All versions and changelogs are available on the [Releases page](https://github.com/damir3/MiRay/releases).
 
 ---
 

@@ -1,6 +1,6 @@
-# MiRay2 Build & Distribution Guide
+# MiRay Build & Distribution Guide
 
-Comprehensive guide for configuring, building, testing, and packaging the **MiRay2** rendering engine across macOS and Windows.
+Comprehensive guide for configuring, building, testing, and packaging the **MiRay** rendering engine across macOS and Windows.
 
 ---
 
