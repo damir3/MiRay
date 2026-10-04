@@ -89,13 +89,72 @@ jobs:
         run: |
           ${{ matrix.platform.test_cmd }}
 
-      - name: (macOS) Bundle Application
+      - name: (macOS) Setup Keychain & Import Certificate
+        if: runner.os == 'macOS' && env.HAVE_CERT == 'true'
+        env:
+          HAVE_CERT: ${{ secrets.MACOS_CERTIFICATE_P12 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' }}
+          CERT_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERT_PWD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          KEYCHAIN_PWD="temporary_password"
+
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+
+          echo "$CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -P "$CERT_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+      - name: (macOS) Bundle, Sign & Notarize
         if: runner.os == 'macOS'
         shell: bash
+        env:
+          DEVELOPER_ID: ${{ secrets.DEVELOPER_ID }}
+          APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
+          # 1. Prepare application bundle
           bash tools/mac/bundle.sh ${{ matrix.platform.arch }}
+
+          # 2. Code sign if certificate identity is available
+          if [ -n "${DEVELOPER_ID}" ]; then
+            echo "==> Signing application with: ${DEVELOPER_ID}..."
+            bash tools/mac/sign.sh ${{ matrix.platform.arch }}
+          else
+            echo "==> DEVELOPER_ID secret not set, skipping code signing."
+          fi
+
+          # 3. Notarize if Apple API credentials are available
+          if [ -n "${APPLE_API_KEY_BASE64}" ] && [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ]; then
+            echo "==> Submitting bundle to Apple for notarization..."
+            API_KEY_PATH="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+            echo "${APPLE_API_KEY_BASE64}" | base64 --decode > "${API_KEY_PATH}"
+
+            NOTARIZE_ZIP="$RUNNER_TEMP/notarize_${{ matrix.platform.arch }}.zip"
+            ditto -c -k --keepParent "bin/${{ matrix.platform.arch }}/MiRay.app" "${NOTARIZE_ZIP}"
+
+            xcrun notarytool submit "${NOTARIZE_ZIP}" \
+              --key "${API_KEY_PATH}" \
+              --key-id "${APPLE_API_KEY_ID}" \
+              --issuer "${APPLE_API_ISSUER}" \
+              --wait
+
+            echo "==> Stapling notarization ticket to MiRay.app..."
+            xcrun stapler staple "bin/${{ matrix.platform.arch }}/MiRay.app"
+
+            echo "==> Verifying stapled ticket..."
+            spctl --assess --type execute --verbose "bin/${{ matrix.platform.arch }}/MiRay.app" || true
+          else
+            echo "==> Apple API credentials not set, skipping notarization."
+          fi
+
+          # 4. Create final distribution ZIP with stapled ticket and preserved symlinks
           mkdir -p out
-          ditto -c -k --keepParent bin/${{ matrix.platform.arch }}/MiRay.app out/MiRay-macOS-${{ matrix.platform.arch }}.zip
+          ditto -c -k --keepParent "bin/${{ matrix.platform.arch }}/MiRay.app" "out/MiRay-macOS-${{ matrix.platform.arch }}.zip"
 
       - name: (Windows) Bundle Application
         if: runner.os == 'Windows'
